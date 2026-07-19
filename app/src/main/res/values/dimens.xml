@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Onboarding page indicator -->
+    <dimen name="indicator_dot_size">8dp</dimen>
+    <dimen name="indicator_dot_active_width">24dp</dimen>
+    <dimen name="indicator_dot_spacing">8dp</dimen>
+</resources>

@@ -1,0 +1,35 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="220dp"
+    android:height="220dp"
+    android:viewportWidth="220"
+    android:viewportHeight="220">
+
+    <!-- Backdrop circle -->
+    <path
+        android:fillColor="@color/onboarding_illustration_bg"
+        android:pathData="M110,20 m-90,0 a90,90 0 1,0 180,0 a90,90 0 1,0 -180,0" />
+
+    <!-- Ground line -->
+    <path
+        android:strokeColor="@color/onboarding_illustration_accent"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M45,165 L175,165" />
+
+    <!-- Arch (venue entrance) -->
+    <path
+        android:strokeColor="@color/wedora_primary"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"
+        android:pathData="M72,165 L72,95 A38,38 0 0,1 148,95 L148,165" />
+
+    <!-- Interlocking rings -->
+    <path
+        android:strokeColor="@color/wedora_primary"
+        android:strokeWidth="6"
+        android:pathData="M98,92 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+    <path
+        android:strokeColor="@color/wedora_gradient_top"
+        android:strokeWidth="6"
+        android:pathData="M122,92 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+</vector>

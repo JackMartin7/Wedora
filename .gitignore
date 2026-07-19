@@ -1,0 +1,30 @@
+# Built application files
+/build/
+/app/build/
+/*/build/
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Local configuration (SDK path, signing, etc.)
+local.properties
+
+# Android Studio / IntelliJ
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Firebase — contains project ID + API key; each environment supplies its own
+/app/google-services.json
