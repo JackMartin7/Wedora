@@ -43,6 +43,11 @@
     <!-- Guest mode -->
     <string name="continue_as_guest">Continue as Guest</string>
     <string name="guest_action_blocked">Sign up to use this feature</string>
+    <string name="guest_label">Guest</string>
+
+    <!-- Signed-in user fallbacks (no displayName set on the Firebase account) -->
+    <string name="default_greeting_name">there</string>
+    <string name="default_profile_name">Wedora User</string>
 
     <!-- Home -->
     <string name="home_greeting">Good Morning 👋</string>

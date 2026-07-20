@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/wedora_bg">
@@ -78,6 +79,19 @@
                 android:textSize="19sp"
                 android:fontFamily="@font/poppins_semibold" />
 
+            <!-- Real Firebase email; hidden for guests, who have none -->
+            <TextView
+                android:id="@+id/tvProfileEmail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="sarah@example.com" />
+
+            <!-- Location is placeholder — no backend field for this yet -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

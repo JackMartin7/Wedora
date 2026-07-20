@@ -41,12 +41,17 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    /** Greet the signed-in user by name, falling back to the sample name. */
+    /** Greet the signed-in user by name and load their avatar, if any. */
     private fun showSignedInUser() {
-        val displayName = FirebaseAuth.getInstance().currentUser?.displayName
-        if (!displayName.isNullOrBlank()) {
-            binding.tvUserName.text = displayName
+        if (GuestPrefs.isGuest(this)) {
+            binding.tvUserName.text = getString(R.string.guest_label)
+            return
         }
+
+        val user = FirebaseAuth.getInstance().currentUser
+        binding.tvUserName.text = user?.displayName?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.default_greeting_name)
+        binding.ivMyAvatar.loadAvatarOrPlaceholder(user?.photoUrl, R.drawable.home_me_avatar)
     }
 
     private fun setUpFeed() {

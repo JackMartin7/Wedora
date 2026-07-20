@@ -3,6 +3,7 @@ package com.wedora.app
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -18,12 +19,39 @@ class ProfileActivity : AppCompatActivity() {
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        showSignedInUser()
         setUpDarkModeSwitch()
         setUpSettingsRows()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_profile)
 
         binding.btnHistory.setOnClickListener { toast(getString(R.string.cd_history)) }
         binding.btnEditProfile.setOnClickListener { toast(getString(R.string.profile_edit_button)) }
+    }
+
+    /**
+     * Name, email and avatar are real Firebase account data. Location and the
+     * stats card stay as placeholders — there's no backend field for either yet.
+     */
+    private fun showSignedInUser() {
+        if (GuestPrefs.isGuest(this)) {
+            binding.tvProfileName.text = getString(R.string.guest_label)
+            binding.tvProfileEmail.visibility = View.GONE
+            return
+        }
+
+        val user = FirebaseAuth.getInstance().currentUser
+        binding.tvProfileName.text = user?.displayName?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.default_profile_name)
+
+        val email = user?.email
+        if (!email.isNullOrBlank()) {
+            binding.tvProfileEmail.text = email
+            binding.tvProfileEmail.visibility = View.VISIBLE
+        } else {
+            binding.tvProfileEmail.visibility = View.GONE
+        }
+
+        binding.ivProfilePhoto.loadAvatarOrPlaceholder(user?.photoUrl, R.drawable.profile_photo)
     }
 
     private fun setUpDarkModeSwitch() {
