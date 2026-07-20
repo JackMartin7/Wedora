@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Wedora design tokens — DARK mode.
+    Names mirror values/colors.xml exactly; only the values differ.
+    Brand colours are intentionally identical across both modes.
+-->
+<resources>
+    <!-- Brand — identical in light and dark -->
+    <color name="wedora_accent">#FA4659</color>
+    <color name="wedora_gradient_start">#FF93A8</color>
+    <color name="wedora_gradient_end">#FE4667</color>
+    <color name="wedora_success">#3FB56E</color>
+    <color name="wedora_error">#E23B4E</color>
+    <color name="wedora_accent_shadow">#4DFA4659</color>
+
+    <!-- Surfaces -->
+    <color name="wedora_bg">#1C1417</color>
+    <color name="wedora_surface">#2A2124</color>
+    <color name="wedora_border">#3A2E32</color>
+
+    <!-- Text -->
+    <color name="wedora_text">#F5EEEF</color>
+    <color name="wedora_text_secondary">#B8ABAE</color>
+
+    <!-- Inputs -->
+    <color name="wedora_input_bg">#241A1D</color>
+    <color name="wedora_input_border">#3A2E32</color>
+
+    <!-- Decorative concentric rings behind the onboarding avatar collage -->
+    <color name="wedora_ring_mid">#241A1D</color>
+    <color name="wedora_ring_inner">#2E2226</color>
+
+    <!-- Base -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

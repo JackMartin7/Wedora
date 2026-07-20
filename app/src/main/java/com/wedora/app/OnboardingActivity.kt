@@ -16,19 +16,22 @@ class OnboardingActivity : AppCompatActivity() {
 
     private val pages = listOf(
         OnboardingPage(
-            R.drawable.ic_onboarding_venue,
+            R.layout.view_onboarding_illustration_1,
             R.string.onboarding_title_1,
-            R.string.onboarding_desc_1
+            R.string.onboarding_desc_1,
+            canvasWidthDp = 280
         ),
         OnboardingPage(
-            R.drawable.ic_onboarding_plan,
+            R.layout.view_onboarding_illustration_2,
             R.string.onboarding_title_2,
-            R.string.onboarding_desc_2
+            R.string.onboarding_desc_2,
+            canvasWidthDp = 348
         ),
         OnboardingPage(
-            R.drawable.ic_onboarding_celebrate,
+            R.layout.view_onboarding_illustration_3,
             R.string.onboarding_title_3,
-            R.string.onboarding_desc_3
+            R.string.onboarding_desc_3,
+            canvasWidthDp = 348
         )
     )
 

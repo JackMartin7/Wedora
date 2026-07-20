@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Wedora design tokens — LIGHT mode.
+    The dark-mode counterparts live in values-night/colors.xml and MUST use
+    the same names so the system can swap them automatically.
+-->
 <resources>
-    <!-- Brand -->
-    <color name="wedora_primary">#FF445C</color>
-    <color name="wedora_gradient_top">#FF8292</color>
-    <color name="wedora_gradient_mid">#FF5066</color>
-    <color name="wedora_gradient_bottom">#FF3953</color>
+    <!-- Brand — identical in light and dark -->
+    <color name="wedora_accent">#FA4659</color>
+    <color name="wedora_gradient_start">#FF93A8</color>
+    <color name="wedora_gradient_end">#FE4667</color>
+    <color name="wedora_success">#3FB56E</color>
+    <color name="wedora_error">#E23B4E</color>
+    <!-- 30% accent, used for the primary button's coloured drop shadow -->
+    <color name="wedora_accent_shadow">#4DFA4659</color>
+
+    <!-- Surfaces -->
+    <color name="wedora_bg">#FAF7F7</color>
+    <color name="wedora_surface">#FFFFFF</color>
+    <color name="wedora_border">#F0EAEB</color>
 
     <!-- Text -->
-    <color name="text_dark">#330E12</color>
-    <color name="text_muted">#83686B</color>
-    <color name="text_divider">#757171</color>
-    <color name="text_link">#FF445C</color>
-    <color name="text_status_bar">#27282A</color>
+    <color name="wedora_text">#241A1D</color>
+    <color name="wedora_text_secondary">#8C8589</color>
 
     <!-- Inputs -->
-    <color name="input_background">#FFF9FA</color>
-    <color name="input_border">#FF5167</color>
+    <color name="wedora_input_bg">#FDEFF1</color>
+    <color name="wedora_input_border">#FBD3DA</color>
 
-    <!-- Social buttons -->
-    <color name="social_border">#FFDADE</color>
+    <!-- Decorative concentric rings behind the onboarding avatar collage -->
+    <color name="wedora_ring_mid">#FDF2F4</color>
+    <color name="wedora_ring_inner">#FBE7EA</color>
 
     <!-- Base -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="checkbox_border">#83686B</color>
-
-    <!-- Onboarding -->
-    <color name="onboarding_illustration_bg">#FFF0F2</color>
-    <color name="onboarding_illustration_accent">#FFBCC5</color>
-    <color name="indicator_active">#FF445C</color>
-    <color name="indicator_inactive">#FFD3D9</color>
-    <color name="onboarding_skip">#83686B</color>
 </resources>

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="@color/wedora_primary" />
-    <corners android:radius="4dp" />
-</shape>
+<!--
+    Primary CTA. The coloured drop shadow (0 10px 20px rgba(250,70,89,0.3))
+    comes from android:elevation + outlineSpotShadowColor in WedoraPrimaryButton,
+    since shape drawables cannot render a tinted shadow themselves.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33FFFFFF">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_accent" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</ripple>

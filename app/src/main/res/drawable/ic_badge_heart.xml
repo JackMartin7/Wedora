@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Accent disc -->
+    <path
+        android:fillColor="@color/wedora_accent"
+        android:pathData="M16,0 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+
+    <!-- Heart -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M16,23 C16,23 8,18 8,13.2 A4.2,4.2 0 0,1 16,11 A4.2,4.2 0 0,1 24,13.2 C24,18 16,23 16,23 Z" />
+</vector>

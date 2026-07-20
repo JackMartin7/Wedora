@@ -130,7 +130,7 @@ class SignUpActivity : AppCompatActivity() {
         val full = prompt + link
 
         val spannable = SpannableString(full)
-        val linkColor = ContextCompat.getColor(this, R.color.text_link)
+        val linkColor = ContextCompat.getColor(this, R.color.wedora_accent)
 
         spannable.setSpan(
             ForegroundColorSpan(linkColor),

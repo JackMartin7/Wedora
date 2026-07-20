@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sits behind each avatar. The difference between an avatar's outer size and
+    its inner image size (e.g. 58dp vs 52dp) is applied as padding, so this
+    surface-coloured circle shows through as a ring around the photo.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/wedora_surface" />
+</shape>

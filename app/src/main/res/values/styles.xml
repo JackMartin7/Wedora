@@ -1,15 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+        DayNight base theme. Colours resolve from values/ or values-night/
+        automatically, so there is no separate dark theme to maintain.
+        Poppins is set as the default font family here, so every TextView,
+        EditText and Button in the app picks it up without per-view attributes.
+    -->
     <style name="Theme.Wedora" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/wedora_primary</item>
-        <item name="android:windowBackground">@color/white</item>
-        <item name="android:statusBarColor" tools:targetApi="21">@color/white</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+        <item name="colorPrimary">@color/wedora_accent</item>
+        <item name="colorAccent">@color/wedora_accent</item>
+        <item name="colorError">@color/wedora_error</item>
+        <item name="android:windowBackground">@color/wedora_bg</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/wedora_bg</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">@bool/wedora_light_status_bar</item>
+        <item name="android:textColorPrimary">@color/wedora_text</item>
+        <item name="android:textColorSecondary">@color/wedora_text_secondary</item>
+        <item name="android:textColorHint">@color/wedora_text_secondary</item>
+
+        <!-- Default typeface for the whole app -->
+        <item name="android:fontFamily">@font/poppins</item>
+        <item name="fontFamily">@font/poppins</item>
     </style>
 
+    <!-- Splash keeps the brand gradient behind it, so it always uses light icons -->
     <style name="Theme.Wedora.Splash" parent="Theme.Wedora">
         <item name="android:windowBackground">@drawable/bg_splash_gradient</item>
+        <item name="android:statusBarColor" tools:targetApi="21">@color/wedora_gradient_start</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
     </style>
 
@@ -18,18 +35,19 @@
         <item name="android:background">@drawable/bg_input_field</item>
         <item name="android:paddingStart">16dp</item>
         <item name="android:paddingEnd">16dp</item>
-        <item name="android:textColor">@color/text_dark</item>
-        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="android:textColor">@color/wedora_text</item>
+        <item name="android:textColorHint">@color/wedora_text_secondary</item>
         <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/poppins</item>
         <item name="android:singleLine">true</item>
         <item name="android:imeOptions">actionNext</item>
     </style>
 
     <!-- Field label ("Email", "Password", etc.) -->
     <style name="WedoraFieldLabel">
-        <item name="android:textColor">@color/text_dark</item>
+        <item name="android:textColor">@color/wedora_text</item>
         <item name="android:textSize">16sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
         <item name="android:layout_marginBottom">10dp</item>
     </style>
 
@@ -38,10 +56,29 @@
         <item name="android:background">@drawable/bg_button_primary</item>
         <item name="android:textColor">@color/white</item>
         <item name="android:textSize">16sp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">@font/poppins_semibold</item>
         <item name="android:textAllCaps">false</item>
-        <item name="android:layout_height">48dp</item>
-        <item name="android:elevation">2dp</item>
+        <item name="android:layout_height">54dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <!-- Coloured drop shadow ~ 0 10px 20px rgba(250,70,89,0.3) -->
+        <item name="android:elevation">10dp</item>
+        <item name="android:outlineSpotShadowColor" tools:targetApi="28">@color/wedora_accent_shadow</item>
+        <item name="android:outlineAmbientShadowColor" tools:targetApi="28">@color/wedora_accent_shadow</item>
+    </style>
+
+    <!-- Circular mask for ShapeableImageView (onboarding slide 3 profile photos) -->
+    <style name="WedoraCircleImage">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Interest-tag chip label (onboarding slide 2) -->
+    <style name="WedoraChipLabel">
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/wedora_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
     </style>
 
     <!-- Social login icon button (Google/Facebook/Apple) -->

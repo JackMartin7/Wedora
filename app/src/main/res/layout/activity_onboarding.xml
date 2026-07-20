@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/wedora_bg">
 
     <!-- Skip -->
     <TextView
@@ -14,9 +14,9 @@
         android:layout_marginEnd="20dp"
         android:padding="8dp"
         android:text="@string/onboarding_skip"
-        android:textColor="@color/onboarding_skip"
+        android:textColor="@color/wedora_text_secondary"
         android:textSize="14sp"
-        android:fontFamily="sans-serif-medium"
+        android:fontFamily="@font/poppins_medium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

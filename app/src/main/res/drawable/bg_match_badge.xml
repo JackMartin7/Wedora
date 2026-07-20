@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "80%" match badge: accent disc with a surface-coloured ring so it reads
+     clearly where it overlaps the two profile photos. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/wedora_accent" />
+    <stroke
+        android:width="4dp"
+        android:color="@color/wedora_surface" />
+</shape>

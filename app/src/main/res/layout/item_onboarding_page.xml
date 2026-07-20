@@ -4,25 +4,29 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_horizontal"
-    android:paddingHorizontal="32dp">
+    android:paddingHorizontal="32dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <ImageView
-        android:id="@+id/ivIllustration"
-        android:layout_width="260dp"
-        android:layout_height="260dp"
-        android:layout_marginTop="48dp"
-        android:adjustViewBounds="true"
-        android:contentDescription="@null" />
+    <!-- Per-slide illustration collage is inflated into here by OnboardingAdapter.
+         Clipping is disabled so slide 1's avatars/badge can overflow the canvas. -->
+    <FrameLayout
+        android:id="@+id/illustrationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginTop="32dp"
+        android:clipChildren="false"
+        android:clipToPadding="false" />
 
     <TextView
         android:id="@+id/tvPageTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="32dp"
         android:gravity="center"
-        android:textColor="@color/text_dark"
+        android:textColor="@color/wedora_text"
         android:textSize="24sp"
-        android:fontFamily="sans-serif-medium" />
+        android:fontFamily="@font/poppins_semibold" />
 
     <TextView
         android:id="@+id/tvPageDescription"
@@ -31,7 +35,7 @@
         android:layout_marginTop="14dp"
         android:gravity="center"
         android:lineSpacingExtra="4sp"
-        android:textColor="@color/text_muted"
+        android:textColor="@color/wedora_text_secondary"
         android:textSize="14sp" />
 
 </LinearLayout>

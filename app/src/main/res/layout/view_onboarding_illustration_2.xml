@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Onboarding slide 2 — "Share & Chat" interest-tag collage.
+    Absolute composition on a fixed 348x300dp canvas; each child's
+    layout_margin{Start,Top} is its x/y from the spec, in spec order
+    (which is also the z-order, back to front).
+
+    Photo ring = padding of (outer - inner)/2 over bg_avatar_ring, matching
+    slide 1: 72/66 -> 3dp, 76/70 -> 3dp.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="348dp"
+    android:layout_height="300dp"
+    android:layout_gravity="center"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- "Fashion" chip : 92x42 @ (6,10) -->
+    <TextView
+        style="@style/WedoraChipLabel"
+        android:layout_width="92dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="10dp"
+        android:text="@string/onboarding_chip_fashion" />
+
+    <!-- Photo 1 (top-right) : 72x72 @ (266,2), inner 66 -->
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_marginStart="266dp"
+        android:layout_marginTop="2dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_ring"
+        android:src="@drawable/ob2_a1"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+    <!-- "•••" menu dots : 38x38 @ (120,78) -->
+    <ImageView
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginStart="120dp"
+        android:layout_marginTop="78dp"
+        android:padding="9dp"
+        android:background="@drawable/bg_circle_surface"
+        android:src="@drawable/ic_menu_dots"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
+
+    <!-- Photo 2 (left-mid) : 76x76 @ (10,110), inner 70 -->
+    <ImageView
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="110dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_ring"
+        android:src="@drawable/ob2_a2"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+    <!-- "Music" chip : 82x46 @ (112,130) -->
+    <TextView
+        style="@style/WedoraChipLabel"
+        android:layout_width="82dp"
+        android:layout_height="46dp"
+        android:layout_marginStart="112dp"
+        android:layout_marginTop="130dp"
+        android:text="@string/onboarding_chip_music" />
+
+    <!-- small icon circle : 26x26 @ (288,150), 13x13 icon centered -->
+    <ImageView
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="288dp"
+        android:layout_marginTop="150dp"
+        android:padding="6dp"
+        android:background="@drawable/bg_circle_surface"
+        android:src="@drawable/ic_sparkle_heart"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null" />
+
+    <!-- small decorative pill (no icon) : 30x22 @ (60,186) -->
+    <View
+        android:layout_width="30dp"
+        android:layout_height="22dp"
+        android:layout_marginStart="60dp"
+        android:layout_marginTop="186dp"
+        android:background="@drawable/bg_deco_pill" />
+
+    <!-- "Photography" chip : 129x42 @ (6,245) -->
+    <TextView
+        style="@style/WedoraChipLabel"
+        android:layout_width="129dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="245dp"
+        android:text="@string/onboarding_chip_photography" />
+
+    <!-- Photo 3 (bottom-right) : 76x76 @ (252,224), inner 70 -->
+    <ImageView
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_marginStart="252dp"
+        android:layout_marginTop="224dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_ring"
+        android:src="@drawable/ob2_a3"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null" />
+
+</FrameLayout>

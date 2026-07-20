@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Onboarding slide 3 — "Match".
+    Absolute composition on a fixed 348x300dp canvas.
+
+    The two profiles are circle-MASKED (ShapeableImageView + 50% corner size),
+    not ring-bordered like slides 1 and 2. Source PNGs are 148x165, so
+    centerCrop trims them to the 140x140 circle.
+
+    Per the coordinates the photos sit 20dp apart and do not touch; the badge
+    bridges the gap and overlaps both, so it is drawn after them.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="348dp"
+    android:layout_height="300dp"
+    android:layout_gravity="center"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- Photo — female (left) : 140x140 @ (24,36), circular mask -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="36dp"
+        android:src="@drawable/ob3_female"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+    <!-- Photo — male (right) : 140x140 @ (184,36), circular mask -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_marginStart="184dp"
+        android:layout_marginTop="36dp"
+        android:src="@drawable/ob3_male"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+    <!-- "80%" match badge : 80x80 @ (134,100), overlaps both photos -->
+    <TextView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginStart="134dp"
+        android:layout_marginTop="100dp"
+        android:background="@drawable/bg_match_badge"
+        android:gravity="center"
+        android:text="@string/onboarding_match_percent"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:fontFamily="@font/poppins_semibold" />
+
+    <!-- ===== 8 decorative sparkles (one shape, scaled per spec) ===== -->
+
+    <ImageView
+        android:layout_width="16dp" android:layout_height="14dp"
+        android:layout_marginStart="20dp" android:layout_marginTop="30dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="26dp" android:layout_height="23dp"
+        android:layout_marginStart="52dp" android:layout_marginTop="60dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="30dp" android:layout_height="27dp"
+        android:layout_marginStart="248dp" android:layout_marginTop="14dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="16dp" android:layout_height="14dp"
+        android:layout_marginStart="312dp" android:layout_marginTop="80dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="18dp" android:layout_height="16dp"
+        android:layout_marginStart="0dp" android:layout_marginTop="214dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="24dp" android:layout_height="21dp"
+        android:layout_marginStart="60dp" android:layout_marginTop="249dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="16dp" android:layout_height="14dp"
+        android:layout_marginStart="272dp" android:layout_marginTop="242dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="14dp" android:layout_height="12dp"
+        android:layout_marginStart="314dp" android:layout_marginTop="282dp"
+        android:src="@drawable/ic_sparkle_heart" android:contentDescription="@null" />
+
+</FrameLayout>
