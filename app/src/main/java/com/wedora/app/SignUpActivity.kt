@@ -117,6 +117,8 @@ class SignUpActivity : AppCompatActivity() {
      */
     private fun finishSignUp() {
         setLoading(false)
+        // The user now has a real account, so they are no longer a guest.
+        GuestPrefs.clearGuest(this)
         auth.signOut()
         Toast.makeText(this, R.string.signup_success_verify, Toast.LENGTH_LONG).show()
         startActivity(

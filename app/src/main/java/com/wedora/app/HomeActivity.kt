@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,8 +14,10 @@ class HomeActivity : AppCompatActivity() {
 
     private val adapter by lazy {
         MatchCardAdapter(
-            onLike = { toast("Liked ${it.name}") },
-            onSuperlike = { toast("Super liked ${it.name}") },
+            // Liking is a guest-gated action; passing/dismissing only affect the
+            // local feed, so they stay available.
+            onLike = { requireAccount { toast("Liked ${it.name}") } },
+            onSuperlike = { requireAccount { toast("Super liked ${it.name}") } },
             onPass = { toast("Passed on ${it.name}") },
             onDismiss = { toast("Dismissed ${it.name}") },
             onMore = { toast("More options for ${it.name}") }
@@ -58,12 +61,32 @@ class HomeActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> true
+
+                // Chats and Profile are account-only; guests are sent to sign-up.
+                R.id.nav_chats, R.id.nav_profile -> {
+                    requireAccount { toast("${item.title} coming soon") }
+                    false
+                }
+
                 // TODO: swap in the real destinations as those screens are built
                 else -> {
                     toast("${item.title} coming soon")
                     false
                 }
             }
+        }
+    }
+
+    /**
+     * Runs [action] for signed-in users. Guests are redirected to sign-up instead,
+     * which is the single gate for every account-only feature on this screen.
+     */
+    private fun requireAccount(action: () -> Unit) {
+        if (GuestPrefs.isGuest(this)) {
+            Toast.makeText(this, R.string.guest_action_blocked, Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SignUpActivity::class.java))
+        } else {
+            action()
         }
     }
 

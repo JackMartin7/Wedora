@@ -40,6 +40,10 @@
     <string name="verification_email_sent">Verification email sent. Check your inbox.</string>
     <string name="error_verification_send">Couldn\'t send the verification email. Try again shortly.</string>
 
+    <!-- Guest mode -->
+    <string name="continue_as_guest">Continue as Guest</string>
+    <string name="guest_action_blocked">Sign up to use this feature</string>
+
     <!-- Home -->
     <string name="home_greeting">Good Morning 👋</string>
     <string name="home_sample_name">Sarah</string>
