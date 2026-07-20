@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Active tab uses the brand accent; the rest use secondary text colour -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/wedora_accent" android:state_checked="true" />
+    <item android:color="@color/wedora_text_secondary" />
+</selector>

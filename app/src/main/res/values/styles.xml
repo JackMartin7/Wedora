@@ -72,6 +72,12 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- Rounded photo inside a match card -->
+    <style name="WedoraCardImage">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
     <!-- Interest-tag chip label (onboarding slide 2) -->
     <style name="WedoraChipLabel">
         <item name="android:background">@drawable/bg_chip</item>

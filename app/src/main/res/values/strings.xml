@@ -33,6 +33,26 @@
     <string name="login_success">Welcome back!</string>
     <string name="signup_success">Account created successfully!</string>
 
+    <!-- Home -->
+    <string name="home_greeting">Good Morning 👋</string>
+    <string name="home_sample_name">Sarah</string>
+    <string name="home_distance_format">%1$s km away</string>
+    <string name="cd_dark_mode_toggle">Toggle dark mode</string>
+    <string name="cd_menu">Menu</string>
+    <string name="cd_avatar">Profile photo</string>
+    <string name="cd_dismiss">Dismiss</string>
+    <string name="cd_more">More options</string>
+    <string name="cd_like">Like</string>
+    <string name="cd_superlike">Super like</string>
+    <string name="cd_pass">Pass</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_maps">Maps</string>
+    <string name="nav_match">Match</string>
+    <string name="nav_chats">Chats</string>
+    <string name="nav_profile">Profile</string>
+
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
