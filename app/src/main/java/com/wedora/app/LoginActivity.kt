@@ -12,6 +12,7 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -76,12 +77,49 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 setLoading(false)
                 if (task.isSuccessful) {
-                    Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
-                    // TODO: navigate to the app's home screen once it exists
+                    onSignInSuccess()
                 } else {
                     Toast.makeText(this, loginErrorMessage(task.exception), Toast.LENGTH_LONG).show()
                 }
             }
+    }
+
+    private fun onSignInSuccess() {
+        val user = auth.currentUser
+        if (user == null) {
+            Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (user.isEmailVerified) {
+            Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, HomeActivity::class.java))
+            finish()
+        } else {
+            promptEmailVerification()
+        }
+    }
+
+    /**
+     * The account exists but the address is unverified. We keep the user signed in
+     * (signing out would make [FirebaseUser.sendEmailVerification] unavailable) but
+     * deliberately do not navigate onwards.
+     */
+    private fun promptEmailVerification() {
+        Snackbar.make(binding.root, R.string.error_email_not_verified, Snackbar.LENGTH_INDEFINITE)
+            .setAction(R.string.action_resend_verification) { resendVerificationEmail() }
+            .setActionTextColor(ContextCompat.getColor(this, R.color.wedora_accent))
+            .show()
+    }
+
+    private fun resendVerificationEmail() {
+        val user = auth.currentUser ?: return
+        user.sendEmailVerification().addOnCompleteListener(this) { task ->
+            val msg =
+                if (task.isSuccessful) R.string.verification_email_sent
+                else R.string.error_verification_send
+            Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun loginErrorMessage(e: Exception?): String {

@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableString
@@ -12,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -84,18 +86,45 @@ class SignUpActivity : AppCompatActivity() {
     }
 
     private fun setUserDisplayName(username: String) {
+        val user = auth.currentUser
+        if (user == null) {
+            finishSignUp()
+            return
+        }
+
         val request = UserProfileChangeRequest.Builder()
             .setDisplayName(username)
             .build()
-        auth.currentUser?.updateProfile(request)
-            ?.addOnCompleteListener(this) {
-                setLoading(false)
-                Toast.makeText(this, R.string.signup_success, Toast.LENGTH_SHORT).show()
-                // TODO: navigate to the app's home screen once it exists
-            } ?: run {
-                setLoading(false)
-                Toast.makeText(this, R.string.signup_success, Toast.LENGTH_SHORT).show()
+        user.updateProfile(request).addOnCompleteListener(this) {
+            // Whether or not the display name stuck, the account exists — carry on
+            // and send the verification email.
+            sendVerificationEmail(user)
+        }
+    }
+
+    private fun sendVerificationEmail(user: FirebaseUser) {
+        user.sendEmailVerification().addOnCompleteListener(this) { task ->
+            if (!task.isSuccessful) {
+                Toast.makeText(this, R.string.error_verification_send, Toast.LENGTH_LONG).show()
             }
+            finishSignUp()
+        }
+    }
+
+    /**
+     * Sign the new account out and hand off to Login. The user must verify their
+     * email before they can get in, so we deliberately do not drop them straight
+     * into the app.
+     */
+    private fun finishSignUp() {
+        setLoading(false)
+        auth.signOut()
+        Toast.makeText(this, R.string.signup_success_verify, Toast.LENGTH_LONG).show()
+        startActivity(
+            Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        )
+        finish()
     }
 
     private fun signUpErrorMessage(e: Exception?): String {

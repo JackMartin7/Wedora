@@ -33,6 +33,13 @@
     <string name="login_success">Welcome back!</string>
     <string name="signup_success">Account created successfully!</string>
 
+    <!-- Email verification -->
+    <string name="signup_success_verify">Signed up successfully — check your email to verify your account.</string>
+    <string name="error_email_not_verified">Please verify your email address before signing in.</string>
+    <string name="action_resend_verification">Resend</string>
+    <string name="verification_email_sent">Verification email sent. Check your inbox.</string>
+    <string name="error_verification_send">Couldn\'t send the verification email. Try again shortly.</string>
+
     <!-- Home -->
     <string name="home_greeting">Good Morning 👋</string>
     <string name="home_sample_name">Sarah</string>
