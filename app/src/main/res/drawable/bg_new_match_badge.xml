@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Small "unread/new" dot on the new-matches strip. Layered so the red dot
+    reads clearly against any avatar photo behind it: a surface-coloured ring,
+    then the red dot centered inside via padding.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/wedora_surface" />
+        </shape>
+    </item>
+    <item
+        android:top="2dp"
+        android:bottom="2dp"
+        android:start="2dp"
+        android:end="2dp">
+        <shape android:shape="oval">
+            <solid android:color="@color/wedora_error" />
+        </shape>
+    </item>
+</layer-list>

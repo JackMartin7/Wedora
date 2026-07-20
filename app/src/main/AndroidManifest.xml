@@ -35,6 +35,14 @@
             android:name=".HomeActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".MatchActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ChatsActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One avatar in the horizontal "new matches" strip -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="70dp"
+    android:layout_height="70dp"
+    android:layout_marginEnd="12dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivStoryAvatar"
+        android:layout_width="66dp"
+        android:layout_height="66dp"
+        android:layout_gravity="top|start"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/cd_avatar"
+        app:strokeColor="@color/wedora_accent"
+        app:strokeWidth="2dp"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+    <View
+        android:id="@+id/vNewMatchDot"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/bg_new_match_badge" />
+
+</FrameLayout>

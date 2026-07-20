@@ -64,6 +64,11 @@
     <string name="nav_chats">Chats</string>
     <string name="nav_profile">Profile</string>
 
+    <!-- Chats -->
+    <string name="chats_title">Chats</string>
+    <string name="chats_new_matches">New Matches</string>
+    <string name="cd_search">Search</string>
+
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>

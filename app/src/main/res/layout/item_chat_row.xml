@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One row in the conversation list -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="10dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivChatAvatar"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/cd_avatar"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextView
+        android:id="@+id/tvChatName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/ivChatAvatar"
+        app:layout_constraintTop_toTopOf="@id/ivChatAvatar"
+        app:layout_constraintEnd_toStartOf="@id/tvChatTimestamp" />
+
+    <TextView
+        android:id="@+id/tvChatPreview"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="2dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13sp"
+        app:layout_constraintStart_toEndOf="@id/ivChatAvatar"
+        app:layout_constraintTop_toBottomOf="@id/tvChatName"
+        app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar"
+        app:layout_constraintEnd_toStartOf="@id/tvUnreadBadge" />
+
+    <TextView
+        android:id="@+id/tvChatTimestamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivChatAvatar" />
+
+    <!-- Only shown when unreadCount > 0 -->
+    <TextView
+        android:id="@+id/tvUnreadBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:layout_marginTop="4dp"
+        android:minWidth="20dp"
+        android:gravity="center"
+        android:paddingHorizontal="5dp"
+        android:background="@drawable/bg_unread_badge"
+        android:textColor="@color/white"
+        android:textSize="11sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvChatTimestamp"
+        app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
