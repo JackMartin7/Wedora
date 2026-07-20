@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One chevron settings row, inflated programmatically by ProfileActivity -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="14dp">
+
+    <ImageView
+        android:id="@+id/ivRowIcon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="8dp"
+        android:background="@drawable/bg_icon_pink_square"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/tvRowLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="14dp"
+        android:textColor="@color/wedora_text"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium" />
+
+    <ImageView
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_chevron_right"
+        android:contentDescription="@null" />
+
+</LinearLayout>

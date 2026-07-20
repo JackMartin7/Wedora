@@ -1,0 +1,9 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M12,2 A10,10 0 1,1 12,22 A10,10 0 1,1 12,2 Z M12,4 A8,8 0 1,0 12,20 A8,8 0 1,0 12,4 Z M12,15.5 A1.2,1.2 0 1,1 12,17.9 A1.2,1.2 0 1,1 12,15.5 Z M12,6.5 C13.9,6.5 15.2,7.8 15.2,9.4 C15.2,10.7 14.5,11.4 13.6,12 C12.9,12.5 12.6,12.9 12.6,13.6 L11,13.6 C11,12.4 11.5,11.7 12.4,11.1 C13.2,10.6 13.6,10.2 13.6,9.4 C13.6,8.6 12.9,8.1 12,8.1 C11.1,8.1 10.4,8.7 10.3,9.6 L8.7,9.4 C8.9,7.7 10.2,6.5 12,6.5 Z" />
+</vector>

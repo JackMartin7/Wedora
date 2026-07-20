@@ -69,6 +69,26 @@
     <string name="chats_new_matches">New Matches</string>
     <string name="cd_search">Search</string>
 
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="cd_history">History</string>
+    <string name="profile_sample_name">Sarah Mitchell</string>
+    <string name="profile_sample_location">San Francisco, CA</string>
+    <string name="profile_edit_button">Edit Profile</string>
+    <string name="profile_stat_matches_value">128</string>
+    <string name="profile_stat_matches_label">Matches</string>
+    <string name="profile_stat_likes_value">342</string>
+    <string name="profile_stat_likes_label">Likes</string>
+    <string name="profile_stat_percent_value">86%</string>
+    <string name="profile_stat_percent_label">Profile</string>
+    <string name="settings_dark_mode">Dark Mode</string>
+    <string name="settings_account">Account Settings</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_privacy">Privacy &amp; Safety</string>
+    <string name="settings_payment">Payment &amp; Subscription</string>
+    <string name="settings_help">Help Center</string>
+    <string name="settings_logout">Log Out</string>
+
     <!-- Onboarding -->
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
