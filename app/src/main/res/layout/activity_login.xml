@@ -143,8 +143,11 @@
             app:layout_constraintTop_toTopOf="@id/cbRememberMe"
             app:layout_constraintBottom_toBottomOf="@id/cbRememberMe" />
 
-        <!-- Login button -->
-        <Button
+        <!-- Login button.
+             Explicitly AppCompatButton: under a Theme.MaterialComponents.* theme a
+             plain <Button> is auto-inflated as MaterialButton, which manages its own
+             background and ignores android:background (our ripple/corners/shadow). -->
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnLogin"
             style="@style/WedoraPrimaryButton"
             android:layout_width="match_parent"

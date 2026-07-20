@@ -42,8 +42,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/btnNext" />
 
-    <!-- Next / Get Started -->
-    <Button
+    <!-- Next / Get Started. AppCompatButton for the same reason as the auth
+         screens: MaterialButton would ignore our android:background. -->
+    <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnNext"
         style="@style/WedoraPrimaryButton"
         android:layout_width="0dp"
