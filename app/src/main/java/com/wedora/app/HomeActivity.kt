@@ -31,7 +31,7 @@ class HomeActivity : AppCompatActivity() {
 
         showSignedInUser()
         setUpFeed()
-        setUpBottomNav()
+        setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
 
         binding.btnDarkMode.setOnClickListener { toggleDarkMode() }
 
@@ -54,27 +54,6 @@ class HomeActivity : AppCompatActivity() {
         binding.rvMatches.adapter = adapter
         // TODO: replace with real data — wiring the feed is a separate task.
         adapter.submitList(MatchCard.sampleCards())
-    }
-
-    private fun setUpBottomNav() {
-        binding.bottomNav.selectedItemId = R.id.nav_home
-        binding.bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> true
-
-                // Chats and Profile are account-only; guests are sent to sign-up.
-                R.id.nav_chats, R.id.nav_profile -> {
-                    requireAccount { toast("${item.title} coming soon") }
-                    false
-                }
-
-                // TODO: swap in the real destinations as those screens are built
-                else -> {
-                    toast("${item.title} coming soon")
-                    false
-                }
-            }
-        }
     }
 
     /**

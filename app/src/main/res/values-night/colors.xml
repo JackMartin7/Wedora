@@ -30,6 +30,10 @@
     <color name="wedora_ring_mid">#241A1D</color>
     <color name="wedora_ring_inner">#2E2226</color>
 
+    <!-- Match screen radar background gradient — fixed brand colours, same both modes -->
+    <color name="wedora_match_gradient_start">#FFE9EB</color>
+    <color name="wedora_match_gradient_mid">#FE798A</color>
+
     <!-- Base -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>

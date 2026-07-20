@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Match "radar" screen — same concentric layout idea as
+    view_onboarding_illustration_1.xml (hero + scattered avatars), but full-bleed
+    over a gradient instead of flat ring colours, and using ConstraintLayout's
+    circular positioning (constraintCircle/-Angle/-Radius) rather than fixed x/y,
+    since this canvas spans the whole screen height rather than one small fixed
+    illustration box.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg">
+
+    <!-- Gradient radar canvas: fills the screen above the bottom nav -->
+    <View
+        android:id="@+id/radarBackground"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_match_gradient"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav" />
+
+    <!-- ===== Hero (dead-center of the radar canvas) ===== -->
+    <ImageView
+        android:id="@+id/ivMatchHero"
+        android:layout_width="146dp"
+        android:layout_height="146dp"
+        android:padding="4dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_center"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintTop_toTopOf="@id/radarBackground"
+        app:layout_constraintBottom_toBottomOf="@id/radarBackground"
+        app:layout_constraintStart_toStartOf="@id/radarBackground"
+        app:layout_constraintEnd_toEndOf="@id/radarBackground" />
+
+    <!-- ===== 8 scattered avatars, positioned by angle/radius from the hero ===== -->
+
+    <!-- top-mid : 60dp outer (54dp photo), angle 270 (straight up), radius 150dp -->
+    <ImageView
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_topmid"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="270"
+        app:layout_constraintCircleRadius="150dp" />
+
+    <!-- top-right : 80dp outer (74dp photo), angle 320, radius 150dp -->
+    <ImageView
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_topright"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="320"
+        app:layout_constraintCircleRadius="150dp" />
+
+    <!-- right-small : 56dp outer (50dp photo), angle 0 (east), radius 135dp -->
+    <ImageView
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_rightsmall"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="0"
+        app:layout_constraintCircleRadius="135dp" />
+
+    <!-- bottom-right : 76dp outer (70dp photo), angle 40, radius 150dp -->
+    <ImageView
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_botright"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="40"
+        app:layout_constraintCircleRadius="150dp" />
+
+    <!-- bottom-mid : 64dp outer (58dp photo), angle 90 (south), radius 155dp -->
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_botmid"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="90"
+        app:layout_constraintCircleRadius="155dp" />
+
+    <!-- bottom-left : 72dp outer (66dp photo), angle 140, radius 145dp -->
+    <ImageView
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_botleft"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="140"
+        app:layout_constraintCircleRadius="145dp" />
+
+    <!-- left : 64dp outer (58dp photo), angle 180 (west), radius 140dp -->
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_left"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="180"
+        app:layout_constraintCircleRadius="140dp" />
+
+    <!-- top-left : 70dp outer (64dp photo), angle 220, radius 145dp -->
+    <ImageView
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:padding="3dp"
+        android:background="@drawable/bg_avatar_white_ring"
+        android:src="@drawable/match_topleft"
+        android:scaleType="centerCrop"
+        android:contentDescription="@null"
+        app:layout_constraintCircle="@id/ivMatchHero"
+        app:layout_constraintCircleAngle="220"
+        app:layout_constraintCircleRadius="145dp" />
+
+    <!-- ===== Bottom navigation ===== -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bottom_nav"
+        app:menu="@menu/bottom_nav_menu"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemActiveIndicatorStyle="@null"
+        app:labelVisibilityMode="labeled"
+        app:elevation="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Match screen radar background.
+
+    Spec calls for a CSS-style "159deg" diagonal (0deg=up, clockwise). Android's
+    shape <gradient> only accepts angles in multiples of 45, so this uses the
+    closest standard option — 315 ("top-left to bottom-right" in Android's own
+    angle table) — which is a downward-rightward diagonal, matching the spec's
+    intent closely since 159deg CSS is also mostly-downward with a rightward lean.
+    Adjust here if a pixel-exact angle turns out to matter.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="315"
+        android:startColor="@color/wedora_match_gradient_start"
+        android:centerColor="@color/wedora_match_gradient_mid"
+        android:endColor="@color/wedora_accent"
+        android:centerY="0.5" />
+</shape>

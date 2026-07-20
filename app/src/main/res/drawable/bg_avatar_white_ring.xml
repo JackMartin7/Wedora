@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Literal white ring (not a theme colour) for avatars sitting on the fixed-colour
+    Match gradient — the border needs to read the same in light and dark mode.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/white" />
+</shape>
