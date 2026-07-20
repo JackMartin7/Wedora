@@ -44,7 +44,6 @@ class SignUpActivity : AppCompatActivity() {
 
         binding.btnGoogle.setOnClickListener { /* TODO: Google sign-up */ }
         binding.btnFacebook.setOnClickListener { /* TODO: Facebook sign-up */ }
-        binding.btnApple.setOnClickListener { /* TODO: Apple sign-up */ }
     }
 
     private fun attemptSignUp() {

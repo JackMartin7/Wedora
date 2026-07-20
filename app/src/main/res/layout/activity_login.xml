@@ -216,13 +216,6 @@
                 android:layout_marginStart="16dp"
                 android:src="@drawable/ic_facebook"
                 android:contentDescription="@null" />
-
-            <ImageButton
-                android:id="@+id/btnApple"
-                style="@style/WedoraSocialButton"
-                android:layout_marginStart="16dp"
-                android:src="@drawable/ic_apple"
-                android:contentDescription="@null" />
         </LinearLayout>
 
         <!-- Sign up prompt -->

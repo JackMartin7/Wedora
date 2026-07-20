@@ -49,7 +49,6 @@ class LoginActivity : AppCompatActivity() {
 
         binding.btnGoogle.setOnClickListener { /* TODO: Google sign-in */ }
         binding.btnFacebook.setOnClickListener { /* TODO: Facebook sign-in */ }
-        binding.btnApple.setOnClickListener { /* TODO: Apple sign-in */ }
     }
 
     private fun attemptLogin() {
