@@ -52,7 +52,11 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    /** Greet the signed-in user by name and load their avatar, if any. */
+    /**
+     * Greet the signed-in user by name and load their device-local avatar, if
+     * any (see [LocalProfilePrefs] — there is no Firebase photoUrl to fall
+     * back on, since profile photos are never uploaded).
+     */
     private fun showSignedInUser() {
         if (GuestPrefs.isGuest(this)) {
             binding.tvUserName.text = getString(R.string.guest_label)
@@ -62,7 +66,7 @@ class HomeActivity : AppCompatActivity() {
         val user = FirebaseAuth.getInstance().currentUser
         binding.tvUserName.text = user?.displayName?.takeIf { it.isNotBlank() }
             ?: getString(R.string.default_greeting_name)
-        binding.ivMyAvatar.loadAvatarOrPlaceholder(user?.photoUrl, R.drawable.home_me_avatar)
+        user?.uid?.let { binding.ivMyAvatar.loadLocalProfilePhoto(this, it) }
     }
 
     private fun setUpFeed() {

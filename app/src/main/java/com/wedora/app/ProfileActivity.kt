@@ -29,8 +29,10 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     /**
-     * Name, email and avatar are real Firebase account data. Location and the
-     * stats card stay as placeholders — there's no backend field for either yet.
+     * Name and email are real Firebase account data; the photo is the
+     * device-local file saved at sign-up (see [LocalProfilePrefs]), not a
+     * Firebase photoUrl. Location and the stats card stay as placeholders —
+     * there's no backend field for either yet.
      */
     private fun showSignedInUser() {
         if (GuestPrefs.isGuest(this)) {
@@ -51,7 +53,7 @@ class ProfileActivity : AppCompatActivity() {
             binding.tvProfileEmail.visibility = View.GONE
         }
 
-        binding.ivProfilePhoto.loadAvatarOrPlaceholder(user?.photoUrl, R.drawable.profile_photo)
+        user?.uid?.let { binding.ivProfilePhoto.loadLocalProfilePhoto(this, it) }
     }
 
     private fun setUpDarkModeSwitch() {
