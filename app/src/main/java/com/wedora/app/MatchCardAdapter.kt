@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.wedora.app.databinding.ItemMatchCardBinding
 
 class MatchCardAdapter(
+    private val onCardClick: (MatchCard) -> Unit = {},
     private val onLike: (MatchCard) -> Unit = {},
     private val onSuperlike: (MatchCard) -> Unit = {},
     private val onPass: (MatchCard) -> Unit = {},
@@ -52,6 +53,10 @@ class MatchCardAdapter(
                 tvDistance.visibility = View.VISIBLE
                 tvDistance.text = root.context.getString(R.string.home_distance_format, distanceKm.toString())
             }
+
+            // The action buttons consume their own taps, so this only fires
+            // for presses on the card body itself.
+            root.setOnClickListener { onCardClick(card) }
 
             btnLike.setOnClickListener { onLike(card) }
             btnSuperlike.setOnClickListener { onSuperlike(card) }

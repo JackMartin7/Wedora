@@ -9,9 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.wedora.app.databinding.ActivityHomeBinding
 
 class HomeActivity : AppCompatActivity() {
@@ -25,6 +23,7 @@ class HomeActivity : AppCompatActivity() {
 
     private val adapter by lazy {
         MatchCardAdapter(
+            onCardClick = { startActivity(ProfileDetailActivity.intent(this, it.id)) },
             // Liking is a guest-gated action; passing/dismissing only affect the
             // local feed, so they stay available.
             onLike = { requireAccount { createMatchWith(it) } },
@@ -176,14 +175,7 @@ class HomeActivity : AppCompatActivity() {
 
     /**
      * Instant match: liking someone writes the match document straight away,
-     * so there is no pending/one-sided like state.
-     *
-     * Uses set(merge) rather than checking for an existing match first. A
-     * pre-read would need a rule permitting reads of match documents the
-     * caller isn't in yet — and since user documents are readable and keyed by
-     * UID, that would let anyone enumerate UID pairs and reconstruct the whole
-     * match graph. Writing blind keeps the read rule strict; the cost is that
-     * re-liking someone refreshes createdAt.
+     * so there is no pending/one-sided like state. See [createMatchDocument].
      */
     private fun createMatchWith(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
@@ -192,14 +184,7 @@ class HomeActivity : AppCompatActivity() {
             return
         }
 
-        val matchData = mapOf(
-            Match.FIELD_USERS to listOf(selfUid, card.id),
-            Match.FIELD_CREATED_AT to FieldValue.serverTimestamp()
-        )
-
-        firestore.collection(Match.COLLECTION)
-            .document(Match.idFor(selfUid, card.id))
-            .set(matchData, SetOptions.merge())
+        createMatchDocument(firestore, selfUid, card.id)
             .addOnSuccessListener { toast(getString(R.string.match_created)) }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to create match with ${card.id}", e)

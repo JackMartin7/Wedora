@@ -49,6 +49,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ProfileDetailActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".MatchActivity"
             android:exported="false" />
 

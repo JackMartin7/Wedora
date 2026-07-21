@@ -1,6 +1,36 @@
 package com.wedora.app
 
+import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+
+/**
+ * Writes the match document between [selfUid] and [otherUid], returning the
+ * task so each caller can attach its own UI handling. Shared by the Home feed
+ * and the profile detail screen, which both offer a like action.
+ *
+ * Uses set(merge) rather than checking for an existing match first. A pre-read
+ * would need a rule permitting reads of match documents the caller isn't in
+ * yet — and since user documents are readable and keyed by UID, that would let
+ * anyone enumerate UID pairs and reconstruct the whole match graph. Writing
+ * blind keeps the read rule strict; the cost is that re-liking someone
+ * refreshes createdAt.
+ */
+fun createMatchDocument(
+    firestore: FirebaseFirestore,
+    selfUid: String,
+    otherUid: String
+): Task<Void> {
+    val matchData = mapOf(
+        Match.FIELD_USERS to listOf(selfUid, otherUid),
+        Match.FIELD_CREATED_AT to FieldValue.serverTimestamp()
+    )
+    return firestore.collection(Match.COLLECTION)
+        .document(Match.idFor(selfUid, otherUid))
+        .set(matchData, SetOptions.merge())
+}
 
 /**
  * A match between two users — `matches/{matchId}`.

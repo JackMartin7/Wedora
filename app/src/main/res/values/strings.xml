@@ -105,6 +105,10 @@
     <string name="match_created">It\'s a match!</string>
     <string name="error_match_failed">Couldn\'t create the match. Please try again.</string>
 
+    <!-- Profile detail -->
+    <string name="error_profile_load_failed">Couldn\'t load this profile. Please try again.</string>
+    <string name="cd_profile_photo">Profile photo</string>
+
     <!-- Matching feed states -->
     <string name="home_empty_guest">Sign up to see who\'s out there.</string>
     <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>

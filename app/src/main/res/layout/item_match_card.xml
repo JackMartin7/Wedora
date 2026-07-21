@@ -11,7 +11,8 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginBottom="20dp"
     android:padding="12dp"
-    android:background="@drawable/bg_card">
+    android:background="@drawable/bg_card"
+    android:foreground="?attr/selectableItemBackground">
 
     <!-- ===== Mini profile row ===== -->
     <RelativeLayout
