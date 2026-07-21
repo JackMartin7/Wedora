@@ -8,7 +8,6 @@ import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
-import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,10 +21,6 @@ import com.google.firebase.FirebaseNetworkException
 import com.wedora.app.databinding.ActivityLoginBinding
 
 class LoginActivity : AppCompatActivity() {
-
-    private companion object {
-        const val TAG = "WedoraAuth"
-    }
 
     private lateinit var binding: ActivityLoginBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
@@ -109,6 +104,10 @@ class LoginActivity : AppCompatActivity() {
         }
 
         if (user.isEmailVerified) {
+            // Signing into a real account ends any prior guest session.
+            // Without this the flag would survive, and the guest gates on Home
+            // would keep bouncing a genuinely signed-in user to Sign Up.
+            GuestPrefs.clearGuest(this)
             Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
             routeAfterSignIn(user.uid)
         } else {
@@ -125,22 +124,13 @@ class LoginActivity : AppCompatActivity() {
      * all; [UserProfile.from] reports those as incomplete, which correctly
      * routes them through the completion step.
      *
-     * A failed read fails *open* to Home rather than blocking sign-in: the
-     * user is already authenticated, every app launch passes back through
-     * this screen, so the gate simply re-runs next time.
+     * Shares [resolveSignedInDestination] with SplashActivity, which applies
+     * the same gate when it restores a persisted session — since sessions
+     * persist, a signed-in user no longer passes back through this screen on
+     * every launch, so the gate has to live somewhere both entry points reach.
      */
     private fun routeAfterSignIn(uid: String) {
-        firestore.collection(UserProfile.COLLECTION).document(uid).get()
-            .addOnSuccessListener { snapshot ->
-                val destination =
-                    if (UserProfile.from(snapshot).isComplete) HomeActivity::class.java
-                    else CompleteProfileActivity::class.java
-                goTo(destination)
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Couldn't read profile for completeness gate; continuing to Home", e)
-                goTo(HomeActivity::class.java)
-            }
+        resolveSignedInDestination(firestore, uid) { goTo(it) }
     }
 
     private fun goTo(destination: Class<*>) {

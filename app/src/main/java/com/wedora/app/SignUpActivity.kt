@@ -64,7 +64,7 @@ class SignUpActivity : AppCompatActivity() {
 
         binding.btnTogglePassword.setOnClickListener { togglePasswordVisibility() }
 
-        binding.tvLoginPrompt.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        binding.tvLoginPrompt.setOnClickListener { goToLogin() }
 
         binding.rowAddPhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
 
@@ -72,6 +72,21 @@ class SignUpActivity : AppCompatActivity() {
 
         binding.btnGoogle.setOnClickListener { /* TODO: Google sign-up */ }
         binding.btnFacebook.setOnClickListener { /* TODO: Facebook sign-up */ }
+    }
+
+    /**
+     * Navigates to Login rather than popping the back stack. Going back only
+     * lands on Login when Sign Up was opened from it — a guest who arrives
+     * here via a gated tab would otherwise be sent back to Home with no route
+     * to signing in at all. CLEAR_TOP reuses the existing Login instance when
+     * there is one instead of stacking a second.
+     */
+    private fun goToLogin() {
+        startActivity(
+            Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        )
+        finish()
     }
 
     private fun setUpSelectors() {
