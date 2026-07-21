@@ -3,12 +3,42 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // On an update, request.resource.data is the POST-write document — the
+    // incoming change merged over the existing fields. So this holds even for
+    // an update that doesn't touch age itself, as long as the stored age is
+    // already valid.
+    function hasValidAge() {
+      return 'age' in request.resource.data
+          && request.resource.data.age is int
+          && request.resource.data.age >= 18;
+    }
+
+    function ageAbsentOrValid() {
+      return !('age' in request.resource.data) || hasValidAge();
+    }
+
     // Any authenticated user can read the users collection (needed for the
     // matching query, which reads other users' gender/interestedIn), but a
-    // user may only create/update/delete their own document.
+    // user may only write their own document.
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Sign-up creates this document before an age has been collected — age
+      // is gathered later, by the Complete Profile step on first verified
+      // login — so create tolerates a missing age, but never an invalid one.
+      // (A doc created here without an age can only ever gain one via an
+      // update, which is subject to the 18+ check below.)
+      allow create: if isOwner(userId) && ageAbsentOrValid();
+
+      // Every update must leave the document carrying an 18+ age. Combined
+      // with the create rule above, an under-18 age can never be stored.
+      allow update: if isOwner(userId) && hasValidAge();
+
+      allow delete: if isOwner(userId);
     }
   }
 }
