@@ -11,7 +11,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import com.wedora.app.databinding.ActivityHomeBinding
 
@@ -187,52 +186,24 @@ class HomeActivity : AppCompatActivity() {
      * re-liking someone refreshes createdAt.
      */
     private fun createMatchWith(card: MatchCard) {
-        val user = FirebaseAuth.getInstance().currentUser
-        val selfUid = user?.uid
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
-            Log.w(TAG, "[match-debug] aborting: no signed-in user")
             toast(getString(R.string.error_match_failed))
             return
         }
 
-        val users = listOf(selfUid, card.id)
-        val matchId = Match.idFor(selfUid, card.id)
         val matchData = mapOf(
-            Match.FIELD_USERS to users,
+            Match.FIELD_USERS to listOf(selfUid, card.id),
             Match.FIELD_CREATED_AT to FieldValue.serverTimestamp()
         )
 
-        // TEMPORARY diagnostics — remove once the write is confirmed working.
-        // Logs exactly what the security rules will be evaluating against:
-        //   isValidNewMatch() needs users.size()==2, users[0]!=users[1],
-        //   and request.auth.uid in users.
-        Log.d(TAG, "[match-debug] ---- attempting match write ----")
-        Log.d(TAG, "[match-debug] authed=${user != null} emailVerified=${user?.isEmailVerified}")
-        Log.d(TAG, "[match-debug] selfUid='$selfUid'")
-        Log.d(TAG, "[match-debug] otherUid='${card.id}' (from card '${card.name}')")
-        Log.d(TAG, "[match-debug] users=$users size=${users.size} distinct=${users[0] != users[1]}")
-        Log.d(TAG, "[match-debug] selfInUsers=${selfUid in users}")
-        Log.d(TAG, "[match-debug] path=${Match.COLLECTION}/$matchId")
-
         firestore.collection(Match.COLLECTION)
-            .document(matchId)
+            .document(Match.idFor(selfUid, card.id))
             .set(matchData, SetOptions.merge())
-            .addOnSuccessListener {
-                Log.d(TAG, "[match-debug] SUCCESS wrote $matchId")
-                toast(getString(R.string.match_created))
-            }
+            .addOnSuccessListener { toast(getString(R.string.match_created)) }
             .addOnFailureListener { e ->
-                // The Firestore error code is the key signal: PERMISSION_DENIED
-                // means the rules rejected it (or aren't deployed), whereas
-                // UNAVAILABLE/DEADLINE_EXCEEDED point at connectivity instead.
-                val code = (e as? FirebaseFirestoreException)?.code
-                Log.e(TAG, "[match-debug] FAILED writing $matchId", e)
-                Log.e(TAG, "[match-debug] exceptionClass=${e.javaClass.name}")
-                Log.e(TAG, "[match-debug] firestoreCode=${code ?: "n/a (not a FirebaseFirestoreException)"}")
-                Log.e(TAG, "[match-debug] message=${e.message}")
-
-                // Surfaced on-device so the code is visible without logcat.
-                toast("Match failed: ${code ?: e.javaClass.simpleName}")
+                Log.w(TAG, "Failed to create match with ${card.id}", e)
+                toast(getString(R.string.error_match_failed))
             }
     }
 
