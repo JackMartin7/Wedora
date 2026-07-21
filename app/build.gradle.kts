@@ -47,6 +47,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
 
     // Image loading (signed-in user avatars from Firebase photoUrl)
     implementation("com.github.bumptech.glide:glide:4.16.0")

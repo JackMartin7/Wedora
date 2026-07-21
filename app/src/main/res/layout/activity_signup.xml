@@ -125,6 +125,164 @@
             app:layout_constraintTop_toTopOf="@id/etPassword"
             app:layout_constraintBottom_toBottomOf="@id/etPassword" />
 
+        <!-- Gender -->
+        <TextView
+            android:id="@+id/labelGender"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/label_gender"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/etPassword" />
+
+        <LinearLayout
+            android:id="@+id/rowGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelGender">
+
+            <TextView
+                android:id="@+id/tvGenderMale"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_male"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvGenderFemale"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_female"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvGenderOther"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_other"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+        </LinearLayout>
+
+        <!-- Interested In -->
+        <TextView
+            android:id="@+id/labelInterestedIn"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/label_interested_in"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/rowGender" />
+
+        <LinearLayout
+            android:id="@+id/rowInterestedIn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelInterestedIn">
+
+            <TextView
+                android:id="@+id/tvInterestedMale"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_male"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvInterestedFemale"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_female"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvInterestedOther"
+                android:layout_width="0dp"
+                android:layout_height="44dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_segment_option_unselected"
+                android:gravity="center"
+                android:text="@string/gender_other"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+        </LinearLayout>
+
+        <!-- Add Photo (optional) -->
+        <LinearLayout
+            android:id="@+id/rowAddPhoto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
+            android:padding="4dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/rowInterestedIn">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivPhotoPreview"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:background="@color/wedora_input_bg"
+                android:padding="18dp"
+                android:src="@drawable/ic_add_photo"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/cd_add_photo"
+                app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+            <TextView
+                android:id="@+id/tvAddPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:text="@string/add_photo"
+                android:textColor="@color/wedora_accent"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium" />
+
+        </LinearLayout>
+
         <!-- Sign Up button.
              Explicitly AppCompatButton: under a Theme.MaterialComponents.* theme a
              plain <Button> is auto-inflated as MaterialButton, which manages its own
@@ -137,7 +295,7 @@
             android:text="@string/btn_signup"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etPassword" />
+            app:layout_constraintTop_toBottomOf="@id/rowAddPhoto" />
 
         <!-- Divider -->
         <View

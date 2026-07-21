@@ -23,6 +23,10 @@
     <string name="error_username_required">Please enter a username</string>
     <string name="error_invalid_email">Please enter a valid email address</string>
     <string name="error_fields_required">Please fill in all fields</string>
+    <string name="error_gender_required">Please select your gender</string>
+    <string name="error_interested_in_required">Please select who you\'re interested in</string>
+    <string name="error_photo_copy_failed">Couldn\'t use that photo. Please try another.</string>
+    <string name="error_profile_save_failed">Account created, but we couldn\'t save your profile details. You can update them later.</string>
     <string name="error_wrong_password">Incorrect email or password. Please try again.</string>
     <string name="error_no_account">No account found with this email.</string>
     <string name="error_email_in_use">An account already exists with this email.</string>
@@ -120,6 +124,19 @@
     <string name="signup_subtitle">Sign Up to continue using the app</string>
     <string name="label_username">Username</string>
     <string name="hint_username">Enter Your Username</string>
+
+    <!-- Gender / Interested In selectors — same 3 options, two separate fields -->
+    <string name="label_gender">Gender</string>
+    <string name="label_interested_in">Interested In</string>
+    <string name="gender_male">Male</string>
+    <string name="gender_female">Female</string>
+    <string name="gender_other">Other</string>
+
+    <!-- Add Photo -->
+    <string name="add_photo">Add Photo</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="cd_add_photo">Add a profile photo</string>
+
     <string name="btn_signup">Sign Up</string>
     <string name="btn_creating_account">Creating account…</string>
     <string name="or_signup_with">Or sign up with</string>
