@@ -33,12 +33,10 @@ class CompleteProfileActivity : AppCompatActivity() {
     private companion object {
         const val TAG = "WedoraProfile"
 
-        /**
-         * Sanity bounds only — this is not a product age policy. See the note
-         * in the commit message: a dating app very likely wants a hard 18+
-         * minimum, which is a product decision rather than input validation.
-         */
-        const val MIN_AGE = 13
+        /** Hard minimum age policy for the app. Enforced in [saveAndContinue]. */
+        const val MIN_AGE = 18
+
+        /** Upper sanity bound, to reject typos like "999". */
         const val MAX_AGE = 120
     }
 
@@ -123,8 +121,15 @@ class CompleteProfileActivity : AppCompatActivity() {
 
     // ----- Validation -----------------------------------------------------
 
-    private fun parsedAge(): Int? =
-        binding.etAge.text.toString().trim().toIntOrNull()?.takeIf { it in MIN_AGE..MAX_AGE }
+    /**
+     * A syntactically plausible age, deliberately NOT applying the [MIN_AGE]
+     * policy. The 18+ rule is enforced on Continue instead of here, so that an
+     * under-age entry leaves the button tappable and the user gets an explicit
+     * "you must be 18 or older" message — gating the button on it would reject
+     * them silently with no way to find out why.
+     */
+    private fun enteredAge(): Int? =
+        binding.etAge.text.toString().trim().toIntOrNull()?.takeIf { it in 1..MAX_AGE }
 
     /** City/country from whichever mode is active, or null if not yet available. */
     private fun currentPlace(): LocationResolver.Place? {
@@ -140,7 +145,7 @@ class CompleteProfileActivity : AppCompatActivity() {
     }
 
     private fun updateContinueEnabled() {
-        binding.btnContinue.isEnabled = parsedAge() != null && currentPlace() != null
+        binding.btnContinue.isEnabled = enteredAge() != null && currentPlace() != null
     }
 
     // ----- Save -----------------------------------------------------------
@@ -152,9 +157,14 @@ class CompleteProfileActivity : AppCompatActivity() {
             binding.etAge.requestFocus()
             return
         }
-        val age = parsedAge()
+        val age = enteredAge()
         if (age == null) {
             binding.etAge.error = getString(R.string.error_age_invalid)
+            binding.etAge.requestFocus()
+            return
+        }
+        if (age < MIN_AGE) {
+            binding.etAge.error = getString(R.string.error_age_minimum, MIN_AGE)
             binding.etAge.requestFocus()
             return
         }

@@ -83,6 +83,8 @@
     <string name="btn_saving">Saving…</string>
     <string name="error_age_required">Please enter your age</string>
     <string name="error_age_invalid">Please enter a valid age</string>
+    <!-- %1$d is MIN_AGE, so the copy and the constant can't drift apart -->
+    <string name="error_age_minimum">You must be %1$d or older to use Wedora</string>
     <string name="error_city_required">Please enter your city</string>
     <string name="error_country_required">Please enter your country</string>
     <string name="error_profile_update_failed">Couldn\'t save your details. Check your connection and try again.</string>
