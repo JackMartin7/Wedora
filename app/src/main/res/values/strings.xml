@@ -116,6 +116,9 @@
     <string name="chat_empty">No messages yet — say hi 👋</string>
     <string name="chat_hint_message">Type a message…</string>
     <string name="cd_send">Send</string>
+    <string name="cd_message">Message</string>
+    <string name="btn_message">Message</string>
+    <string name="btn_like_and_message">Like &amp; Message</string>
     <string name="error_message_send_failed">Couldn\'t send. Please try again.</string>
     <string name="error_chat_load_failed">Couldn\'t load this conversation.</string>
 

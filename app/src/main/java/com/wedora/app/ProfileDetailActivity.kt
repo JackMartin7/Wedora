@@ -35,6 +35,12 @@ class ProfileDetailActivity : AppCompatActivity() {
 
     private lateinit var userId: String
 
+    /** Held so the chat thread can be opened with the right header name. */
+    private var userName: String = ""
+
+    /** Null until the match lookup resolves; drives the Message button's label. */
+    private var isMatched: Boolean? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileDetailBinding.inflate(layoutInflater)
@@ -56,8 +62,10 @@ class ProfileDetailActivity : AppCompatActivity() {
         binding.btnPass.setOnClickListener { finish() }
 
         binding.btnLike.setOnClickListener { likeUser() }
+        binding.btnMessage.setOnClickListener { messageUser() }
 
         loadProfile()
+        checkMatchState()
     }
 
     private fun loadProfile() {
@@ -82,7 +90,62 @@ class ProfileDetailActivity : AppCompatActivity() {
             }
     }
 
+    /**
+     * Decides whether the button reads "Message" or "Like & Message". On
+     * failure it defaults to "Like & Message": the match write is idempotent,
+     * so offering it when a match already exists is harmless, whereas showing
+     * "Message" without one would open an empty thread for a non-match.
+     */
+    private fun checkMatchState() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        matchExistsQuery(firestore, selfUid, userId)
+            .addOnSuccessListener { snapshot -> applyMatchState(!snapshot.isEmpty) }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to check match state for $userId", e)
+                applyMatchState(false)
+            }
+    }
+
+    private fun applyMatchState(matched: Boolean) {
+        isMatched = matched
+        binding.btnMessage.setText(
+            if (matched) R.string.btn_message else R.string.btn_like_and_message
+        )
+        binding.btnMessage.visibility = View.VISIBLE
+    }
+
+    private fun messageUser() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (selfUid == null) {
+            toast(getString(R.string.error_match_failed))
+            return
+        }
+
+        if (isMatched == true) {
+            openChatThread()
+            return
+        }
+
+        binding.btnMessage.isEnabled = false
+        createMatchDocument(firestore, selfUid, userId)
+            .addOnSuccessListener {
+                toast(getString(R.string.match_created))
+                openChatThread()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to create match before chat with $userId", e)
+                binding.btnMessage.isEnabled = true
+                toast(getString(R.string.error_match_failed))
+            }
+    }
+
+    private fun openChatThread() {
+        startActivity(ChatThreadActivity.intent(this, userId, userName))
+        finish()
+    }
+
     private fun showProfile(name: String, profile: UserProfile) {
+        userName = name
         binding.tvDetailName.text = name
 
         val line = formatAgeLocation(

@@ -79,6 +79,23 @@
                 tools:visibility="visible"
                 tools:text="24 • Islamabad, Pakistan" />
 
+            <!-- Label depends on whether a match already exists, so it stays
+                 hidden until that lookup resolves rather than flipping text
+                 in front of the user. -->
+            <TextView
+                android:id="@+id/btnMessage"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_pill_outline"
+                android:gravity="center"
+                android:textColor="@color/wedora_accent"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="Like &amp; Message" />
+
         </LinearLayout>
     </ScrollView>
 

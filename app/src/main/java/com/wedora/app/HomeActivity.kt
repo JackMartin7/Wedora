@@ -29,6 +29,7 @@ class HomeActivity : AppCompatActivity() {
             onLike = { requireAccount { createMatchWith(it) } },
             onSuperlike = { requireAccount { createMatchWith(it) } },
             onPass = { toast("Passed on ${it.name}") },
+            onChat = { requireAccount { openChatWith(it) } },
             onDismiss = { toast("Dismissed ${it.name}") },
             onMore = { toast("More options for ${it.name}") }
         )
@@ -190,6 +191,45 @@ class HomeActivity : AppCompatActivity() {
                 Log.w(TAG, "Failed to create match with ${card.id}", e)
                 toast(getString(R.string.error_match_failed))
             }
+    }
+
+    /**
+     * Opens the conversation with this user, creating the match first if there
+     * isn't one. Checking first rather than always writing avoids a redundant
+     * write — and avoids bumping an existing match's createdAt, which would
+     * reshuffle the Chats list every time someone opened a chat.
+     */
+    private fun openChatWith(card: MatchCard) {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (selfUid == null) {
+            toast(getString(R.string.error_match_failed))
+            return
+        }
+
+        matchExistsQuery(firestore, selfUid, card.id)
+            .addOnSuccessListener { snapshot ->
+                if (!snapshot.isEmpty) {
+                    openChatThread(card)
+                } else {
+                    createMatchDocument(firestore, selfUid, card.id)
+                        .addOnSuccessListener {
+                            toast(getString(R.string.match_created))
+                            openChatThread(card)
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Failed to create match before chat", e)
+                            toast(getString(R.string.error_match_failed))
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to check match state", e)
+                toast(getString(R.string.error_match_failed))
+            }
+    }
+
+    private fun openChatThread(card: MatchCard) {
+        startActivity(ChatThreadActivity.intent(this, card.id, card.name))
     }
 
     /**

@@ -3,8 +3,10 @@ package com.wedora.app
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
 
 /**
@@ -19,6 +21,30 @@ import com.google.firebase.firestore.SetOptions
  * blind keeps the read rule strict; the cost is that re-liking someone
  * refreshes createdAt.
  */
+/**
+ * Looks up whether a match already exists between these two users; the result
+ * is empty if not.
+ *
+ * Deliberately a document-ID *query* rather than a get(). Membership in the
+ * security rules is read off the stored document, so a get() for a match that
+ * doesn't exist has no `users` array to check and is rejected outright —
+ * indistinguishable from "you may not see this". A query instead returns
+ * nothing for a missing document, and because the ID always contains the
+ * caller's own UID, any document it does return is one they're a member of.
+ *
+ * The read rule stays strict on purpose: loosening it enough for the get()
+ * would let anyone probe UID pairs and reconstruct the whole match graph.
+ */
+fun matchExistsQuery(
+    firestore: FirebaseFirestore,
+    selfUid: String,
+    otherUid: String
+): Task<QuerySnapshot> =
+    firestore.collection(Match.COLLECTION)
+        .whereEqualTo(FieldPath.documentId(), Match.idFor(selfUid, otherUid))
+        .limit(1)
+        .get()
+
 fun createMatchDocument(
     firestore: FirebaseFirestore,
     selfUid: String,

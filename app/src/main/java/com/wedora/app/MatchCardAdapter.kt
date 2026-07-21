@@ -13,6 +13,7 @@ class MatchCardAdapter(
     private val onLike: (MatchCard) -> Unit = {},
     private val onSuperlike: (MatchCard) -> Unit = {},
     private val onPass: (MatchCard) -> Unit = {},
+    private val onChat: (MatchCard) -> Unit = {},
     private val onDismiss: (MatchCard) -> Unit = {},
     private val onMore: (MatchCard) -> Unit = {}
 ) : ListAdapter<MatchCard, MatchCardAdapter.CardViewHolder>(DIFF) {
@@ -61,6 +62,7 @@ class MatchCardAdapter(
             btnLike.setOnClickListener { onLike(card) }
             btnSuperlike.setOnClickListener { onSuperlike(card) }
             btnPass.setOnClickListener { onPass(card) }
+            btnChat.setOnClickListener { onChat(card) }
             btnDismiss.setOnClickListener { onDismiss(card) }
             btnMore.setOnClickListener { onMore(card) }
         }
