@@ -105,6 +105,11 @@
     <string name="match_created">It\'s a match!</string>
     <string name="error_match_failed">Couldn\'t create the match. Please try again.</string>
 
+    <!-- Match radar states -->
+    <string name="match_empty">No matches yet — like someone from Home to get started.</string>
+    <string name="match_empty_guest">Sign up to start matching.</string>
+    <string name="match_load_error">Couldn\'t load your matches. Check your connection and try again.</string>
+
     <!-- Profile detail -->
     <string name="error_profile_load_failed">Couldn\'t load this profile. Please try again.</string>
     <string name="cd_profile_photo">Profile photo</string>

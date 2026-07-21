@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import com.google.android.gms.tasks.Task
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -44,7 +45,9 @@ fun createMatchDocument(
  */
 data class Match(
     val id: String,
-    val users: List<String>
+    val users: List<String>,
+    /** Null while the server timestamp is still pending on a just-written doc. */
+    val createdAt: Timestamp?
 ) {
 
     /** The other participant's UID, or null if [selfUid] isn't in this match. */
@@ -73,7 +76,11 @@ data class Match(
             @Suppress("UNCHECKED_CAST")
             val users = snapshot.get(FIELD_USERS) as? List<String> ?: return null
             if (users.size != 2) return null
-            return Match(id = snapshot.id, users = users)
+            return Match(
+                id = snapshot.id,
+                users = users,
+                createdAt = snapshot.getTimestamp(FIELD_CREATED_AT)
+            )
         }
     }
 }
