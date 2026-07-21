@@ -184,13 +184,13 @@ class SignUpActivity : AppCompatActivity() {
      */
     private fun writeUserDocument(user: FirebaseUser, username: String, gender: Gender, interestedIn: Gender) {
         val userDoc = hashMapOf(
-            "displayName" to username,
-            "email" to user.email,
-            "gender" to gender.firestoreValue,
-            "interestedIn" to interestedIn.firestoreValue,
-            "createdAt" to FieldValue.serverTimestamp()
+            UserProfile.FIELD_DISPLAY_NAME to username,
+            UserProfile.FIELD_EMAIL to user.email,
+            UserProfile.FIELD_GENDER to gender.firestoreValue,
+            UserProfile.FIELD_INTERESTED_IN to interestedIn.firestoreValue,
+            UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
         )
-        firestore.collection("users").document(user.uid).set(userDoc)
+        firestore.collection(UserProfile.COLLECTION).document(user.uid).set(userDoc)
             .addOnCompleteListener(this) { task ->
                 if (!task.isSuccessful) {
                     Log.w(TAG, "Failed to write user profile document", task.exception)

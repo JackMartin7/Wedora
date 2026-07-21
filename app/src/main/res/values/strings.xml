@@ -113,7 +113,6 @@
     <string name="profile_title">Profile</string>
     <string name="cd_history">History</string>
     <string name="profile_sample_name">Sarah Mitchell</string>
-    <string name="profile_sample_location">San Francisco, CA</string>
     <string name="profile_edit_button">Edit Profile</string>
     <string name="profile_stat_matches_value">128</string>
     <string name="profile_stat_matches_label">Matches</string>

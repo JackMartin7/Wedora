@@ -16,7 +16,6 @@ class HomeActivity : AppCompatActivity() {
 
     private companion object {
         const val TAG = "WedoraMatching"
-        const val USERS_COLLECTION = "users"
     }
 
     private lateinit var binding: ActivityHomeBinding
@@ -93,9 +92,9 @@ class HomeActivity : AppCompatActivity() {
         }
 
         showLoading()
-        firestore.collection(USERS_COLLECTION).document(uid).get()
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { selfDoc ->
-                val interestedIn = selfDoc.getString("interestedIn")
+                val interestedIn = UserProfile.from(selfDoc).interestedIn
                 if (interestedIn.isNullOrBlank()) {
                     showEmptyState(getString(R.string.home_empty_no_matches))
                 } else {
@@ -109,8 +108,8 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun queryMatches(interestedIn: String, selfUid: String) {
-        firestore.collection(USERS_COLLECTION)
-            .whereEqualTo("gender", interestedIn)
+        firestore.collection(UserProfile.COLLECTION)
+            .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
                 val cards = snapshot.documents
@@ -130,13 +129,15 @@ class HomeActivity : AppCompatActivity() {
     }
 
     /**
-     * Real users have no bio/role/distance backend field yet — those stay
+     * Age/city/country are real, supplied by the other user's Complete Profile
+     * step. Role/bio/distance still have no backend field, so they stay
      * blank/null (MatchCardAdapter hides or honestly labels them) rather than
      * inventing plausible-looking data, and the photo slots use a neutral
      * placeholder since there is no photo backend either.
      */
     private fun DocumentSnapshot.toMatchCard(): MatchCard? {
-        val name = getString("displayName")?.takeIf { it.isNotBlank() } ?: return null
+        val profile = UserProfile.from(this)
+        val name = profile.displayName?.takeIf { it.isNotBlank() } ?: return null
         return MatchCard(
             id = id,
             name = name,
@@ -144,7 +145,10 @@ class HomeActivity : AppCompatActivity() {
             avatarRes = R.drawable.ic_avatar_placeholder,
             photoRes = R.drawable.ic_avatar_placeholder,
             distanceKm = null,
-            bio = ""
+            bio = "",
+            age = profile.age,
+            city = profile.city,
+            country = profile.country
         )
     }
 

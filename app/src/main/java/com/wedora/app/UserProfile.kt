@@ -1,6 +1,27 @@
 package com.wedora.app
 
+import android.content.Context
+import androidx.annotation.StringRes
 import com.google.firebase.firestore.DocumentSnapshot
+
+/**
+ * Formats an "age • city, country" line, or returns null if any part is
+ * missing so the caller can hide the view entirely rather than render a
+ * half-empty string like "18 years old • , ".
+ *
+ * Shared by ProfileActivity (own profile) and MatchCardAdapter (other users'
+ * cards), which use different format strings but identical null handling.
+ */
+fun formatAgeLocation(
+    context: Context,
+    @StringRes formatRes: Int,
+    age: Int?,
+    city: String?,
+    country: String?
+): String? {
+    if (age == null || city.isNullOrBlank() || country.isNullOrBlank()) return null
+    return context.getString(formatRes, age, city, country)
+}
 
 /**
  * A user's Firestore `users/{uid}` document.
@@ -26,6 +47,10 @@ data class UserProfile(
     /** True once the Complete Profile step has been satisfied. */
     val isComplete: Boolean
         get() = age != null && !city.isNullOrBlank() && !country.isNullOrBlank()
+
+    /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
+    fun ageLocationLine(context: Context): String? =
+        formatAgeLocation(context, R.string.profile_age_location_format, age, city, country)
 
     companion object {
         const val COLLECTION = "users"

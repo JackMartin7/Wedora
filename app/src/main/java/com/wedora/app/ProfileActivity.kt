@@ -2,17 +2,24 @@ package com.wedora.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityProfileBinding
 import com.wedora.app.databinding.ItemSettingsRowBinding
 
 class ProfileActivity : AppCompatActivity() {
 
+    private companion object {
+        const val TAG = "WedoraProfile"
+    }
+
     private lateinit var binding: ActivityProfileBinding
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,13 +38,14 @@ class ProfileActivity : AppCompatActivity() {
     /**
      * Name and email are real Firebase account data; the photo is the
      * device-local file saved at sign-up (see [LocalProfilePrefs]), not a
-     * Firebase photoUrl. Location and the stats card stay as placeholders —
-     * there's no backend field for either yet.
+     * Firebase photoUrl; age/city/country are read from Firestore below. The
+     * stats card stays a placeholder — there's no backend field for it yet.
      */
     private fun showSignedInUser() {
         if (GuestPrefs.isGuest(this)) {
             binding.tvProfileName.text = getString(R.string.guest_label)
             binding.tvProfileEmail.visibility = View.GONE
+            binding.tvProfileAgeLocation.visibility = View.GONE
             return
         }
 
@@ -53,7 +61,33 @@ class ProfileActivity : AppCompatActivity() {
             binding.tvProfileEmail.visibility = View.GONE
         }
 
-        user?.uid?.let { binding.ivProfilePhoto.loadLocalProfilePhoto(this, it) }
+        user?.uid?.let {
+            binding.ivProfilePhoto.loadLocalProfilePhoto(this, it)
+            showAgeAndLocation(it)
+        }
+    }
+
+    /**
+     * Populates "{age} years old • {city}, {country}" from the user's Firestore
+     * doc. Stays hidden if the read fails or the fields aren't there — the
+     * Complete Profile gate normally guarantees they are, but an older session
+     * or a network failure shouldn't render a half-empty line.
+     */
+    private fun showAgeAndLocation(uid: String) {
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
+            .addOnSuccessListener { snapshot ->
+                val line = UserProfile.from(snapshot).ageLocationLine(this)
+                if (line == null) {
+                    binding.tvProfileAgeLocation.visibility = View.GONE
+                } else {
+                    binding.tvProfileAgeLocation.text = line
+                    binding.tvProfileAgeLocation.visibility = View.VISIBLE
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Couldn't load age/location for profile", e)
+                binding.tvProfileAgeLocation.visibility = View.GONE
+            }
     }
 
     private fun setUpDarkModeSwitch() {

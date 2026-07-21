@@ -39,7 +39,11 @@ class MatchCardAdapter(
                 tvCardRole.text = card.role
             }
 
-            tvCardBio.text = card.bio.ifBlank { root.context.getString(R.string.match_card_no_bio) }
+            // Prefer the real age/location line now that Complete Profile
+            // supplies it; fall back to a bio if one ever exists, then to the
+            // honest "No bio yet" placeholder.
+            tvCardBio.text = card.ageLocationLine(root.context)
+                ?: card.bio.ifBlank { root.context.getString(R.string.match_card_no_bio) }
 
             val distanceKm = card.distanceKm
             if (distanceKm == null) {
