@@ -40,5 +40,56 @@ service cloud.firestore {
 
       allow delete: if isOwner(userId);
     }
+
+    // A match between two users. Document ID is the two UIDs sorted and
+    // joined ("{uidA}_{uidB}"), so a given pair always maps to exactly one
+    // document regardless of who liked first.
+    match /matches/{matchId} {
+
+      // Membership is read off the stored document, so this only applies to
+      // operations on a document that already exists.
+      function isMember() {
+        return request.auth != null
+            && request.auth.uid in resource.data.users;
+      }
+
+      // For a create there is no stored document yet, so validate the
+      // incoming payload instead: exactly two distinct users, one of whom is
+      // the caller. This stops a user fabricating matches between other
+      // people, or matching themselves.
+      function isValidNewMatch() {
+        return request.auth != null
+            && request.resource.data.users is list
+            && request.resource.data.users.size() == 2
+            && request.resource.data.users[0] != request.resource.data.users[1]
+            && request.auth.uid in request.resource.data.users;
+      }
+
+      allow read: if isMember();
+      allow create: if isValidNewMatch();
+      allow update, delete: if isMember();
+
+      match /messages/{messageId} {
+
+        // Messages inherit access from the parent match document. This costs
+        // one extra document read per rule evaluation, which is the standard
+        // trade-off for subcollection ownership checks.
+        function isMatchMember() {
+          return request.auth != null
+              && request.auth.uid in
+                 get(/databases/$(database)/documents/matches/$(matchId)).data.users;
+        }
+
+        allow read: if isMatchMember();
+
+        // A sender can only post as themselves.
+        allow create: if isMatchMember()
+            && request.resource.data.senderId == request.auth.uid;
+
+        // Messages are immutable — no edit or delete. Loosen deliberately if
+        // the product ever wants "unsend".
+        allow update, delete: if false;
+      }
+    }
   }
 }

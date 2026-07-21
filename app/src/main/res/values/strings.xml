@@ -101,6 +101,10 @@
     <string name="profile_age_location_format">%1$d years old • %2$s, %3$s</string>
     <string name="match_card_age_location_format">%1$d • %2$s, %3$s</string>
 
+    <!-- Matching -->
+    <string name="match_created">It\'s a match!</string>
+    <string name="error_match_failed">Couldn\'t create the match. Please try again.</string>
+
     <!-- Matching feed states -->
     <string name="home_empty_guest">Sign up to see who\'s out there.</string>
     <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>
