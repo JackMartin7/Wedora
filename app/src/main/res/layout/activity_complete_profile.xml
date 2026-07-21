@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One-time Complete Profile step, shown after first verified login when the
+    user's Firestore doc is missing age/city/country.
+
+    The location section has two mutually-exclusive modes, toggled at runtime
+    by CompleteProfileActivity depending on whether ACCESS_COARSE_LOCATION was
+    granted and resolution succeeded:
+      groupDetectedLocation -> read-only detected text + Refresh
+      groupManualLocation   -> editable City / Country fields
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="64dp"
+            android:text="@string/complete_profile_title"
+            android:textColor="@color/wedora_accent"
+            android:textSize="26sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/complete_profile_subtitle"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+        <!-- ===== Age ===== -->
+
+        <TextView
+            android:id="@+id/labelAge"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="@string/label_age"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvSubtitle" />
+
+        <EditText
+            android:id="@+id/etAge"
+            style="@style/WedoraInputField"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="@string/hint_age"
+            android:inputType="number"
+            android:maxLength="3"
+            android:imeOptions="actionDone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelAge" />
+
+        <!-- ===== Location ===== -->
+
+        <TextView
+            android:id="@+id/labelLocation"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/label_location"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/etAge" />
+
+        <!-- Mode A: detected (read-only) -->
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/groupDetectedLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:constraint_referenced_ids="tvDetectedLocation,tvRefreshLocation" />
+
+        <TextView
+            android:id="@+id/tvDetectedLocation"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input_field"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:text="@string/location_detecting"
+            android:textColor="@color/wedora_text"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvRefreshLocation"
+            app:layout_constraintTop_toBottomOf="@id/labelLocation" />
+
+        <TextView
+            android:id="@+id/tvRefreshLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center"
+            android:paddingHorizontal="8dp"
+            android:text="@string/location_refresh"
+            android:textColor="@color/wedora_accent"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvDetectedLocation"
+            app:layout_constraintBottom_toBottomOf="@id/tvDetectedLocation" />
+
+        <!-- Mode B: manual entry (permission denied, or detection failed) -->
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/groupManualLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:constraint_referenced_ids="etCity,labelCountry,etCountry" />
+
+        <EditText
+            android:id="@+id/etCity"
+            style="@style/WedoraInputField"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="@string/hint_city"
+            android:inputType="textCapWords"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelLocation" />
+
+        <TextView
+            android:id="@+id/labelCountry"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/label_country"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/etCity" />
+
+        <EditText
+            android:id="@+id/etCountry"
+            style="@style/WedoraInputField"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="@string/hint_country"
+            android:inputType="textCapWords"
+            android:imeOptions="actionDone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelCountry" />
+
+        <!-- Anchors Continue below whichever location mode is visible.
+             barrierAllowsGoneWidgets=false is essential: without it the barrier
+             would still account for the hidden mode's collapsed position. -->
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrierLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:barrierAllowsGoneWidgets="false"
+            app:constraint_referenced_ids="tvDetectedLocation,etCountry" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnContinue"
+            style="@style/WedoraPrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_marginTop="32dp"
+            android:text="@string/btn_continue"
+            tools:enabled="false"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/barrierLocation" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

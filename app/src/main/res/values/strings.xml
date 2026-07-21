@@ -66,6 +66,31 @@
     <string name="cd_superlike">Super like</string>
     <string name="cd_pass">Pass</string>
 
+    <!-- Complete Profile (one-time step after first verified login) -->
+    <string name="complete_profile_title">Complete Your Profile</string>
+    <string name="complete_profile_subtitle">Just a couple more details before you get started.</string>
+    <string name="label_age">Age</string>
+    <string name="hint_age">Enter Your Age</string>
+    <string name="label_location">Location</string>
+    <string name="label_city">City</string>
+    <string name="hint_city">Enter Your City</string>
+    <string name="label_country">Country</string>
+    <string name="hint_country">Enter Your Country</string>
+    <string name="location_detecting">Detecting your location…</string>
+    <string name="location_refresh">Refresh</string>
+    <string name="location_detected_format">%1$s, %2$s</string>
+    <string name="btn_continue">Continue</string>
+    <string name="btn_saving">Saving…</string>
+    <string name="error_age_required">Please enter your age</string>
+    <string name="error_age_invalid">Please enter a valid age</string>
+    <string name="error_city_required">Please enter your city</string>
+    <string name="error_country_required">Please enter your country</string>
+    <string name="error_profile_update_failed">Couldn\'t save your details. Check your connection and try again.</string>
+
+    <!-- Age/location line, shown on Profile and on other users' feed cards -->
+    <string name="profile_age_location_format">%1$d years old • %2$s, %3$s</string>
+    <string name="match_card_age_location_format">%1$d • %2$s, %3$s</string>
+
     <!-- Matching feed states -->
     <string name="home_empty_guest">Sign up to see who\'s out there.</string>
     <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>

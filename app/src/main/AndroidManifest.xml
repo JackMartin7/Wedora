@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Coarse is deliberate: city-level accuracy is all Complete Profile needs,
+         and it is less invasive than ACCESS_FINE_LOCATION. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:name=".WedoraApplication"
@@ -31,6 +34,10 @@
 
         <activity
             android:name=".SignUpActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CompleteProfileActivity"
             android:exported="false" />
 
         <activity

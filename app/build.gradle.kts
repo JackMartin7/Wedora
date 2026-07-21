@@ -51,4 +51,7 @@ dependencies {
 
     // Image loading (signed-in user avatars from Firebase photoUrl)
     implementation("com.github.bumptech.glide:glide:4.16.0")
+
+    // Fused location provider, for city-level location detection on Complete Profile
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }

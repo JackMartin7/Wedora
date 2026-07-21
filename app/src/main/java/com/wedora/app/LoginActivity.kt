@@ -8,6 +8,7 @@ import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
+import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -16,13 +17,19 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.FirebaseNetworkException
 import com.wedora.app.databinding.ActivityLoginBinding
 
 class LoginActivity : AppCompatActivity() {
 
+    private companion object {
+        const val TAG = "WedoraAuth"
+    }
+
     private lateinit var binding: ActivityLoginBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
     private var isPasswordVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,10 +90,12 @@ class LoginActivity : AppCompatActivity() {
         setLoading(true)
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
-                setLoading(false)
                 if (task.isSuccessful) {
+                    // Stays in the loading state until routeAfterSignIn navigates,
+                    // so the profile-completeness read can't be double-tapped.
                     onSignInSuccess()
                 } else {
+                    setLoading(false)
                     Toast.makeText(this, loginErrorMessage(task.exception), Toast.LENGTH_LONG).show()
                 }
             }
@@ -95,17 +104,50 @@ class LoginActivity : AppCompatActivity() {
     private fun onSignInSuccess() {
         val user = auth.currentUser
         if (user == null) {
+            setLoading(false)
             Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
             return
         }
 
         if (user.isEmailVerified) {
             Toast.makeText(this, R.string.login_success, Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
+            routeAfterSignIn(user.uid)
         } else {
+            setLoading(false)
             promptEmailVerification()
         }
+    }
+
+    /**
+     * Sends the user to Complete Profile if their Firestore doc is missing
+     * age/city/country, otherwise straight to Home.
+     *
+     * Accounts predating the Firestore user-doc feature have no document at
+     * all; [UserProfile.from] reports those as incomplete, which correctly
+     * routes them through the completion step.
+     *
+     * A failed read fails *open* to Home rather than blocking sign-in: the
+     * user is already authenticated, every app launch passes back through
+     * this screen, so the gate simply re-runs next time.
+     */
+    private fun routeAfterSignIn(uid: String) {
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
+            .addOnSuccessListener { snapshot ->
+                val destination =
+                    if (UserProfile.from(snapshot).isComplete) HomeActivity::class.java
+                    else CompleteProfileActivity::class.java
+                goTo(destination)
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Couldn't read profile for completeness gate; continuing to Home", e)
+                goTo(HomeActivity::class.java)
+            }
+    }
+
+    private fun goTo(destination: Class<*>) {
+        setLoading(false)
+        startActivity(Intent(this, destination))
+        finish()
     }
 
     /**
