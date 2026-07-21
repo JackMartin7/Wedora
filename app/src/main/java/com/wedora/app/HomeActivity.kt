@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityHomeBinding
+import java.util.Calendar
 
 class HomeActivity : AppCompatActivity() {
 
@@ -40,6 +41,7 @@ class HomeActivity : AppCompatActivity() {
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        showGreeting()
         showSignedInUser()
         setUpFeed()
         loadMatches()
@@ -47,10 +49,25 @@ class HomeActivity : AppCompatActivity() {
 
         binding.btnDarkMode.setOnClickListener { toggleDarkMode() }
 
-        binding.btnMenu.setOnClickListener {
-            // TODO: open the navigation drawer / overflow menu
-            toast(getString(R.string.cd_menu))
+        binding.btnNotifications.setOnClickListener {
+            startActivity(Intent(this, NotificationsActivity::class.java))
         }
+    }
+
+    /**
+     * Greeting follows the device clock. Set in onCreate rather than onStart —
+     * the boundaries are hours apart, so re-evaluating on every resume would
+     * cost more than it's worth.
+     */
+    private fun showGreeting() {
+        val greeting = when (Calendar.getInstance().get(Calendar.HOUR_OF_DAY)) {
+            in 5..11 -> R.string.home_greeting_morning
+            in 12..16 -> R.string.home_greeting_afternoon
+            in 17..20 -> R.string.home_greeting_evening
+            // 21:00-04:59, which wraps midnight and so can't be a single range.
+            else -> R.string.home_greeting_night
+        }
+        binding.tvGreeting.setText(greeting)
     }
 
     /**

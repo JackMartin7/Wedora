@@ -94,14 +94,15 @@
         android:gravity="center_vertical"
         android:paddingTop="12dp">
 
+        <!-- No app:tint here on purpose: the liked/unliked colour lives in the
+             two drawables, so MatchCardAdapter only has to swap src. -->
         <ImageButton
             android:id="@+id/btnLike"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:padding="9dp"
             android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_action_like"
-            app:tint="@color/wedora_accent"
+            android:src="@drawable/ic_like_outline"
             android:contentDescription="@string/cd_like" />
 
         <ImageButton

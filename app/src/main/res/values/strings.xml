@@ -62,11 +62,25 @@
     <string name="default_profile_name">Wedora User</string>
 
     <!-- Home -->
-    <string name="home_greeting">Good Morning 👋</string>
+    <!-- Time-of-day greetings, chosen by HomeActivity from the current hour -->
+    <string name="home_greeting_morning">Good Morning 👋</string>
+    <string name="home_greeting_afternoon">Good Afternoon ☀️</string>
+    <string name="home_greeting_evening">Good Evening 🌆</string>
+    <string name="home_greeting_night">Good Night 🌙</string>
     <string name="home_sample_name">Sarah</string>
     <string name="home_distance_format">%1$s km away</string>
     <string name="cd_dark_mode_toggle">Toggle dark mode</string>
-    <string name="cd_menu">Menu</string>
+    <string name="cd_notifications">Notifications</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">Notifications</string>
+    <string name="notifications_empty">No notifications yet</string>
+    <string name="notification_liked_your_profile">liked your profile</string>
+    <string name="notification_time_now">now</string>
+    <string name="notification_time_minutes">%1$dm ago</string>
+    <string name="notification_time_hours">%1$dh ago</string>
+    <string name="notification_time_days">%1$dd ago</string>
+    <string name="notification_time_weeks">%1$dw ago</string>
     <string name="cd_avatar">Profile photo</string>
     <string name="cd_dismiss">Dismiss</string>
     <string name="cd_more">More options</string>

@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Unliked state. Colour lives in the drawable rather than an app:tint on
+         the ImageButton, so swapping src is all that changes between states. -->
+    <path
+        android:strokeColor="@color/wedora_text_secondary"
+        android:strokeWidth="1.8"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M12,20.3 C12,20.3 3.8,14.5 3.8,9.1 A4.5,4.5 0 0,1 12,6.9 A4.5,4.5 0 0,1 20.2,9.1 C20.2,14.5 12,20.3 12,20.3 Z" />
+</vector>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One notification row: avatar, "<name> liked your profile", and a relative
+    timestamp on the right.
+
+    Name and action text form a packed horizontal chain so they read as one
+    sentence; the name ellipsizes rather than pushing the action text off the
+    row when it's long.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="12dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivNotificationAvatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/cd_avatar"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextView
+        android:id="@+id/tvNotificationName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/ivNotificationAvatar"
+        app:layout_constraintEnd_toStartOf="@id/tvNotificationAction"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="Amelia Hart" />
+
+    <TextView
+        android:id="@+id/tvNotificationAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:singleLine="true"
+        android:text="@string/notification_liked_your_profile"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        app:layout_constraintStart_toEndOf="@id/tvNotificationName"
+        app:layout_constraintEnd_toStartOf="@id/tvNotificationTime"
+        app:layout_constraintTop_toTopOf="@id/tvNotificationName"
+        app:layout_constraintBottom_toBottomOf="@id/tvNotificationName" />
+
+    <TextView
+        android:id="@+id/tvNotificationTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="2m ago" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
