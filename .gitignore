@@ -28,3 +28,6 @@ Thumbs.db
 
 # Firebase — contains project ID + API key; each environment supplies its own
 /app/google-services.json
+
+# Firebase CLI local cache (debug logs are already covered by *.log above)
+.firebase/

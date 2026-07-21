@@ -54,6 +54,36 @@ project, so the app **will not build until you add it**. This file is not commit
 > If you see a build error like `File google-services.json is missing`, it means step 5 wasn't
 > completed or the file landed in the wrong folder (it must be in `app/`, not the project root).
 
+### Firestore security rules
+
+Cloud Firestore stores user profiles (`users/{uid}`), matches (`matches/{matchId}`) and
+messages (`matches/{matchId}/messages`). Access is controlled by [`firestore.rules`](firestore.rules),
+which is deployed from this repo rather than edited in the console — so the live rules and the
+committed ones can't drift apart.
+
+```bash
+npm install -g firebase-tools     # once
+firebase login                    # once
+firebase deploy --only firestore:rules
+```
+
+`firebase.json` points the CLI at `firestore.rules`, and `.firebaserc` pins the target project,
+so the deploy command needs no extra arguments. To deploy to a different project:
+
+```bash
+firebase use --add                # register another project alias
+firebase deploy --only firestore:rules --project <alias>
+```
+
+> **The app will not work until the rules are deployed.** A project left on the default locked
+> ruleset rejects every read and write, which surfaces in-app as matches failing to save and
+> empty feeds — `PERMISSION_DENIED` in logcat.
+
+`firestore.indexes.json` is intentionally empty: the queries are all deliberately shaped to
+avoid composite indexes (self-filtering and sorting happen client-side). If a query ever does
+need one, Firestore's error message links to a page that generates the definition — paste it in
+there and it deploys with `firebase deploy --only firestore:indexes`.
+
 ## Project structure
 ```
 app/src/main/
