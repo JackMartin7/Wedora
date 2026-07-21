@@ -48,8 +48,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.tvForgotPassword.setOnClickListener {
-            // TODO: navigate to Forgot Password screen
-            Toast.makeText(this, "Forgot Password tapped", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
 
         binding.btnLogin.setOnClickListener { attemptLogin() }
