@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.wedora.app.databinding.ActivityHomeBinding
 import java.util.Calendar
 
@@ -21,6 +22,9 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    /** Live view of the user's matches; drives the badge and the liked hearts. */
+    private var matchesListener: ListenerRegistration? = null
 
     private val adapter by lazy {
         MatchCardAdapter(
@@ -51,6 +55,69 @@ class HomeActivity : AppCompatActivity() {
 
         binding.btnNotifications.setOnClickListener {
             startActivity(Intent(this, NotificationsActivity::class.java))
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        observeMatches()
+    }
+
+    override fun onStop() {
+        matchesListener?.remove()
+        matchesListener = null
+        super.onStop()
+    }
+
+    /**
+     * One listener serves both the unseen-like badge and the filled hearts —
+     * they're two readings of the same set of match documents, so a second
+     * query would be redundant. Being live means a like arriving while the
+     * screen is open updates the badge without a refresh.
+     *
+     * Scoped to onStart/onStop so it isn't running while backgrounded.
+     */
+    private fun observeMatches() {
+        if (GuestPrefs.isGuest(this)) {
+            showNotificationBadge(0)
+            return
+        }
+
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (selfUid == null) {
+            showNotificationBadge(0)
+            return
+        }
+
+        matchesListener = firestore.collection(Match.COLLECTION)
+            .whereArrayContains(Match.FIELD_USERS, selfUid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w(TAG, "Match listener failed", error)
+                    showNotificationBadge(0)
+                    return@addSnapshotListener
+                }
+
+                val matches = snapshot?.documents
+                    ?.mapNotNull { Match.from(it) }
+                    .orEmpty()
+
+                showNotificationBadge(matches.count { it.isUnseenLikeFor(selfUid) })
+
+                // Hearts for people already liked, including on a fresh launch.
+                adapter.markLiked(
+                    matches.filter { it.isLikeBy(selfUid) }
+                        .mapNotNull { it.otherUserId(selfUid) }
+                )
+            }
+    }
+
+    private fun showNotificationBadge(count: Int) {
+        if (count <= 0) {
+            binding.tvNotificationBadge.visibility = View.GONE
+        } else {
+            binding.tvNotificationBadge.visibility = View.VISIBLE
+            binding.tvNotificationBadge.text = count.toString()
         }
     }
 

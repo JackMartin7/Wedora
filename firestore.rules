@@ -56,18 +56,47 @@ service cloud.firestore {
       // For a create there is no stored document yet, so validate the
       // incoming payload instead: exactly two distinct users, one of whom is
       // the caller. This stops a user fabricating matches between other
-      // people, or matching themselves.
+      // people, or matching themselves. likedBy must be the caller, so a like
+      // can't be attributed to someone who didn't make it.
       function isValidNewMatch() {
         return request.auth != null
             && request.resource.data.users is list
             && request.resource.data.users.size() == 2
             && request.resource.data.users[0] != request.resource.data.users[1]
-            && request.auth.uid in request.resource.data.users;
+            && request.auth.uid in request.resource.data.users
+            && request.resource.data.likedBy == request.auth.uid;
+      }
+
+      // The participant who did NOT send the like — the one it notifies.
+      function isRecipient() {
+        return request.auth != null
+            && request.auth.uid in resource.data.users
+            && resource.data.likedBy != request.auth.uid;
+      }
+
+      function onlyChangesSeenFlag() {
+        return request.resource.data.diff(resource.data)
+                 .affectedKeys().hasOnly(['seenByRecipient']);
       }
 
       allow read: if isMember();
       allow create: if isValidNewMatch();
-      allow update, delete: if isMember();
+
+      // Updates stay open to members because liking is idempotent: tapping
+      // like again re-runs set(merge), which rewrites createdAt. A rule
+      // restricting updates to seenByRecipient alone would reject that and
+      // break re-liking.
+      //
+      // Two things are still enforced. Participants can never change, so a
+      // member can't rewrite a match onto someone else. And an update that
+      // touches *only* seenByRecipient must come from the recipient — that is
+      // the notification-clearing write, and the sender of a like has no
+      // business marking it read on the other person's behalf.
+      allow update: if isMember()
+          && request.resource.data.users == resource.data.users
+          && (!onlyChangesSeenFlag() || isRecipient());
+
+      allow delete: if isMember();
 
       match /messages/{messageId} {
 

@@ -35,6 +35,19 @@ class MatchCardAdapter(
      */
     private val likedUserIds = mutableSetOf<String>()
 
+    /**
+     * Seeds the liked set from Firestore so hearts are already filled for
+     * people liked on a previous run, not just this session.
+     *
+     * Adds rather than replaces: a heart filled optimistically on tap must not
+     * be cleared by a snapshot that hasn't caught up with the write yet.
+     */
+    fun markLiked(userIds: Collection<String>) {
+        if (likedUserIds.addAll(userIds) && itemCount > 0) {
+            notifyItemRangeChanged(0, itemCount)
+        }
+    }
+
     inner class CardViewHolder(
         private val binding: ItemMatchCardBinding
     ) : RecyclerView.ViewHolder(binding.root) {

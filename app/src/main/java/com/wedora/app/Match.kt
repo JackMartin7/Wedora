@@ -52,7 +52,10 @@ fun createMatchDocument(
 ): Task<Void> {
     val matchData = mapOf(
         Match.FIELD_USERS to listOf(selfUid, otherUid),
-        Match.FIELD_CREATED_AT to FieldValue.serverTimestamp()
+        Match.FIELD_CREATED_AT to FieldValue.serverTimestamp(),
+        // Who initiated. Drives the other participant's notification, and the
+        // security rules require it to be the caller.
+        Match.FIELD_LIKED_BY to selfUid
     )
     return firestore.collection(Match.COLLECTION)
         .document(Match.idFor(selfUid, otherUid))
@@ -73,12 +76,29 @@ data class Match(
     val id: String,
     val users: List<String>,
     /** Null while the server timestamp is still pending on a just-written doc. */
-    val createdAt: Timestamp?
+    val createdAt: Timestamp?,
+    /**
+     * Who initiated the like. Null on matches written before this field
+     * existed — those can't be attributed, so they're excluded from
+     * notifications rather than guessed at or migrated.
+     */
+    val likedBy: String?,
+    /** Missing is treated as unseen, so old documents surface as notifications. */
+    val seenByRecipient: Boolean
 ) {
 
     /** The other participant's UID, or null if [selfUid] isn't in this match. */
     fun otherUserId(selfUid: String): String? =
         if (selfUid in users) users.firstOrNull { it != selfUid } else null
+
+    /** True when [selfUid] is the one who liked — i.e. not a notification. */
+    fun isLikeBy(selfUid: String): Boolean = likedBy != null && likedBy == selfUid
+
+    /** True when someone else liked [selfUid], regardless of seen state. */
+    fun isLikeFor(selfUid: String): Boolean = likedBy != null && likedBy != selfUid
+
+    /** A like for [selfUid] that they haven't looked at yet — drives the badge. */
+    fun isUnseenLikeFor(selfUid: String): Boolean = isLikeFor(selfUid) && !seenByRecipient
 
     companion object {
         const val COLLECTION = "matches"
@@ -86,6 +106,8 @@ data class Match(
 
         const val FIELD_USERS = "users"
         const val FIELD_CREATED_AT = "createdAt"
+        const val FIELD_LIKED_BY = "likedBy"
+        const val FIELD_SEEN_BY_RECIPIENT = "seenByRecipient"
 
         /**
          * Deterministic, order-independent document ID for a pair of users.
@@ -105,7 +127,9 @@ data class Match(
             return Match(
                 id = snapshot.id,
                 users = users,
-                createdAt = snapshot.getTimestamp(FIELD_CREATED_AT)
+                createdAt = snapshot.getTimestamp(FIELD_CREATED_AT),
+                likedBy = snapshot.getString(FIELD_LIKED_BY),
+                seenByRecipient = snapshot.getBoolean(FIELD_SEEN_BY_RECIPIENT) ?: false
             )
         }
     }
