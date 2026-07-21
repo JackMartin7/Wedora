@@ -87,6 +87,31 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav" />
 
+    <ProgressBar
+        android:id="@+id/progressLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/wedora_accent"
+        app:layout_constraintTop_toBottomOf="@id/ivMyAvatar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="40dp"
+        android:gravity="center"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4sp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/ivMyAvatar"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- ===== Bottom navigation ===== -->
 
     <com.google.android.material.bottomnavigation.BottomNavigationView

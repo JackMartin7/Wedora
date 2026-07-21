@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -30,12 +31,23 @@ class MatchCardAdapter(
             ivCardAvatar.setImageResource(card.avatarRes)
             ivCardPhoto.setImageResource(card.photoRes)
             tvCardName.text = card.name
-            tvCardRole.text = card.role
-            tvCardBio.text = card.bio
-            tvDistance.text = root.context.getString(
-                R.string.home_distance_format,
-                card.distanceKm.toString()
-            )
+
+            if (card.role.isBlank()) {
+                tvCardRole.visibility = View.GONE
+            } else {
+                tvCardRole.visibility = View.VISIBLE
+                tvCardRole.text = card.role
+            }
+
+            tvCardBio.text = card.bio.ifBlank { root.context.getString(R.string.match_card_no_bio) }
+
+            val distanceKm = card.distanceKm
+            if (distanceKm == null) {
+                tvDistance.visibility = View.GONE
+            } else {
+                tvDistance.visibility = View.VISIBLE
+                tvDistance.text = root.context.getString(R.string.home_distance_format, distanceKm.toString())
+            }
 
             btnLike.setOnClickListener { onLike(card) }
             btnSuperlike.setOnClickListener { onSuperlike(card) }

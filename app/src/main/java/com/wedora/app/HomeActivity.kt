@@ -2,15 +2,25 @@ package com.wedora.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityHomeBinding
 
 class HomeActivity : AppCompatActivity() {
 
+    private companion object {
+        const val TAG = "WedoraMatching"
+        const val USERS_COLLECTION = "users"
+    }
+
     private lateinit var binding: ActivityHomeBinding
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     private val adapter by lazy {
         MatchCardAdapter(
@@ -31,6 +41,7 @@ class HomeActivity : AppCompatActivity() {
 
         showSignedInUser()
         setUpFeed()
+        loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
 
         binding.btnDarkMode.setOnClickListener { toggleDarkMode() }
@@ -57,8 +68,100 @@ class HomeActivity : AppCompatActivity() {
     private fun setUpFeed() {
         binding.rvMatches.layoutManager = LinearLayoutManager(this)
         binding.rvMatches.adapter = adapter
-        // TODO: replace with real data — wiring the feed is a separate task.
-        adapter.submitList(MatchCard.sampleCards())
+    }
+
+    /**
+     * Real matching feed: users whose `gender` matches the current user's own
+     * `interestedIn`, excluding the current user. Self is filtered out
+     * client-side rather than in the query, which avoids needing a composite
+     * Firestore index for an early-stage, likely-low-volume collection.
+     */
+    private fun loadMatches() {
+        if (GuestPrefs.isGuest(this)) {
+            showEmptyState(getString(R.string.home_empty_guest))
+            return
+        }
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            showEmptyState(getString(R.string.home_empty_error))
+            return
+        }
+
+        showLoading()
+        firestore.collection(USERS_COLLECTION).document(uid).get()
+            .addOnSuccessListener { selfDoc ->
+                val interestedIn = selfDoc.getString("interestedIn")
+                if (interestedIn.isNullOrBlank()) {
+                    showEmptyState(getString(R.string.home_empty_no_matches))
+                } else {
+                    queryMatches(interestedIn, uid)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to load own profile for matching", e)
+                showEmptyState(getString(R.string.home_empty_error))
+            }
+    }
+
+    private fun queryMatches(interestedIn: String, selfUid: String) {
+        firestore.collection(USERS_COLLECTION)
+            .whereEqualTo("gender", interestedIn)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val cards = snapshot.documents
+                    .filter { it.id != selfUid }
+                    .mapNotNull { it.toMatchCard() }
+
+                if (cards.isEmpty()) {
+                    showEmptyState(getString(R.string.home_empty_no_matches))
+                } else {
+                    showCards(cards)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to query matches", e)
+                showEmptyState(getString(R.string.home_empty_error))
+            }
+    }
+
+    /**
+     * Real users have no bio/role/distance backend field yet — those stay
+     * blank/null (MatchCardAdapter hides or honestly labels them) rather than
+     * inventing plausible-looking data, and the photo slots use a neutral
+     * placeholder since there is no photo backend either.
+     */
+    private fun DocumentSnapshot.toMatchCard(): MatchCard? {
+        val name = getString("displayName")?.takeIf { it.isNotBlank() } ?: return null
+        return MatchCard(
+            id = id,
+            name = name,
+            role = "",
+            avatarRes = R.drawable.ic_avatar_placeholder,
+            photoRes = R.drawable.ic_avatar_placeholder,
+            distanceKm = null,
+            bio = ""
+        )
+    }
+
+    private fun showLoading() {
+        binding.progressLoading.visibility = View.VISIBLE
+        binding.tvEmptyState.visibility = View.GONE
+        binding.rvMatches.visibility = View.GONE
+    }
+
+    private fun showEmptyState(message: String) {
+        binding.progressLoading.visibility = View.GONE
+        binding.rvMatches.visibility = View.GONE
+        binding.tvEmptyState.visibility = View.VISIBLE
+        binding.tvEmptyState.text = message
+    }
+
+    private fun showCards(cards: List<MatchCard>) {
+        binding.progressLoading.visibility = View.GONE
+        binding.tvEmptyState.visibility = View.GONE
+        binding.rvMatches.visibility = View.VISIBLE
+        adapter.submitList(cards)
     }
 
     /**
