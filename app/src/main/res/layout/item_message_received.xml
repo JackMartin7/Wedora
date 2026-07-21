@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Incoming message: left-aligned, surface bubble, dark text. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="start"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="4dp">
+
+    <TextView
+        android:id="@+id/tvMessageText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxWidth="280dp"
+        android:background="@drawable/bg_bubble_received"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="10dp"
+        android:textColor="@color/wedora_text"
+        android:textSize="14sp"
+        android:lineSpacingExtra="2sp"
+        tools:text="Pretty good! Just got back from a hike." />
+
+    <TextView
+        android:id="@+id/tvMessageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:layout_marginStart="4dp"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="11sp"
+        tools:text="9:42 AM" />
+
+</LinearLayout>

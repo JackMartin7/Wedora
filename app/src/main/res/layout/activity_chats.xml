@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/wedora_bg">
@@ -59,7 +60,12 @@
         app:layout_constraintTop_toTopOf="@id/btnBack"
         app:layout_constraintBottom_toBottomOf="@id/btnBack" />
 
-    <!-- ===== New matches strip ===== -->
+    <!-- ===== New matches strip =====
+         Hidden for now. It only ever held placeholder avatars, and leaving
+         those on screen beside real conversations would show invented people.
+         Its "new match" meaning is currently covered by list rows that read
+         "Say hi 👋". Kept in the layout (along with NewMatchAdapter) so it can
+         be repurposed rather than rebuilt. -->
 
     <TextView
         android:id="@+id/tvNewMatchesLabel"
@@ -71,6 +77,7 @@
         android:textColor="@color/wedora_text_secondary"
         android:textSize="12sp"
         android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btnBack" />
 
@@ -84,6 +91,7 @@
         android:paddingEnd="8dp"
         android:orientation="horizontal"
         android:scrollbars="none"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/tvNewMatchesLabel" />
 
     <!-- ===== Conversation list ===== -->
@@ -92,14 +100,42 @@
         android:id="@+id/rvChats"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="8dp"
         android:clipToPadding="false"
         android:paddingBottom="8dp"
         android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@id/rvNewMatches"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav" />
+
+    <ProgressBar
+        android:id="@+id/progressLoading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminateTint="@color/wedora_accent"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tvChatsEmpty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="40dp"
+        android:gravity="center"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="No matches yet — like someone to start chatting."
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- ===== Bottom navigation ===== -->
 

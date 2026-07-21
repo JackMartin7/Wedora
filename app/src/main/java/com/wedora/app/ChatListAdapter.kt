@@ -14,7 +14,7 @@ class ChatListAdapter(
 
     private companion object {
         val DIFF = object : DiffUtil.ItemCallback<ChatPreview>() {
-            override fun areItemsTheSame(a: ChatPreview, b: ChatPreview) = a.id == b.id
+            override fun areItemsTheSame(a: ChatPreview, b: ChatPreview) = a.matchId == b.matchId
             override fun areContentsTheSame(a: ChatPreview, b: ChatPreview) = a == b
         }
     }
@@ -24,17 +24,18 @@ class ChatListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(chat: ChatPreview) = with(binding) {
-            ivChatAvatar.setImageResource(chat.avatarRes)
+            // No photo backend for other users, so every row uses the neutral
+            // placeholder rather than a stock face.
+            ivChatAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
             tvChatName.text = chat.name
-            tvChatPreview.text = chat.lastMessage
-            tvChatTimestamp.text = chat.timestamp
 
-            if (chat.unreadCount > 0) {
-                tvUnreadBadge.text = chat.unreadCount.toString()
-                tvUnreadBadge.visibility = View.VISIBLE
-            } else {
-                tvUnreadBadge.visibility = View.GONE
-            }
+            tvChatPreview.text =
+                chat.lastMessage ?: root.context.getString(R.string.chat_say_hi)
+            tvChatTimestamp.text = formatChatTimestamp(root.context, chat.lastMessageAt)
+
+            // Nothing tracks read state yet, so this stays hidden instead of
+            // showing a made-up count.
+            tvUnreadBadge.visibility = View.GONE
 
             root.setOnClickListener { onClick(chat) }
         }

@@ -105,6 +105,20 @@
     <string name="match_created">It\'s a match!</string>
     <string name="error_match_failed">Couldn\'t create the match. Please try again.</string>
 
+    <!-- Chats list states -->
+    <string name="chats_empty">No matches yet — like someone to start chatting.</string>
+    <string name="chats_empty_guest">Sign up to start chatting.</string>
+    <string name="chats_load_error">Couldn\'t load your chats. Check your connection and try again.</string>
+    <string name="chat_say_hi">Say hi 👋</string>
+    <string name="timestamp_yesterday">Yesterday</string>
+
+    <!-- Chat thread -->
+    <string name="chat_empty">No messages yet — say hi 👋</string>
+    <string name="chat_hint_message">Type a message…</string>
+    <string name="cd_send">Send</string>
+    <string name="error_message_send_failed">Couldn\'t send. Please try again.</string>
+    <string name="error_chat_load_failed">Couldn\'t load this conversation.</string>
+
     <!-- Match radar states -->
     <string name="match_empty">No matches yet — like someone from Home to get started.</string>
     <string name="match_empty_guest">Sign up to start matching.</string>
