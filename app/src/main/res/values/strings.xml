@@ -324,4 +324,17 @@
     <string name="privacy_setting_load_failed">Couldn\'t load your messaging setting. Please try again.</string>
     <string name="privacy_setting_save_failed">Couldn\'t save that setting. Please try again.</string>
     <string name="chat_locked_until_match">You can message once they like you back</string>
+
+    <!-- Notification settings -->
+    <string name="notif_settings_intro">Choose what Wedora can notify you about.</string>
+    <string name="notif_new_matches">New matches</string>
+    <string name="notif_new_matches_caption">When someone you liked likes you back.</string>
+    <string name="notif_messages">Messages</string>
+    <string name="notif_messages_caption">When a match sends you a message.</string>
+    <string name="notif_likes">Likes</string>
+    <string name="notif_likes_caption">When someone likes your profile.</string>
+    <string name="notif_app_updates">App updates</string>
+    <string name="notif_app_updates_caption">New features and important changes.</string>
+    <string name="notif_promotions">Promotions</string>
+    <string name="notif_promotions_caption">Offers and news from Wedora.</string>
 </resources>

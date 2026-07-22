@@ -67,6 +67,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".NotificationsSettingsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

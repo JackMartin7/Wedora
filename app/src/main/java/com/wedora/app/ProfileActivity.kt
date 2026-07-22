@@ -195,7 +195,7 @@ class ProfileActivity : AppCompatActivity() {
                 startActivity(Intent(this, AccountSettingsActivity::class.java))
             },
             SettingsRow(R.drawable.ic_notifications, R.string.settings_notifications) {
-                toast(getString(R.string.settings_notifications))
+                startActivity(Intent(this, NotificationsSettingsActivity::class.java))
             },
             SettingsRow(R.drawable.ic_privacy, R.string.settings_privacy) {
                 startActivity(Intent(this, PrivacySafetyActivity::class.java))
