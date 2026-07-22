@@ -27,10 +27,11 @@ import java.io.IOException
  * things: Save is disabled until something genuinely differs, and the write
  * carries only the changed fields rather than the whole document.
  *
- * The photo is the exception. It's device-local (see [LocalProfilePrefs]) and
- * never goes to Firestore, so it saves at the moment it's picked rather than
- * on Save — there's nothing to batch it with, and picking is already an
- * explicit confirmation.
+ * The photo is device-local (see [LocalProfilePrefs]) and never goes to
+ * Firestore, so it can't live in that diff — a picked photo is staged to a
+ * separate file and tracked by [photoChanged], which counts towards enabling
+ * Save exactly like an edited field. Nothing the rest of the app reads changes
+ * until Save, so leaving without saving discards the pick.
  */
 class EditProfileActivity : AppCompatActivity() {
 
@@ -40,6 +41,13 @@ class EditProfileActivity : AppCompatActivity() {
         /** Same age policy as CompleteProfileActivity. */
         const val MIN_AGE = 18
         const val MAX_AGE = 120
+
+        /**
+         * A picked photo lands here and stays until Save, so leaving without
+         * saving discards it. Kept separate from the UID-keyed file that
+         * [LocalProfilePrefs] points at, which is only overwritten on Save.
+         */
+        const val STAGED_PHOTO_FILENAME = "profile_photos/staging_edit.jpg"
     }
 
     private lateinit var binding: ActivityEditProfileBinding
@@ -60,9 +68,19 @@ class EditProfileActivity : AppCompatActivity() {
 
     private var isSaving = false
 
+    /**
+     * A new photo has been picked and staged but not yet persisted. Counts as
+     * a change for the Save button exactly like an edited text field, and is
+     * cleared once the staged file has been committed.
+     */
+    private var photoChanged = false
+
+    /** The staged file backing [photoChanged]; deleted if the user leaves. */
+    private var stagedPhotoFile: File? = null
+
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) savePickedPhoto(uri)
+            if (uri != null) stagePickedPhoto(uri)
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,9 +114,33 @@ class EditProfileActivity : AppCompatActivity() {
         })
 
         binding.ivEditPhoto.loadLocalProfilePhoto(this, uid)
+        restoreOrClearStagedPhoto(savedInstanceState != null)
         updateBioCounter()
         updateSaveEnabled()
         loadProfile()
+    }
+
+    /**
+     * The staging file outlives the activity instance, so it has to be
+     * reconciled on every start.
+     *
+     * After a configuration change the pick is still current — adopt it, so
+     * rotating doesn't silently revert the preview and disable Save. On a
+     * fresh launch it's a leftover from a session that ended without saving
+     * (or was killed mid-edit), so delete it rather than resurrect a pick the
+     * user already walked away from.
+     */
+    private fun restoreOrClearStagedPhoto(isRecreated: Boolean) {
+        val staging = File(filesDir, STAGED_PHOTO_FILENAME)
+        if (!staging.exists()) return
+
+        if (isRecreated) {
+            stagedPhotoFile = staging
+            photoChanged = true
+            showPreview(staging)
+        } else {
+            staging.delete()
+        }
     }
 
     /**
@@ -237,8 +279,15 @@ class EditProfileActivity : AppCompatActivity() {
         return changes
     }
 
+    /**
+     * A staged photo counts as a change on its own, so picking one and
+     * touching nothing else still enables Save. The photo isn't a Firestore
+     * field, so it can't live in [changedFields] — hence the separate flag.
+     */
+    private fun hasChanges(): Boolean = photoChanged || changedFields().isNotEmpty()
+
     private fun updateSaveEnabled() {
-        val enabled = !isSaving && loaded != null && changedFields().isNotEmpty()
+        val enabled = !isSaving && loaded != null && hasChanges()
         binding.btnSave.isEnabled = enabled
         // A TextView doesn't dim itself when disabled the way a button does.
         binding.btnSave.alpha = if (enabled) 1f else 0.4f
@@ -259,37 +308,84 @@ class EditProfileActivity : AppCompatActivity() {
      * holding the picker's Uri, whose grant isn't guaranteed to outlive this
      * screen — same reasoning as SignUpActivity.
      *
-     * Written directly to the UID-keyed filename, with no staging step: unlike
-     * sign-up there's already an account to key it to.
+     * It goes to a staging file, not to the live UID-keyed one. The preview
+     * updates immediately so the choice is visible, but nothing the rest of
+     * the app reads changes until Save: [LocalProfilePrefs] still points at
+     * the old photo, so backing out discards the pick.
      */
-    private fun savePickedPhoto(uri: Uri) {
+    private fun stagePickedPhoto(uri: Uri) {
         try {
-            val destination = File(filesDir, "profile_photos/$uid.jpg")
-            destination.parentFile?.mkdirs()
+            val staging = File(filesDir, STAGED_PHOTO_FILENAME)
+            staging.parentFile?.mkdirs()
             contentResolver.openInputStream(uri)?.use { input ->
-                destination.outputStream().use { output -> input.copyTo(output) }
+                staging.outputStream().use { output -> input.copyTo(output) }
             } ?: throw IOException("openInputStream returned null")
 
-            LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
-            // skipMemoryCache/diskCacheStrategy NONE: the path is unchanged
-            // between picks, so Glide would otherwise redisplay the old image.
-            Glide.with(this)
-                .load(destination)
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .centerCrop()
-                .into(binding.ivEditPhoto)
+            stagedPhotoFile = staging
+            photoChanged = true
+            showPreview(staging)
+            updateSaveEnabled()
         } catch (e: IOException) {
             Log.w(TAG, "Failed to copy picked profile photo", e)
             Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
         }
     }
 
+    /**
+     * Both caches are skipped because the staging path is identical between
+     * picks — Glide would otherwise treat the second pick as the same image
+     * and redisplay the first.
+     */
+    private fun showPreview(file: File) {
+        Glide.with(this)
+            .load(file)
+            .skipMemoryCache(true)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .centerCrop()
+            .into(binding.ivEditPhoto)
+    }
+
+    /**
+     * Moves the staged photo onto the live UID-keyed file and points
+     * [LocalProfilePrefs] at it. Returns false if the move failed, so the
+     * caller can tell the user rather than silently keeping the old photo.
+     *
+     * Copy-then-delete rather than renameTo: both paths are in filesDir so a
+     * rename would normally work, but a failed rename leaves no way to tell
+     * whether the destination survived intact.
+     */
+    private fun commitStagedPhoto(): Boolean {
+        val staging = stagedPhotoFile ?: return true
+        return try {
+            val destination = File(filesDir, "profile_photos/$uid.jpg")
+            destination.parentFile?.mkdirs()
+            staging.inputStream().use { input ->
+                destination.outputStream().use { output -> input.copyTo(output) }
+            }
+            LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
+
+            staging.delete()
+            stagedPhotoFile = null
+            photoChanged = false
+            true
+        } catch (e: IOException) {
+            Log.w(TAG, "Failed to commit staged profile photo", e)
+            false
+        }
+    }
+
+    /** Drops a staged photo the user never saved. */
+    private fun discardStagedPhoto() {
+        stagedPhotoFile?.delete()
+        stagedPhotoFile = null
+        photoChanged = false
+    }
+
     // ----- Save -----------------------------------------------------------
 
     private fun save() {
         val changes = changedFields()
-        if (changes.isEmpty()) return
+        if (!hasChanges()) return
 
         if (enteredName().isEmpty()) {
             binding.etName.error = getString(R.string.error_name_required)
@@ -319,16 +415,44 @@ class EditProfileActivity : AppCompatActivity() {
         }
 
         setSaving(true)
+
+        // Photo-only save: nothing to send, so skip the round trip entirely
+        // rather than writing an empty merge.
+        if (changes.isEmpty()) {
+            persistPhotoThenFinish(changes)
+            return
+        }
+
         // merge, not update(): an account predating the Firestore user document
         // has none, and update() fails on a missing document.
         firestore.collection(UserProfile.COLLECTION).document(uid)
             .set(changes, SetOptions.merge())
-            .addOnSuccessListener { onSaved(changes) }
+            .addOnSuccessListener { persistPhotoThenFinish(changes) }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to save profile edits", e)
                 setSaving(false)
                 Toast.makeText(this, R.string.error_profile_update_failed, Toast.LENGTH_LONG).show()
             }
+    }
+
+    /**
+     * Commits the staged photo, after the Firestore write rather than before,
+     * so a failed save leaves nothing persisted at all.
+     *
+     * A photo failure here is reported but doesn't block finishing when field
+     * changes already went through — those really did save, and stranding the
+     * user on the screen would invite them to save again.
+     */
+    private fun persistPhotoThenFinish(changes: Map<String, Any?>) {
+        if (photoChanged && !commitStagedPhoto()) {
+            Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
+            if (changes.isEmpty()) {
+                // Nothing at all was saved — stay put so the pick isn't lost.
+                setSaving(false)
+                return
+            }
+        }
+        onSaved(changes)
     }
 
     /**
@@ -371,6 +495,20 @@ class EditProfileActivity : AppCompatActivity() {
         isSaving = saving
         binding.btnSave.setText(if (saving) R.string.btn_saving else R.string.btn_save)
         updateSaveEnabled()
+    }
+
+    /**
+     * Cleans up a staged photo the user never saved — the back arrow, the
+     * system back gesture and a swipe-away all land here. [commitStagedPhoto]
+     * clears the flag on success, so a saved photo is never deleted.
+     *
+     * Guarded on isFinishing so a configuration change — which destroys the
+     * activity without the user leaving — keeps the staged file for
+     * [restoreOrClearStagedPhoto] to adopt.
+     */
+    override fun onDestroy() {
+        if (isFinishing) discardStagedPhoto()
+        super.onDestroy()
     }
 
     /** Minimal TextWatcher so the fields can share one re-validate hook. */

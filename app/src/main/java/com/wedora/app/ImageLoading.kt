@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import java.io.File
 
 /**
@@ -38,6 +39,11 @@ fun ImageView.loadLocalProfilePhoto(context: Context, uid: String) {
     if (!file.exists()) return
     Glide.with(this)
         .load(file)
+        // The photo is always written to the same UID-keyed path, and Glide's
+        // default cache key is the path alone — so without a signature that
+        // changes with the file, editing your photo would keep showing the old
+        // one everywhere it's already been loaded.
+        .signature(ObjectKey(file.lastModified()))
         .centerCrop()
         .into(this)
 }
