@@ -41,6 +41,7 @@ class ChatThreadActivity : AppCompatActivity() {
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     private lateinit var selfUid: String
+    private lateinit var otherUid: String
     private lateinit var matchId: String
 
     private var messagesListener: ListenerRegistration? = null
@@ -66,7 +67,8 @@ class ChatThreadActivity : AppCompatActivity() {
             return
         }
         selfUid = uid
-        matchId = Match.idFor(selfUid, otherUserId)
+        otherUid = otherUserId
+        matchId = Match.idFor(selfUid, otherUid)
 
         binding.tvChatTitle.text = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
         binding.btnBack.setOnClickListener { goToChats() }
@@ -80,6 +82,55 @@ class ChatThreadActivity : AppCompatActivity() {
         binding.rvMessages.adapter = adapter
 
         observeMessages()
+        applyMessagingGate()
+    }
+
+    /**
+     * Reflects the other person's "only matched users can message me" setting
+     * in the composer, so someone who can't send finds out before typing
+     * rather than from a failed write.
+     *
+     * This is presentation only — firestore.rules is what actually enforces
+     * the setting. That's why every read here fails *open*: a network blip
+     * shouldn't lock someone out of a conversation they're entitled to, and if
+     * they aren't, the rule rejects the message anyway.
+     *
+     * Evaluated on open. A like-back that arrives while the thread is already
+     * on screen won't unlock the composer until it's reopened — the match
+     * document isn't listened to here, only the messages under it.
+     */
+    private fun applyMessagingGate() {
+        firestore.collection(UserProfile.COLLECTION).document(otherUid).get()
+            .addOnSuccessListener { userDoc ->
+                if (!UserProfile.from(userDoc).onlyMatchesCanMessage) {
+                    setComposerLocked(false)
+                    return@addOnSuccessListener
+                }
+                // A one-sided like still creates the match document, so the
+                // gate turns on "is it mutual", not "does a match exist".
+                matchExistsQuery(firestore, selfUid, otherUid)
+                    .addOnSuccessListener { snapshot ->
+                        val mutual = snapshot.documents.firstOrNull()
+                            ?.let { Match.from(it)?.isMutual() } == true
+                        setComposerLocked(!mutual)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Couldn't check match state for messaging gate", e)
+                        setComposerLocked(false)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Couldn't read recipient messaging setting", e)
+                setComposerLocked(false)
+            }
+    }
+
+    private fun setComposerLocked(locked: Boolean) {
+        binding.etMessage.isEnabled = !locked
+        binding.btnSend.isEnabled = !locked
+        binding.etMessage.setHint(
+            if (locked) R.string.chat_locked_until_match else R.string.chat_hint_message
+        )
     }
 
     private fun matchDocument() =

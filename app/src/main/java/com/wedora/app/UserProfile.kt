@@ -47,7 +47,14 @@ data class UserProfile(
      * the editor. Null for anyone who hasn't written one — it is optional, so
      * it deliberately plays no part in [isComplete].
      */
-    val bio: String?
+    val bio: String?,
+    /**
+     * When true, only mutually-matched users may send this person messages.
+     * Enforced in firestore.rules, not just here. Absent reads as false — the
+     * setting is opt-in, and applying it to someone who never turned it on
+     * would silently mute their existing conversations.
+     */
+    val onlyMatchesCanMessage: Boolean
 ) {
 
     /** True once the Complete Profile step has been satisfied. */
@@ -70,6 +77,7 @@ data class UserProfile(
         const val FIELD_CITY = "city"
         const val FIELD_COUNTRY = "country"
         const val FIELD_BIO = "bio"
+        const val FIELD_ONLY_MATCHES_CAN_MESSAGE = "onlyMatchesCanMessage"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -88,7 +96,9 @@ data class UserProfile(
             age = snapshot.getLong(FIELD_AGE)?.toInt(),
             city = snapshot.getString(FIELD_CITY),
             country = snapshot.getString(FIELD_COUNTRY),
-            bio = snapshot.getString(FIELD_BIO)
+            bio = snapshot.getString(FIELD_BIO),
+            onlyMatchesCanMessage =
+                snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false
         )
     }
 }

@@ -148,17 +148,18 @@
                         android:fontFamily="@font/poppins_medium" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="@string/coming_soon"
+                        android:text="@string/privacy_only_matches_caption"
                         android:textColor="@color/wedora_text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="2sp" />
 
                 </LinearLayout>
 
-                <!-- Disabled on purpose: the space is reserved, there is no
-                     backing field for it yet. See PrivacySafetyActivity. -->
+                <!-- Enabled once the current value has been read, so a stale
+                     "off" can't be toggled before the real setting arrives. -->
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchOnlyMatchesCanMessage"
                     android:layout_width="wrap_content"

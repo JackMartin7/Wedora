@@ -152,11 +152,39 @@ service cloud.firestore {
                  get(/databases/$(database)/documents/matches/$(matchId)).data.users;
         }
 
+        // The recipient's "only matched users can message me" setting.
+        //
+        // Enforced here rather than only in the UI: a privacy control that the
+        // client can decline to apply isn't one. A modified client, or simply
+        // an older build that predates the setting, would otherwise sail past
+        // it.
+        //
+        // "Matched" means mutual — both participants in likedUsers. A one-sided
+        // like creates the match document (this app matches instantly), so
+        // without this check anyone who likes you can open a thread and write
+        // to you, which is exactly what the setting exists to prevent.
+        //
+        // Default is false: absent means the user never turned it on, and a
+        // privacy control must never be applied to someone who didn't ask for
+        // it — silently muting an existing conversation would be worse than
+        // not having the feature.
+        function recipientAcceptsMessageFrom(matchData) {
+          let others = matchData.users.removeAll([request.auth.uid]);
+          let recipientGate = others.size() == 1
+              && get(/databases/$(database)/documents/users/$(others[0]))
+                   .data.get('onlyMatchesCanMessage', false) == true;
+          return !recipientGate
+              || matchData.get('likedUsers', []).hasAll(matchData.users);
+        }
+
         allow read: if isMatchMember();
 
-        // A sender can only post as themselves.
+        // A sender can only post as themselves, and only if the recipient
+        // accepts messages from them.
         allow create: if isMatchMember()
-            && request.resource.data.senderId == request.auth.uid;
+            && request.resource.data.senderId == request.auth.uid
+            && recipientAcceptsMessageFrom(
+                 get(/databases/$(database)/documents/matches/$(matchId)).data);
 
         // Messages are immutable — no edit or delete. Loosen deliberately if
         // the product ever wants "unsend".

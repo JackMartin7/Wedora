@@ -320,5 +320,8 @@
     <string name="unblock_failed">Couldn\'t unblock this user. Please try again.</string>
     <string name="privacy_who_can_message">Who Can Message Me</string>
     <string name="privacy_only_matches_can_message">Only matched users can message me</string>
-    <string name="coming_soon">Coming soon</string>
+    <string name="privacy_only_matches_caption">When on, people can only message you once you\'ve liked them back.</string>
+    <string name="privacy_setting_load_failed">Couldn\'t load your messaging setting. Please try again.</string>
+    <string name="privacy_setting_save_failed">Couldn\'t save that setting. Please try again.</string>
+    <string name="chat_locked_until_match">You can message once they like you back</string>
 </resources>

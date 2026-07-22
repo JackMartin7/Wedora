@@ -12,16 +12,15 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.SetOptions
 import com.wedora.app.databinding.ActivityPrivacySafetyBinding
 
 /**
- * Privacy & Safety: manage the block list, plus a reserved slot for a future
- * "who can message me" control.
+ * Privacy & Safety: manage the block list and who is allowed to message you.
  *
- * The message toggle is deliberately inert — disabled, labelled "Coming soon",
- * and with no listener attached. There is no backing Firestore field and no
- * rule enforcing it, so making it operable would be a privacy control that
- * silently does nothing.
+ * The message setting is stored on the user's own document and enforced in
+ * firestore.rules, which is what makes it a privacy control rather than a UI
+ * preference — see the messages create rule.
  */
 class PrivacySafetyActivity : AppCompatActivity() {
 
@@ -57,6 +56,57 @@ class PrivacySafetyActivity : AppCompatActivity() {
         binding.rvBlockedUsers.adapter = adapter
 
         loadBlockedUsers()
+        loadMessagePrivacy()
+    }
+
+    // ----- Who can message me ---------------------------------------------
+
+    /**
+     * The switch stays disabled until the stored value arrives, so it can't be
+     * toggled from a default that isn't the user's actual setting — a race
+     * that would write the opposite of what they intended.
+     */
+    private fun loadMessagePrivacy() {
+        firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
+            .addOnSuccessListener { snapshot ->
+                val enabled = UserProfile.from(snapshot).onlyMatchesCanMessage
+                // Set the state before attaching the listener, or restoring it
+                // would immediately write it straight back.
+                binding.switchOnlyMatchesCanMessage.isChecked = enabled
+                binding.switchOnlyMatchesCanMessage.isEnabled = true
+                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener { _, isChecked ->
+                    setMessagePrivacy(isChecked)
+                }
+            }
+            .addOnFailureListener { e ->
+                // Left disabled: a privacy switch that silently failed to load
+                // would show "off" and invite the user to trust it.
+                Log.w(TAG, "Failed to load message privacy setting", e)
+                Toast.makeText(this, R.string.privacy_setting_load_failed, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Reverts the switch if the write fails, so it never displays a protection
+     * that isn't actually stored. The listener is detached around the revert to
+     * keep it from re-firing and writing again.
+     */
+    private fun setMessagePrivacy(enabled: Boolean) {
+        firestore.collection(UserProfile.COLLECTION).document(selfUid)
+            .set(
+                mapOf(UserProfile.FIELD_ONLY_MATCHES_CAN_MESSAGE to enabled),
+                SetOptions.merge()
+            )
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to save message privacy setting", e)
+                Toast.makeText(this, R.string.privacy_setting_save_failed, Toast.LENGTH_LONG).show()
+
+                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener(null)
+                binding.switchOnlyMatchesCanMessage.isChecked = !enabled
+                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener { _, isChecked ->
+                    setMessagePrivacy(isChecked)
+                }
+            }
     }
 
     // ----- Blocked users --------------------------------------------------
