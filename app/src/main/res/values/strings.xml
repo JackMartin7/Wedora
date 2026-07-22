@@ -72,6 +72,11 @@
     <string name="cd_dark_mode_toggle">Toggle dark mode</string>
     <string name="cd_notifications">Notifications</string>
 
+    <!-- Likes tab (who liked you, as a photo grid) -->
+    <string name="likes_title">Likes</string>
+    <string name="likes_empty">No likes yet — keep swiping!</string>
+    <string name="likes_guest">Sign up to see who liked you</string>
+
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
     <string name="notifications_empty">No notifications yet</string>
@@ -154,7 +159,7 @@
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_maps">Maps</string>
-    <string name="nav_match">Match</string>
+    <string name="nav_match">Likes</string>
     <string name="nav_chats">Chats</string>
     <string name="nav_profile">Profile</string>
 

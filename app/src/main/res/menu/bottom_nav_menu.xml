@@ -11,9 +11,11 @@
         android:icon="@drawable/ic_nav_maps"
         android:title="@string/nav_maps" />
 
+    <!-- id stays nav_match to avoid rippling the rename through every tab
+         screen's active-id argument; the label and icon are what changed. -->
     <item
         android:id="@+id/nav_match"
-        android:icon="@drawable/ic_nav_match"
+        android:icon="@drawable/ic_likes"
         android:title="@string/nav_match" />
 
     <item

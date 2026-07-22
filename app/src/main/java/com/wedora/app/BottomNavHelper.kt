@@ -30,7 +30,7 @@ fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, acti
 
         val destination = when (item.itemId) {
             R.id.nav_home -> HomeActivity::class.java
-            R.id.nav_match -> MatchActivity::class.java
+            R.id.nav_match -> LikesActivity::class.java
             R.id.nav_chats -> ChatsActivity::class.java
             R.id.nav_profile -> ProfileActivity::class.java
             else -> null // Maps isn't built yet.
