@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Outgoing screen on a back/pop: leaves fully off the right edge. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <translate
+        android:fromXDelta="0"
+        android:toXDelta="100%"
+        android:duration="@integer/wedora_transition_ms"
+        android:interpolator="@android:interpolator/accelerate_quad" />
+</set>

@@ -43,6 +43,9 @@ fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, acti
 
         startActivity(Intent(this, destination))
         finish()
+        // Tabs are peers, not a stack — a slide would suggest one sits inside
+        // another, and switching back would appear to go the wrong way.
+        applyLateralTransition()
         true
     }
 }

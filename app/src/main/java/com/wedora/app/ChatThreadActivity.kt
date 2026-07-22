@@ -253,6 +253,9 @@ class ChatThreadActivity : AppCompatActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         )
         finish()
+        // Starting the parent is an "open" as far as Android is concerned, so
+        // without this the list slides in from the right like a push.
+        applyBackTransition()
     }
 
     override fun onDestroy() {

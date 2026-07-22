@@ -204,6 +204,7 @@ class ChatsActivity : AppCompatActivity() {
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         )
         finish()
+        applyBackTransition()
     }
 
     private fun toast(message: String) {

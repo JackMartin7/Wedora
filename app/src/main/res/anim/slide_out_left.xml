@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Outgoing screen on a forward push. It only moves a third of the way, so
+    the screen being left behind reads as sitting underneath rather than being
+    shoved off — the standard parallax for a push.
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <translate
+        android:fromXDelta="0"
+        android:toXDelta="-33%"
+        android:duration="@integer/wedora_transition_ms"
+        android:interpolator="@android:interpolator/decelerate_quad" />
+</set>

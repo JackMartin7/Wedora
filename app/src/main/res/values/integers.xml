@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        One duration for every activity transition, so forward, back and tab
+        switches all take the same time. Short on purpose: long enough to read
+        as motion, short enough not to sit between the user and the screen.
+    -->
+    <integer name="wedora_transition_ms">220</integer>
+</resources>

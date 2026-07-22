@@ -21,6 +21,28 @@
         <!-- Default typeface for the whole app -->
         <item name="android:fontFamily">@font/poppins</item>
         <item name="fontFamily">@font/poppins</item>
+
+        <!-- Every activity transition, set once here rather than at each
+             startActivity call site — see WedoraWindowAnimation. -->
+        <item name="android:windowAnimationStyle">@style/WedoraWindowAnimation</item>
+    </style>
+
+    <!--
+        Push/pop transitions for every activity in the app.
+        openEnter/openExit play when a screen is started, closeEnter/closeExit
+        when one finishes, so forward and back read as opposites without any
+        per-screen code.
+
+        Screens that navigate "back" by starting their parent and finishing
+        themselves are the exception: Android sees those as an open and would
+        play the forward animation. They call applyBackTransition() to override
+        it — see Transitions.kt.
+    -->
+    <style name="WedoraWindowAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
     </style>
 
     <!-- Splash keeps the brand gradient behind it, so it always uses light icons -->

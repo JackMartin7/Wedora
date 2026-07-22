@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Incoming screen on a back/pop: the parent slides back in from the left. -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false">
+    <translate
+        android:fromXDelta="-33%"
+        android:toXDelta="0"
+        android:duration="@integer/wedora_transition_ms"
+        android:interpolator="@android:interpolator/decelerate_quad" />
+</set>

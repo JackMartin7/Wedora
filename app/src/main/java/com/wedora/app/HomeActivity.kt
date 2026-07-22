@@ -117,6 +117,10 @@ class HomeActivity : AppCompatActivity() {
             }
             startActivity(Intent(this, ProfileActivity::class.java))
             finish()
+            // Profile is a bottom-nav peer, so this matches how the tab bar
+            // moves between the two rather than sliding as though it were a
+            // level deeper.
+            applyLateralTransition()
         }
     }
 
