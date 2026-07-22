@@ -41,7 +41,13 @@ data class UserProfile(
     val interestedIn: String?,
     val age: Int?,
     val city: String?,
-    val country: String?
+    val country: String?,
+    /**
+     * Free text the user writes about themselves, capped at 150 characters by
+     * the editor. Null for anyone who hasn't written one — it is optional, so
+     * it deliberately plays no part in [isComplete].
+     */
+    val bio: String?
 ) {
 
     /** True once the Complete Profile step has been satisfied. */
@@ -63,6 +69,10 @@ data class UserProfile(
         const val FIELD_AGE = "age"
         const val FIELD_CITY = "city"
         const val FIELD_COUNTRY = "country"
+        const val FIELD_BIO = "bio"
+
+        /** Character cap on [bio], enforced by the editor's input filter too. */
+        const val MAX_BIO_LENGTH = 150
 
         /**
          * Reads a profile out of a snapshot. Safe on a snapshot for a document
@@ -77,7 +87,8 @@ data class UserProfile(
             // Firestore stores whole numbers as Long; narrow to Int for the UI.
             age = snapshot.getLong(FIELD_AGE)?.toInt(),
             city = snapshot.getString(FIELD_CITY),
-            country = snapshot.getString(FIELD_COUNTRY)
+            country = snapshot.getString(FIELD_COUNTRY),
+            bio = snapshot.getString(FIELD_BIO)
         )
     }
 }

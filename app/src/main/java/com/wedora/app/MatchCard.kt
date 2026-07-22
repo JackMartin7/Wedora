@@ -12,9 +12,10 @@ import androidx.annotation.DrawableRes
  * hasn't been through that step yet (or predates it) has none, and the card
  * simply omits the line rather than inventing one.
  *
- * `role`, `bio` and `distanceKm` have no backing Firestore field at all yet —
- * real cards leave `role` blank and `distanceKm` null (both hidden when the
- * card is bound). Nothing here invents data the backend doesn't have.
+ * [bio] is real data, written by the Edit Profile screen. `role` and
+ * `distanceKm` still have no backing Firestore field — real cards leave `role`
+ * blank and `distanceKm` null (both hidden when the card is bound). Nothing
+ * here invents data the backend doesn't have.
  */
 data class MatchCard(
     val id: String,
@@ -32,4 +33,24 @@ data class MatchCard(
     /** "24 • Islamabad, Pakistan", or null if this user hasn't completed their profile. */
     fun ageLocationLine(context: Context): String? =
         formatAgeLocation(context, R.string.match_card_age_location_format, age, city, country)
+
+    /**
+     * The bio shortened for the card, or null when there isn't one so the
+     * caller can hide the view. Cut on a word boundary where there is one
+     * within reach, so the preview doesn't end mid-word.
+     */
+    fun bioPreview(): String? {
+        val trimmed = bio.trim()
+        if (trimmed.isEmpty()) return null
+        if (trimmed.length <= BIO_PREVIEW_LENGTH) return trimmed
+
+        val cut = trimmed.take(BIO_PREVIEW_LENGTH)
+        val lastSpace = cut.lastIndexOf(' ')
+        val body = if (lastSpace >= BIO_PREVIEW_LENGTH / 2) cut.take(lastSpace) else cut
+        return body.trimEnd() + "…"
+    }
+
+    private companion object {
+        const val BIO_PREVIEW_LENGTH = 60
+    }
 }

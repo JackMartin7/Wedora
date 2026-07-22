@@ -1,0 +1,382 @@
+package com.wedora.app
+
+import android.net.Uri
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
+import android.view.View
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.wedora.app.databinding.ActivityEditProfileBinding
+import java.io.File
+import java.io.IOException
+
+/**
+ * Full profile editing, reached from ProfileActivity.
+ *
+ * The screen loads the user's Firestore document once and keeps it as
+ * [loaded]. Every field is compared against that snapshot, which gives two
+ * things: Save is disabled until something genuinely differs, and the write
+ * carries only the changed fields rather than the whole document.
+ *
+ * The photo is the exception. It's device-local (see [LocalProfilePrefs]) and
+ * never goes to Firestore, so it saves at the moment it's picked rather than
+ * on Save — there's nothing to batch it with, and picking is already an
+ * explicit confirmation.
+ */
+class EditProfileActivity : AppCompatActivity() {
+
+    private companion object {
+        const val TAG = "WedoraProfile"
+
+        /** Same age policy as CompleteProfileActivity. */
+        const val MIN_AGE = 18
+        const val MAX_AGE = 120
+    }
+
+    private lateinit var binding: ActivityEditProfileBinding
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    private lateinit var genderControl: SegmentedControl
+    private lateinit var interestedInControl: SegmentedControl
+
+    private lateinit var uid: String
+
+    /**
+     * The profile as it was loaded. Null until the read completes, which is
+     * also what keeps Save disabled during load — there is nothing to diff
+     * against yet, so a change can't be detected.
+     */
+    private var loaded: UserProfile? = null
+
+    private var isSaving = false
+
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            if (uri != null) savePickedPhoto(uri)
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityEditProfileBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        val currentUid = auth.currentUser?.uid
+        if (currentUid == null) {
+            Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
+            finish()
+            return
+        }
+        uid = currentUid
+
+        setUpSelectors()
+
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnSave.setOnClickListener { save() }
+        binding.ivEditPhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
+        binding.tvChangePhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
+
+        val watcher = SimpleWatcher { updateSaveEnabled() }
+        binding.etName.addTextChangedListener(watcher)
+        binding.etAge.addTextChangedListener(watcher)
+        binding.etCity.addTextChangedListener(watcher)
+        binding.etCountry.addTextChangedListener(watcher)
+        binding.etBio.addTextChangedListener(SimpleWatcher {
+            updateBioCounter()
+            updateSaveEnabled()
+        })
+
+        binding.ivEditPhoto.loadLocalProfilePhoto(this, uid)
+        updateBioCounter()
+        updateSaveEnabled()
+        loadProfile()
+    }
+
+    /**
+     * The segmented controls notify through the same hook as the text fields,
+     * so tapping one enables Save exactly as typing does.
+     */
+    private fun setUpSelectors() {
+        genderControl = SegmentedControl(
+            listOf(
+                binding.tvGenderMale to Gender.MALE,
+                binding.tvGenderFemale to Gender.FEMALE,
+                binding.tvGenderOther to Gender.OTHER
+            ),
+            onSelected = { updateSaveEnabled() }
+        )
+        interestedInControl = SegmentedControl(
+            listOf(
+                binding.tvInterestedMale to Gender.MALE,
+                binding.tvInterestedFemale to Gender.FEMALE,
+                binding.tvInterestedOther to Gender.OTHER
+            ),
+            onSelected = { updateSaveEnabled() }
+        )
+    }
+
+    // ----- Load -----------------------------------------------------------
+
+    private fun loadProfile() {
+        setFormVisible(false)
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
+            .addOnSuccessListener { snapshot ->
+                val profile = UserProfile.from(snapshot)
+                loaded = profile
+                populate(profile)
+                setFormVisible(true)
+                updateSaveEnabled()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to load profile for editing", e)
+                Toast.makeText(this, R.string.edit_profile_load_failed, Toast.LENGTH_LONG).show()
+                finish()
+            }
+    }
+
+    /**
+     * Name falls back to the Auth display name: accounts created before the
+     * Firestore user document existed have no displayName field there, and
+     * showing an empty box would invite the user to blank their own name.
+     */
+    private fun populate(profile: UserProfile) {
+        binding.etName.setText(
+            profile.displayName?.takeIf { it.isNotBlank() }
+                ?: auth.currentUser?.displayName.orEmpty()
+        )
+        binding.etAge.setText(profile.age?.toString().orEmpty())
+        binding.etBio.setText(profile.bio.orEmpty())
+        binding.etCity.setText(profile.city.orEmpty())
+        binding.etCountry.setText(profile.country.orEmpty())
+
+        genderFrom(profile.gender)?.let { genderControl.select(it) }
+        genderFrom(profile.interestedIn)?.let { interestedInControl.select(it) }
+
+        updateBioCounter()
+    }
+
+    /** Maps a stored Firestore value back to its [Gender], or null if unset. */
+    private fun genderFrom(value: String?): Gender? =
+        Gender.values().firstOrNull { it.firestoreValue == value }
+
+    private fun setFormVisible(visible: Boolean) {
+        binding.progressLoading.visibility = if (visible) View.GONE else View.VISIBLE
+    }
+
+    // ----- Change detection -----------------------------------------------
+
+    private fun enteredName() = binding.etName.text.toString().trim()
+    private fun enteredCity() = binding.etCity.text.toString().trim()
+    private fun enteredCountry() = binding.etCountry.text.toString().trim()
+    private fun enteredBio() = binding.etBio.text.toString().trim()
+
+    /**
+     * Syntactically plausible age. As in CompleteProfileActivity this does NOT
+     * apply the 18+ policy — that is checked on Save so an under-age entry
+     * gets an explicit message rather than a silently dead button.
+     */
+    private fun enteredAge(): Int? =
+        binding.etAge.text.toString().trim().toIntOrNull()?.takeIf { it in 1..MAX_AGE }
+
+    /**
+     * Every field that differs from what was loaded, keyed by Firestore field
+     * name. This is both the "is Save enabled" test and the actual write
+     * payload, so the two can never disagree.
+     *
+     * Blank input maps to null rather than "", so clearing an optional field
+     * (bio) is a real change and stores a null instead of an empty string.
+     */
+    private fun changedFields(): Map<String, Any?> {
+        val original = loaded ?: return emptyMap()
+        val changes = mutableMapOf<String, Any?>()
+
+        val name = enteredName()
+        if (name != original.displayName.orEmpty().trim()) {
+            changes[UserProfile.FIELD_DISPLAY_NAME] = name
+        }
+
+        val age = enteredAge()
+        if (age != original.age) {
+            changes[UserProfile.FIELD_AGE] = age
+        }
+
+        val bio = enteredBio()
+        if (bio != original.bio.orEmpty().trim()) {
+            changes[UserProfile.FIELD_BIO] = bio.ifEmpty { null }
+        }
+
+        val city = enteredCity()
+        if (city != original.city.orEmpty().trim()) {
+            changes[UserProfile.FIELD_CITY] = city
+        }
+
+        val country = enteredCountry()
+        if (country != original.country.orEmpty().trim()) {
+            changes[UserProfile.FIELD_COUNTRY] = country
+        }
+
+        val gender = genderControl.selected?.firestoreValue
+        if (gender != null && gender != original.gender) {
+            changes[UserProfile.FIELD_GENDER] = gender
+        }
+
+        val interestedIn = interestedInControl.selected?.firestoreValue
+        if (interestedIn != null && interestedIn != original.interestedIn) {
+            changes[UserProfile.FIELD_INTERESTED_IN] = interestedIn
+        }
+
+        return changes
+    }
+
+    private fun updateSaveEnabled() {
+        val enabled = !isSaving && loaded != null && changedFields().isNotEmpty()
+        binding.btnSave.isEnabled = enabled
+        // A TextView doesn't dim itself when disabled the way a button does.
+        binding.btnSave.alpha = if (enabled) 1f else 0.4f
+    }
+
+    private fun updateBioCounter() {
+        binding.tvBioCounter.text = getString(
+            R.string.bio_counter_format,
+            binding.etBio.text.length,
+            UserProfile.MAX_BIO_LENGTH
+        )
+    }
+
+    // ----- Photo ----------------------------------------------------------
+
+    /**
+     * Copies the picked image into internal storage straight away rather than
+     * holding the picker's Uri, whose grant isn't guaranteed to outlive this
+     * screen — same reasoning as SignUpActivity.
+     *
+     * Written directly to the UID-keyed filename, with no staging step: unlike
+     * sign-up there's already an account to key it to.
+     */
+    private fun savePickedPhoto(uri: Uri) {
+        try {
+            val destination = File(filesDir, "profile_photos/$uid.jpg")
+            destination.parentFile?.mkdirs()
+            contentResolver.openInputStream(uri)?.use { input ->
+                destination.outputStream().use { output -> input.copyTo(output) }
+            } ?: throw IOException("openInputStream returned null")
+
+            LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
+            // skipMemoryCache/diskCacheStrategy NONE: the path is unchanged
+            // between picks, so Glide would otherwise redisplay the old image.
+            Glide.with(this)
+                .load(destination)
+                .skipMemoryCache(true)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .centerCrop()
+                .into(binding.ivEditPhoto)
+        } catch (e: IOException) {
+            Log.w(TAG, "Failed to copy picked profile photo", e)
+            Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ----- Save -----------------------------------------------------------
+
+    private fun save() {
+        val changes = changedFields()
+        if (changes.isEmpty()) return
+
+        if (enteredName().isEmpty()) {
+            binding.etName.error = getString(R.string.error_name_required)
+            binding.etName.requestFocus()
+            return
+        }
+
+        // Age is validated whenever one is present, not only when it changed:
+        // the rules require the stored document to carry an 18+ age on every
+        // update, so a bad age blocks an otherwise unrelated edit anyway.
+        val ageText = binding.etAge.text.toString().trim()
+        if (ageText.isEmpty()) {
+            binding.etAge.error = getString(R.string.error_age_required)
+            binding.etAge.requestFocus()
+            return
+        }
+        val age = enteredAge()
+        if (age == null) {
+            binding.etAge.error = getString(R.string.error_age_invalid)
+            binding.etAge.requestFocus()
+            return
+        }
+        if (age < MIN_AGE) {
+            binding.etAge.error = getString(R.string.error_age_minimum, MIN_AGE)
+            binding.etAge.requestFocus()
+            return
+        }
+
+        setSaving(true)
+        // merge, not update(): an account predating the Firestore user document
+        // has none, and update() fails on a missing document.
+        firestore.collection(UserProfile.COLLECTION).document(uid)
+            .set(changes, SetOptions.merge())
+            .addOnSuccessListener { onSaved(changes) }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to save profile edits", e)
+                setSaving(false)
+                Toast.makeText(this, R.string.error_profile_update_failed, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Firestore is the source of truth and has already been written, so a
+     * failure to mirror the name onto the Auth profile is logged but not
+     * surfaced — the save genuinely succeeded. The Auth displayName is kept in
+     * sync only because Home and Profile read the greeting from it.
+     */
+    private fun onSaved(changes: Map<String, Any?>) {
+        val newName = changes[UserProfile.FIELD_DISPLAY_NAME] as? String
+        if (newName.isNullOrBlank()) {
+            finishSaved()
+            return
+        }
+
+        val user = auth.currentUser
+        if (user == null) {
+            finishSaved()
+            return
+        }
+
+        user.updateProfile(
+            UserProfileChangeRequest.Builder().setDisplayName(newName).build()
+        ).addOnCompleteListener {
+            if (!it.isSuccessful) {
+                Log.w(TAG, "Saved profile but failed to update Auth displayName", it.exception)
+            }
+            finishSaved()
+        }
+    }
+
+    private fun finishSaved() {
+        Toast.makeText(this, R.string.profile_updated, Toast.LENGTH_SHORT).show()
+        // ProfileActivity re-reads Firestore in onResume, so returning to it is
+        // all that's needed for the change to show.
+        finish()
+    }
+
+    private fun setSaving(saving: Boolean) {
+        isSaving = saving
+        binding.btnSave.setText(if (saving) R.string.btn_saving else R.string.btn_save)
+        updateSaveEnabled()
+    }
+
+    /** Minimal TextWatcher so the fields can share one re-validate hook. */
+    private class SimpleWatcher(private val onChanged: () -> Unit) : TextWatcher {
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) = Unit
+        override fun afterTextChanged(s: Editable?) = onChanged()
+    }
+}

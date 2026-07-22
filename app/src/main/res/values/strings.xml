@@ -179,7 +179,6 @@
     <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>
     <string name="home_empty_error">Couldn\'t load matches right now. Check your connection and try again.</string>
     <string name="home_empty_all_swiped">You\'ve seen everyone nearby — check back later.</string>
-    <string name="match_card_no_bio">No bio yet</string>
     <string name="error_unlike_failed">Couldn\'t undo that like. Please try again.</string>
 
     <!-- Swipe overlay stamps -->
@@ -261,4 +260,16 @@
     <string name="or_signup_with">Or sign up with</string>
     <string name="has_account_prompt">Already have an account? </string>
     <string name="login_link">Login</string>
+
+    <!-- Edit Profile -->
+    <string name="edit_profile_title">Edit Profile</string>
+    <string name="btn_save">Save</string>
+    <string name="label_full_name">Full Name</string>
+    <string name="hint_full_name">Your name</string>
+    <string name="label_bio">Bio</string>
+    <string name="hint_bio">Tell people a little about yourself</string>
+    <string name="bio_counter_format">%1$d / %2$d</string>
+    <string name="error_name_required">Please enter your name</string>
+    <string name="profile_updated">Profile updated</string>
+    <string name="edit_profile_load_failed">Couldn\'t load your profile. Please try again.</string>
 </resources>

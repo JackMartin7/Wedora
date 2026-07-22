@@ -10,7 +10,13 @@ import androidx.core.content.ContextCompat
  * rows — two independent instances, same 3 [Gender] options.
  */
 class SegmentedControl(
-    private val options: List<Pair<TextView, Gender>>
+    private val options: List<Pair<TextView, Gender>>,
+    /**
+     * Fired only on user taps, not on a programmatic [select]. Edit Profile
+     * pre-selects the stored value while populating the form, and treating
+     * that as a change would enable Save before the user had touched anything.
+     */
+    private val onSelected: () -> Unit = {}
 ) {
 
     var selected: Gender? = null
@@ -18,7 +24,10 @@ class SegmentedControl(
 
     init {
         options.forEach { (view, gender) ->
-            view.setOnClickListener { select(gender) }
+            view.setOnClickListener {
+                select(gender)
+                onSelected()
+            }
         }
     }
 

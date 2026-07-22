@@ -228,6 +228,14 @@ class ProfileDetailActivity : AppCompatActivity() {
             binding.tvDetailAgeLocation.visibility = View.VISIBLE
         }
 
+        val bio = profile.bio?.trim()
+        if (bio.isNullOrEmpty()) {
+            binding.tvDetailBio.visibility = View.GONE
+        } else {
+            binding.tvDetailBio.text = bio
+            binding.tvDetailBio.visibility = View.VISIBLE
+        }
+
         binding.progressLoading.visibility = View.GONE
         binding.scrollContent.visibility = View.VISIBLE
         binding.actionRow.visibility = View.VISIBLE

@@ -5,6 +5,7 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -198,5 +199,21 @@
         android:lineSpacingExtra="4sp"
         android:textColor="@color/wedora_text_secondary"
         android:textSize="13sp" />
+
+    <!-- Truncated bio, below the age/location line. Hidden when this user
+         hasn't written one. -->
+    <TextView
+        android:id="@+id/tvCardBioPreview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:lineSpacingExtra="4sp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="Coffee, long walks and terrible puns." />
 
 </LinearLayout>

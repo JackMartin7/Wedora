@@ -92,6 +92,19 @@
                 tools:visibility="visible"
                 tools:text="24 • Islamabad, Pakistan" />
 
+            <!-- The user's bio; hidden entirely when they haven't written one. -->
+            <TextView
+                android:id="@+id/tvDetailBio"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:lineSpacingExtra="4sp"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="Coffee, long walks and terrible puns." />
+
             <!-- Label depends on whether a match already exists, so it stays
                  hidden until that lookup resolves rather than flipping text
                  in front of the user. -->

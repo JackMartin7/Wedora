@@ -26,13 +26,25 @@ class ProfileActivity : AppCompatActivity() {
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        showSignedInUser()
         setUpDarkModeSwitch()
         setUpSettingsRows()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_profile)
 
         binding.btnHistory.setOnClickListener { toast(getString(R.string.cd_history)) }
-        binding.btnEditProfile.setOnClickListener { toast(getString(R.string.profile_edit_button)) }
+        binding.btnEditProfile.setOnClickListener {
+            startActivity(Intent(this, EditProfileActivity::class.java))
+        }
+    }
+
+    /**
+     * Re-read on every resume rather than once in onCreate, so returning from
+     * EditProfileActivity shows the new values immediately. This screen is a
+     * bottom-nav destination the user lands on repeatedly, so the extra read
+     * is bounded by navigation, not by anything in a loop.
+     */
+    override fun onResume() {
+        super.onResume()
+        showSignedInUser()
     }
 
     /**

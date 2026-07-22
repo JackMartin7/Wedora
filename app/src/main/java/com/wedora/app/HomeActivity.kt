@@ -234,7 +234,7 @@ class HomeActivity : AppCompatActivity() {
             avatarRes = R.drawable.ic_avatar_placeholder,
             photoRes = R.drawable.ic_avatar_placeholder,
             distanceKm = null,
-            bio = "",
+            bio = profile.bio.orEmpty(),
             age = profile.age,
             city = profile.city,
             country = profile.country
@@ -268,8 +268,24 @@ class HomeActivity : AppCompatActivity() {
             b.tvCardRole.text = card.role
         }
 
-        b.tvCardBio.text = card.ageLocationLine(this)
-            ?: card.bio.ifBlank { getString(R.string.match_card_no_bio) }
+        // Age/location on one line, the bio preview on its own beneath it —
+        // each hidden independently, since a user may have either, both or
+        // neither.
+        val ageLocation = card.ageLocationLine(this)
+        if (ageLocation == null) {
+            b.tvCardBio.visibility = View.GONE
+        } else {
+            b.tvCardBio.visibility = View.VISIBLE
+            b.tvCardBio.text = ageLocation
+        }
+
+        val bioPreview = card.bioPreview()
+        if (bioPreview == null) {
+            b.tvCardBioPreview.visibility = View.GONE
+        } else {
+            b.tvCardBioPreview.visibility = View.VISIBLE
+            b.tvCardBioPreview.text = bioPreview
+        }
 
         if (card.distanceKm == null) {
             b.tvDistance.visibility = View.GONE
