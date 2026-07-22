@@ -133,6 +133,10 @@
             app:tint="@color/wedora_text_secondary"
             android:contentDescription="@string/cd_pass" />
 
+        <!-- The heart colour lives in ic_like_filled / ic_like_outline (no
+             app:tint), so the toggle only swaps src. Hidden until the like
+             check resolves; likeLoading occupies its slot until then, so the
+             heart never briefly shows the wrong state. -->
         <ImageButton
             android:id="@+id/btnLike"
             android:layout_width="64dp"
@@ -140,9 +144,18 @@
             android:layout_marginStart="28dp"
             android:padding="16dp"
             android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_action_like"
-            app:tint="@color/wedora_accent"
+            android:src="@drawable/ic_like_outline"
+            android:visibility="gone"
+            tools:visibility="visible"
             android:contentDescription="@string/cd_like" />
+
+        <ProgressBar
+            android:id="@+id/likeLoading"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="28dp"
+            android:padding="18dp"
+            android:indeterminateTint="@color/wedora_accent" />
 
     </LinearLayout>
 

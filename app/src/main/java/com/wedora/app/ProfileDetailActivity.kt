@@ -38,8 +38,13 @@ class ProfileDetailActivity : AppCompatActivity() {
     /** Held so the chat thread can be opened with the right header name. */
     private var userName: String = ""
 
-    /** Null until the match lookup resolves; drives the Message button's label. */
-    private var isMatched: Boolean? = null
+    /**
+     * Whether the current user has liked this person (a match doc exists with
+     * likedBy == me). Null until the check resolves — the heart shows a spinner
+     * rather than guessing red or grey. Single source of truth for both the
+     * heart icon and the Message button label.
+     */
+    private var hasLiked: Boolean? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,11 +66,11 @@ class ProfileDetailActivity : AppCompatActivity() {
         // user reappears in the feed on the next load.
         binding.btnPass.setOnClickListener { finish() }
 
-        binding.btnLike.setOnClickListener { likeUser() }
+        binding.btnLike.setOnClickListener { onHeartTapped() }
         binding.btnMessage.setOnClickListener { messageUser() }
 
         loadProfile()
-        checkMatchState()
+        checkLikeState()
     }
 
     private fun loadProfile() {
@@ -91,29 +96,87 @@ class ProfileDetailActivity : AppCompatActivity() {
     }
 
     /**
-     * Decides whether the button reads "Message" or "Like & Message". On
-     * failure it defaults to "Like & Message": the match write is idempotent,
-     * so offering it when a match already exists is harmless, whereas showing
-     * "Message" without one would open an empty thread for a non-match.
+     * Reads whether the current user has already liked this person: a match doc
+     * exists AND its likedBy is me. A doc where they liked me (likedBy != me)
+     * counts as not-yet-liked, so the heart is grey and the user can like back.
+     *
+     * On failure it defaults to grey / "Like & Message": the create is
+     * idempotent, so offering to like when a match already exists is harmless,
+     * whereas showing red would let an unlike fire against a doc that may not be
+     * deletable by this user.
      */
-    private fun checkMatchState() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    private fun checkLikeState() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (selfUid == null) {
+            applyLikeState(false)
+            return
+        }
         matchExistsQuery(firestore, selfUid, userId)
-            .addOnSuccessListener { snapshot -> applyMatchState(!snapshot.isEmpty) }
+            .addOnSuccessListener { snapshot ->
+                val liked = snapshot.documents.firstOrNull()
+                    ?.let { Match.from(it)?.isLikeBy(selfUid) } == true
+                applyLikeState(liked)
+            }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to check match state for $userId", e)
-                applyMatchState(false)
+                Log.w(TAG, "Failed to check like state for $userId", e)
+                applyLikeState(false)
             }
     }
 
-    private fun applyMatchState(matched: Boolean) {
-        isMatched = matched
+    /** Reflects [liked] into the heart icon and the Message button label. */
+    private fun applyLikeState(liked: Boolean) {
+        hasLiked = liked
+
+        binding.likeLoading.visibility = View.GONE
+        binding.btnLike.visibility = View.VISIBLE
+        binding.btnLike.setImageResource(
+            if (liked) R.drawable.ic_like_filled else R.drawable.ic_like_outline
+        )
+
         binding.btnMessage.setText(
-            if (matched) R.string.btn_message else R.string.btn_like_and_message
+            if (liked) R.string.btn_message else R.string.btn_like_and_message
         )
         binding.btnMessage.visibility = View.VISIBLE
     }
 
+    private fun onHeartTapped() {
+        when (hasLiked) {
+            true -> unlikeUser()
+            false -> likeUser()
+            null -> Unit // still resolving; the heart is a spinner, not tappable
+        }
+    }
+
+    /** Grey heart -> create the match, go red. No toast: the heart is feedback. */
+    private fun likeUser() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        applyLikeState(true) // optimistic
+        createMatchDocument(firestore, selfUid, userId)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to like $userId", e)
+                applyLikeState(false)
+                toast(getString(R.string.error_match_failed))
+            }
+    }
+
+    /** Red heart -> delete the match, go grey. */
+    private fun unlikeUser() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        applyLikeState(false) // optimistic
+        deleteMatchDocument(firestore, selfUid, userId)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to unlike $userId", e)
+                applyLikeState(true)
+                toast(getString(R.string.error_unlike_failed))
+            }
+    }
+
+    /**
+     * "Message" once liked -> straight to the thread. "Like & Message" -> like
+     * first, then open. Both reuse the same match write as the heart.
+     */
     private fun messageUser() {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
@@ -121,17 +184,14 @@ class ProfileDetailActivity : AppCompatActivity() {
             return
         }
 
-        if (isMatched == true) {
+        if (hasLiked == true) {
             openChatThread()
             return
         }
 
         binding.btnMessage.isEnabled = false
         createMatchDocument(firestore, selfUid, userId)
-            .addOnSuccessListener {
-                toast(getString(R.string.match_created))
-                openChatThread()
-            }
+            .addOnSuccessListener { openChatThread() }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to create match before chat with $userId", e)
                 binding.btnMessage.isEnabled = true
@@ -171,27 +231,6 @@ class ProfileDetailActivity : AppCompatActivity() {
         binding.progressLoading.visibility = View.VISIBLE
         binding.scrollContent.visibility = View.GONE
         binding.actionRow.visibility = View.GONE
-    }
-
-    /** Same instant-match write as the Home feed's like action. */
-    private fun likeUser() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
-        if (selfUid == null) {
-            toast(getString(R.string.error_match_failed))
-            return
-        }
-
-        binding.btnLike.isEnabled = false
-        createMatchDocument(firestore, selfUid, userId)
-            .addOnSuccessListener {
-                toast(getString(R.string.match_created))
-                finish()
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to create match with $userId", e)
-                binding.btnLike.isEnabled = true
-                toast(getString(R.string.error_match_failed))
-            }
     }
 
     private fun toast(message: String) {
