@@ -201,7 +201,7 @@ class ProfileActivity : AppCompatActivity() {
                 startActivity(Intent(this, PrivacySafetyActivity::class.java))
             },
             SettingsRow(R.drawable.ic_payment, R.string.settings_payment) {
-                toast(getString(R.string.settings_payment))
+                startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
             },
             SettingsRow(R.drawable.ic_help, R.string.settings_help) {
                 startActivity(Intent(this, HelpCenterActivity::class.java))

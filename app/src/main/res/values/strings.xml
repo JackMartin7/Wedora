@@ -364,4 +364,32 @@
     <string name="faq_a_no_matches">Make sure your gender and \'Interested In\' preferences are set correctly in your profile. Also check your internet connection — the feed needs a live connection to load profiles.</string>
     <string name="faq_q_location">How do I change my location?</string>
     <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
+
+    <!-- Payment &amp; Subscription -->
+    <string name="plan_current_label">Current Plan</string>
+    <string name="plan_free">Free Plan</string>
+    <string name="plan_badge_basic">Basic</string>
+    <string name="plan_upgrade_pitch">Upgrade to Premium for unlimited likes, see who liked you, and more</string>
+    <string name="plan_premium_plans">Premium Plans</string>
+    <string name="plan_monthly_title">1 Month</string>
+    <string name="plan_monthly_price">£9.99/month</string>
+    <string name="plan_yearly_title">12 Months</string>
+    <string name="plan_yearly_price">£59.99/year</string>
+    <string name="plan_best_value">Best Value</string>
+    <string name="plan_features_title">Premium Features</string>
+    <string name="plan_subscribe">Subscribe Now</string>
+    <string name="plan_subscribe_caption">Cancel anytime • Secure payment via Google Play</string>
+    <string name="plan_restore_purchase">Already subscribed? Restore Purchase</string>
+    <string name="plan_coming_soon_title">Coming Soon</string>
+    <string name="plan_coming_soon_message">Premium subscriptions will be available soon. Stay tuned!</string>
+    <string name="action_ok">OK</string>
+
+    <string-array name="premium_features">
+        <item>Unlimited likes</item>
+        <item>See who liked you</item>
+        <item>Priority in discovery feed</item>
+        <item>Read receipts in chat</item>
+        <item>Advanced filters</item>
+        <item>No ads</item>
+    </string-array>
 </resources>

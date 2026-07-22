@@ -76,6 +76,10 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".PaymentSubscriptionActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

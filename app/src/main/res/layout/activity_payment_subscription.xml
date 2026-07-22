@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Payment & Subscription. Nothing here transacts: the plan cards and the
+    Subscribe button are presentation only until billing is wired up, and both
+    actions land on a "Coming Soon" dialog. See PaymentSubscriptionActivity.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg">
+
+    <!-- ===== Top bar ===== -->
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
+        android:contentDescription="@null"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/settings_payment"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/btnBack"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="28dp"
+            android:clipToPadding="false">
+
+            <!-- ===== Current plan ===== -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:elevation="4dp"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/plan_current_label"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/plan_free"
+                        android:textColor="@color/wedora_text"
+                        android:textSize="18sp"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_badge_basic"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:text="@string/plan_badge_basic"
+                        android:textColor="@color/wedora_text_secondary"
+                        android:textSize="11sp"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/plan_upgrade_pitch"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="13sp"
+                    android:lineSpacingExtra="3sp" />
+
+            </LinearLayout>
+
+            <!-- ===== Plan choices ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/plan_premium_plans"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
+
+                <!-- Monthly -->
+                <LinearLayout
+                    android:id="@+id/cardMonthly"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center_horizontal"
+                    android:background="@drawable/bg_plan_unselected"
+                    android:paddingVertical="20dp"
+                    android:paddingHorizontal="12dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <TextView
+                        android:id="@+id/tvMonthlyTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/plan_monthly_title"
+                        android:textColor="@color/wedora_text"
+                        android:textSize="15sp"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                    <TextView
+                        android:id="@+id/tvMonthlyPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center"
+                        android:text="@string/plan_monthly_price"
+                        android:textColor="@color/wedora_text_secondary"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <!-- Yearly. The badge overlaps the card's top-right corner, so
+                     the card and badge sit in a FrameLayout with clipping off. -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
+
+                    <LinearLayout
+                        android:id="@+id/cardYearly"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:background="@drawable/bg_plan_selected"
+                        android:paddingVertical="20dp"
+                        android:paddingHorizontal="12dp"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:id="@+id/tvYearlyTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/plan_yearly_title"
+                            android:textColor="@color/white"
+                            android:textSize="15sp"
+                            android:fontFamily="@font/poppins_semibold" />
+
+                        <TextView
+                            android:id="@+id/tvYearlyPrice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center"
+                            android:text="@string/plan_yearly_price"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvBestValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-8dp"
+                        android:layout_marginEnd="-4dp"
+                        android:background="@drawable/bg_badge_on_accent"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:text="@string/plan_best_value"
+                        android:textColor="@color/wedora_accent"
+                        android:textSize="10sp"
+                        android:fontFamily="@font/poppins_semibold" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- ===== Features ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/plan_features_title"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <!-- Rows inflated here by PaymentSubscriptionActivity -->
+            <LinearLayout
+                android:id="@+id/featureContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <!-- ===== Subscribe ===== -->
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSubscribe"
+                style="@style/WedoraPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="24dp"
+                android:text="@string/plan_subscribe" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="@string/plan_subscribe_caption"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvRestorePurchase"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingVertical="10dp"
+                android:text="@string/plan_restore_purchase"
+                android:textColor="@color/wedora_accent"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
