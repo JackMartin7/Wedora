@@ -69,9 +69,6 @@ class SignUpActivity : AppCompatActivity() {
         binding.rowAddPhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
 
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
-
-        binding.btnGoogle.setOnClickListener { /* TODO: Google sign-up */ }
-        binding.btnFacebook.setOnClickListener { /* TODO: Facebook sign-up */ }
     }
 
     /**

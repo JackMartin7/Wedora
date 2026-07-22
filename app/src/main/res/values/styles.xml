@@ -145,13 +145,4 @@
         <item name="rippleColor">@color/wedora_input_border</item>
     </style>
 
-    <!-- Social login icon button (Google/Facebook/Apple) -->
-    <style name="WedoraSocialButton">
-        <item name="android:background">@drawable/bg_social_button</item>
-        <item name="android:layout_width">64dp</item>
-        <item name="android:layout_height">52dp</item>
-        <item name="android:scaleType">centerInside</item>
-        <item name="android:padding">14dp</item>
-    </style>
-
 </resources>

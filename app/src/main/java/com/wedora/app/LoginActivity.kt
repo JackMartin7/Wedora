@@ -49,9 +49,6 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.setOnClickListener { attemptLogin() }
 
         binding.tvContinueAsGuest.setOnClickListener { continueAsGuest() }
-
-        binding.btnGoogle.setOnClickListener { /* TODO: Google sign-in */ }
-        binding.btnFacebook.setOnClickListener { /* TODO: Facebook sign-in */ }
     }
 
     /** Enter the app without an account. Guests get a read-only feed. */

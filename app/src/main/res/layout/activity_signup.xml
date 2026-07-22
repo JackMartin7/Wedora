@@ -345,67 +345,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/rowAddPhoto" />
 
-        <!-- Divider -->
-        <View
-            android:id="@+id/dividerLeft"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="24dp"
-            android:background="@color/wedora_border"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/tvOrSignUp"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp"
-            app:layout_constraintBottom_toBottomOf="@id/tvOrSignUp" />
-
-        <TextView
-            android:id="@+id/tvOrSignUp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:text="@string/or_signup_with"
-            android:textColor="@color/wedora_border"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@id/dividerLeft"
-            app:layout_constraintEnd_toStartOf="@id/dividerRight"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
-
-        <View
-            android:id="@+id/dividerRight"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:background="@color/wedora_border"
-            app:layout_constraintStart_toEndOf="@id/tvOrSignUp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvOrSignUp"
-            app:layout_constraintBottom_toBottomOf="@id/tvOrSignUp" />
-
-        <!-- Social row -->
-        <LinearLayout
-            android:id="@+id/socialRow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvOrSignUp">
-
-            <ImageButton
-                android:id="@+id/btnGoogle"
-                style="@style/WedoraSocialButton"
-                android:src="@drawable/ic_google"
-                android:contentDescription="@null" />
-
-            <ImageButton
-                android:id="@+id/btnFacebook"
-                style="@style/WedoraSocialButton"
-                android:layout_marginStart="16dp"
-                android:src="@drawable/ic_facebook"
-                android:contentDescription="@null" />
-        </LinearLayout>
-
         <!-- Login prompt -->
         <TextView
             android:id="@+id/tvLoginPrompt"
@@ -415,7 +354,7 @@
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/socialRow" />
+            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
