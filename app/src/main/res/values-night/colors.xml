@@ -26,16 +26,6 @@
     <color name="wedora_input_bg">#241A1D</color>
     <color name="wedora_input_border">#3A2E32</color>
 
-    <!-- Switches. The thumb stays brand accent when on, but the tracks are
-         picked against the dark surface rather than reused from light mode:
-         #FFDADE glares on a dark background, and the light-mode off greys
-         wash out. The off thumb is deliberately lighter than its track so the
-         control is still legible as a switch when it's off. -->
-    <color name="wedora_switch_thumb_on">#FA4659</color>
-    <color name="wedora_switch_track_on">#5C2A33</color>
-    <color name="wedora_switch_thumb_off">#9A8E92</color>
-    <color name="wedora_switch_track_off">#43373B</color>
-
     <!-- Decorative concentric rings behind the onboarding avatar collage -->
     <color name="wedora_ring_mid">#241A1D</color>
     <color name="wedora_ring_inner">#2E2226</color>

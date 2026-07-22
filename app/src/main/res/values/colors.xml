@@ -27,12 +27,6 @@
     <color name="wedora_input_bg">#FDEFF1</color>
     <color name="wedora_input_border">#FBD3DA</color>
 
-    <!-- Switches — see res/color/switch_thumb_tint.xml / switch_track_tint.xml -->
-    <color name="wedora_switch_thumb_on">#FA4659</color>
-    <color name="wedora_switch_track_on">#FFDADE</color>
-    <color name="wedora_switch_thumb_off">#B8ABAE</color>
-    <color name="wedora_switch_track_off">#E8E0E1</color>
-
     <!-- Decorative concentric rings behind the onboarding avatar collage -->
     <color name="wedora_ring_mid">#FDF2F4</color>
     <color name="wedora_ring_inner">#FBE7EA</color>

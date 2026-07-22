@@ -87,6 +87,21 @@
         <item name="android:fontFamily">@font/poppins_medium</item>
     </style>
 
+    <!--
+        Every switch in the app. The tints are ColorStateLists keyed on
+        state_checked (res/color/, with dark-mode variants in res/color-night/),
+        so on and off are visibly different states rather than two shades of
+        the same one.
+
+        Applied via style rather than repeated attributes so a switch added
+        later picks this up by referencing one name, and a palette change
+        happens in one place.
+    -->
+    <style name="WedoraSwitch">
+        <item name="thumbTint">@color/switch_thumb_tint</item>
+        <item name="trackTint">@color/switch_track_tint</item>
+    </style>
+
     <!-- Social login icon button (Google/Facebook/Apple) -->
     <style name="WedoraSocialButton">
         <item name="android:background">@drawable/bg_social_button</item>

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Switch thumb: accent when on, neutral grey when off.
+    Switch thumb — LIGHT mode. Dark-mode counterpart in color-night/, which
+    MUST keep the same filename and states so the system can swap it.
 
-    The off state is a real colour rather than a washed-out accent, so "off"
-    reads as off at a glance instead of as a dimmer version of "on".
+    Off is a real neutral grey rather than a faded accent, so "off" reads as
+    off at a glance instead of as a dimmer "on".
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/wedora_switch_thumb_on" android:state_checked="true" />
-    <item android:color="@color/wedora_switch_thumb_off" />
+    <item android:color="#FA4659" android:state_checked="true" />
+    <item android:color="#B8ABAE" />
 </selector>

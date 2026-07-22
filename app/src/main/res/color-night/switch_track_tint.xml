@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Switch track — DARK mode. Mirrors color/switch_track_tint.xml; only the
+    off value differs, dropping to a dark neutral so the track reads against
+    the dark surface instead of glowing against it.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#FFDADE" android:state_checked="true" />
+    <item android:color="#3A2E32" />
+</selector>

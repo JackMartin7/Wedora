@@ -162,12 +162,11 @@
                      "off" can't be toggled before the real setting arrives. -->
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchOnlyMatchesCanMessage"
+                    style="@style/WedoraSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:enabled="false"
-                    app:thumbTint="@color/white"
-                    app:trackTint="@color/wedora_accent" />
+                    android:enabled="false" />
 
             </LinearLayout>
 

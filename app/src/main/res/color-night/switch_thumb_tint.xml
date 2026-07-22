@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Switch thumb — DARK mode. Mirrors color/switch_thumb_tint.xml; only the
+    off value differs. The light-mode grey is far too bright against a dark
+    surface, so the off thumb darkens while staying lighter than its own
+    track, which is what keeps the control readable as a switch when off.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="#FA4659" android:state_checked="true" />
+    <item android:color="#5A4F52" />
+</selector>
