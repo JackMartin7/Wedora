@@ -272,4 +272,39 @@
     <string name="error_name_required">Please enter your name</string>
     <string name="profile_updated">Profile updated</string>
     <string name="edit_profile_load_failed">Couldn\'t load your profile. Please try again.</string>
+
+    <!-- Account Settings -->
+    <string name="account_change_password">Change Password</string>
+    <string name="label_current_password">Current Password</string>
+    <string name="hint_current_password">Enter your current password</string>
+    <string name="label_new_password">New Password</string>
+    <string name="hint_new_password">At least 6 characters</string>
+    <string name="label_confirm_password">Confirm New Password</string>
+    <string name="hint_confirm_password">Re-enter your new password</string>
+    <string name="account_update_password">Update Password</string>
+    <string name="error_current_password_required">Please enter your current password</string>
+    <string name="error_new_password_required">Please enter a new password</string>
+    <string name="error_password_too_short">Password must be at least %1$d characters</string>
+    <string name="error_passwords_dont_match">Passwords don\'t match</string>
+    <string name="error_current_password_wrong">Current password is incorrect</string>
+    <string name="password_updated">Password updated successfully</string>
+    <string name="error_password_update_failed">Couldn\'t update your password. Please try again.</string>
+
+    <string name="account_change_email">Change Email</string>
+    <string name="label_new_email">New Email</string>
+    <string name="account_update_email">Update Email</string>
+    <string name="error_email_unchanged">That\'s already your email address</string>
+    <string name="email_verification_sent">Verification email sent to new address — please verify to complete the change</string>
+    <string name="error_email_update_failed">Couldn\'t update your email. Please try again.</string>
+
+    <string name="account_delete">Delete Account</string>
+    <string name="account_delete_caption">Your matches and messages stay visible to the people you spoke with.</string>
+    <string name="account_delete_confirm_title">Delete your account?</string>
+    <string name="account_delete_confirm_message">This permanently deletes your profile, matches, and messages. This cannot be undone.</string>
+    <string name="account_delete_confirm_button">Delete</string>
+    <string name="error_account_delete_failed">Couldn\'t delete your account. Please try again.</string>
+
+    <string name="reauth_title">Confirm it\'s you</string>
+    <string name="reauth_message">Enter your password to continue.</string>
+    <string name="reauth_confirm">Continue</string>
 </resources>

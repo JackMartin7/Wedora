@@ -114,7 +114,7 @@ class ProfileActivity : AppCompatActivity() {
     private fun setUpSettingsRows() {
         val rows = listOf(
             SettingsRow(R.drawable.ic_account, R.string.settings_account) {
-                toast(getString(R.string.settings_account))
+                startActivity(Intent(this, AccountSettingsActivity::class.java))
             },
             SettingsRow(R.drawable.ic_notifications, R.string.settings_notifications) {
                 toast(getString(R.string.settings_notifications))

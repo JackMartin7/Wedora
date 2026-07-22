@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Account Settings: change password, change email, delete account.
+
+    Every action here re-authenticates first — Firebase requires a recent
+    login for all three, and the password prompt is raised by the activity
+    (see dialog_password_prompt.xml) rather than being part of this layout.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg">
+
+    <!-- ===== Top bar ===== -->
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_back"
+        android:contentDescription="@null"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/settings_account"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack" />
+
+    <View
+        android:id="@+id/dividerTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="@color/wedora_border"
+        app:layout_constraintTop_toBottomOf="@id/btnBack" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/dividerTopBar"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="32dp">
+
+            <!-- ===== Change Password ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/account_change_password"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/label_current_password" />
+
+            <EditText
+                android:id="@+id/etCurrentPassword"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_current_password"
+                android:inputType="textPassword"
+                android:imeOptions="actionNext"
+                android:autofillHints="password" />
+
+            <TextView
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/label_new_password" />
+
+            <EditText
+                android:id="@+id/etNewPassword"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_new_password"
+                android:inputType="textPassword"
+                android:imeOptions="actionNext"
+                android:autofillHints="newPassword" />
+
+            <TextView
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/label_confirm_password" />
+
+            <EditText
+                android:id="@+id/etConfirmPassword"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_confirm_password"
+                android:inputType="textPassword"
+                android:imeOptions="actionDone"
+                android:autofillHints="newPassword" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnUpdatePassword"
+                style="@style/WedoraPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="18dp"
+                android:text="@string/account_update_password" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="26dp"
+                android:background="@color/wedora_border" />
+
+            <!-- ===== Change Email ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="@string/account_change_email"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="@string/label_new_email" />
+
+            <EditText
+                android:id="@+id/etNewEmail"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_email"
+                android:inputType="textEmailAddress"
+                android:imeOptions="actionDone"
+                android:autofillHints="emailAddress"
+                tools:text="amelia@example.com" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnUpdateEmail"
+                style="@style/WedoraPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="18dp"
+                android:text="@string/account_update_email" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="26dp"
+                android:background="@color/wedora_border" />
+
+            <!-- ===== Delete Account ===== -->
+
+            <TextView
+                android:id="@+id/btnDeleteAccount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="?attr/selectableItemBackground"
+                android:paddingVertical="16dp"
+                android:text="@string/account_delete"
+                android:textColor="@color/wedora_error"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/account_delete_caption"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Blocks interaction during re-auth / delete, which are multi-step and
+         must not be re-triggered halfway through. -->
+    <FrameLayout
+        android:id="@+id/loadingOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#66000000"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        tools:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminateTint="@color/wedora_accent" />
+
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
