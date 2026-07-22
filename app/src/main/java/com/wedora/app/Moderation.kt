@@ -11,7 +11,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreException
 
 private const val TAG = "WedoraModeration"
 
@@ -127,24 +126,14 @@ private fun AppCompatActivity.showReportReasonDialog(targetUid: String) {
 }
 
 private fun AppCompatActivity.submitReportFromUi(targetUid: String, reason: String) {
-    val selfUid = FirebaseAuth.getInstance().currentUser?.uid
-    if (selfUid == null) {
-        Log.w(TAG, "[mod-debug] report aborted: no signed-in user")
-        Toast.makeText(this, R.string.report_failed, Toast.LENGTH_LONG).show()
-        return
-    }
-    Log.d(TAG, "[mod-debug] report reporter='$selfUid' reported='$targetUid' reason='$reason'")
+    val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
     submitReport(FirebaseFirestore.getInstance(), selfUid, targetUid, reason)
         .addOnSuccessListener {
-            Log.d(TAG, "[mod-debug] report SUCCESS")
             Toast.makeText(this, R.string.report_submitted, Toast.LENGTH_SHORT).show()
         }
         .addOnFailureListener { e ->
-            // TEMPORARY: surface the error code to tell a rules rejection
-            // (PERMISSION_DENIED) apart from connectivity. Remove once fixed.
-            val code = (e as? FirebaseFirestoreException)?.code
-            Log.e(TAG, "[mod-debug] report FAILED code=$code", e)
-            Toast.makeText(this, "Report failed: ${code ?: e.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+            Log.w(TAG, "Failed to submit report", e)
+            Toast.makeText(this, R.string.report_failed, Toast.LENGTH_LONG).show()
         }
 }
 
@@ -160,24 +149,14 @@ private fun AppCompatActivity.showBlockConfirmDialog(targetUid: String, onBlocke
 }
 
 private fun AppCompatActivity.blockFromUi(targetUid: String, onBlocked: () -> Unit) {
-    val selfUid = FirebaseAuth.getInstance().currentUser?.uid
-    if (selfUid == null) {
-        Log.w(TAG, "[mod-debug] block aborted: no signed-in user")
-        Toast.makeText(this, R.string.block_failed, Toast.LENGTH_LONG).show()
-        return
-    }
-    Log.d(TAG, "[mod-debug] block self='$selfUid' blocked='$targetUid' " +
-        "path=${Moderation.BLOCKS_COLLECTION}/$selfUid/${Moderation.BLOCKED_USERS_SUBCOLLECTION}/$targetUid")
+    val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
     blockUser(FirebaseFirestore.getInstance(), selfUid, targetUid)
         .addOnSuccessListener {
-            Log.d(TAG, "[mod-debug] block SUCCESS")
             Toast.makeText(this, R.string.block_success, Toast.LENGTH_SHORT).show()
             onBlocked()
         }
         .addOnFailureListener { e ->
-            // TEMPORARY: surface the error code. Remove once fixed.
-            val code = (e as? FirebaseFirestoreException)?.code
-            Log.e(TAG, "[mod-debug] block FAILED code=$code", e)
-            Toast.makeText(this, "Block failed: ${code ?: e.javaClass.simpleName}", Toast.LENGTH_LONG).show()
+            Log.w(TAG, "Failed to block user", e)
+            Toast.makeText(this, R.string.block_failed, Toast.LENGTH_LONG).show()
         }
 }
