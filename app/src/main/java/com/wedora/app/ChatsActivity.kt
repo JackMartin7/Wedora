@@ -11,13 +11,14 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.QuerySnapshot
 import com.wedora.app.databinding.ActivityChatsBinding
 
 /**
  * The conversation list: one row per match, showing the last message or a
- * prompt to start one.
+ * prompt to start one, with an unread badge when the other person has written
+ * something this user hasn't opened.
  */
 class ChatsActivity : AppCompatActivity() {
 
@@ -30,6 +31,15 @@ class ChatsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityChatsBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    private var matchesListener: ListenerRegistration? = null
+
+    /**
+     * Display names, kept across snapshots. The match listener re-fires on
+     * every new message; without this the list would re-query every
+     * participant's profile each time a message arrived.
+     */
+    private val nameCache = mutableMapOf<String, String>()
 
     private val adapter = ChatListAdapter { chat ->
         startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
@@ -52,12 +62,24 @@ class ChatsActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Reloaded on every entry so a message sent in a thread is reflected
-        // when the user comes back here.
-        loadConversations()
+        observeConversations()
     }
 
-    private fun loadConversations() {
+    override fun onStop() {
+        matchesListener?.remove()
+        matchesListener = null
+        super.onStop()
+    }
+
+    /**
+     * Live listener rather than a one-shot read, so a new message updates the
+     * preview, ordering and unread badge without leaving and re-entering.
+     *
+     * Everything a row needs beyond the name now lives on the match document
+     * itself (see [Match.LastMessage]), so this no longer runs a per-match
+     * query for the newest message.
+     */
+    private fun observeConversations() {
         if (GuestPrefs.isGuest(this)) {
             showEmpty(getString(R.string.chats_empty_guest))
             return
@@ -70,105 +92,83 @@ class ChatsActivity : AppCompatActivity() {
         }
 
         showLoading()
-        firestore.collection(Match.COLLECTION)
+        matchesListener = firestore.collection(Match.COLLECTION)
             .whereArrayContains(Match.FIELD_USERS, selfUid)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val matches = snapshot.documents.mapNotNull { Match.from(it) }
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.w(TAG, "Match listener failed", error)
+                    showEmpty(getString(R.string.chats_load_error))
+                    return@addSnapshotListener
+                }
+
+                val matches = snapshot?.documents?.mapNotNull { Match.from(it) }.orEmpty()
                 if (matches.isEmpty()) {
                     showEmpty(getString(R.string.chats_empty))
                 } else {
-                    loadNamesAndLastMessages(matches, selfUid)
+                    resolveNamesThenRender(matches, selfUid)
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to load matches", e)
-                showEmpty(getString(R.string.chats_load_error))
             }
     }
 
-    /**
-     * Resolves each match into a row. Names come from a chunked whereIn over
-     * the user documents; the last message is one small query per match.
-     *
-     * That per-match query is the obvious scaling cost here. The alternative is
-     * denormalising the last message onto the match document on every send,
-     * which removes the N queries but introduces data that can drift out of
-     * sync with the messages subcollection. At this size the extra reads are
-     * the cheaper trade.
-     */
-    private fun loadNamesAndLastMessages(matches: List<Match>, selfUid: String) {
-        val otherUids = matches.mapNotNull { it.otherUserId(selfUid) }.distinct()
-        if (otherUids.isEmpty()) {
-            showEmpty(getString(R.string.chats_empty))
+    /** Fetches only the names not already cached, then renders. */
+    private fun resolveNamesThenRender(matches: List<Match>, selfUid: String) {
+        val missing = matches
+            .mapNotNull { it.otherUserId(selfUid) }
+            .distinct()
+            .filterNot { nameCache.containsKey(it) }
+
+        if (missing.isEmpty()) {
+            render(matches, selfUid)
             return
         }
 
-        val nameTasks = otherUids.chunked(WHERE_IN_CHUNK).map { chunk ->
+        val nameTasks = missing.chunked(WHERE_IN_CHUNK).map { chunk ->
             firestore.collection(UserProfile.COLLECTION)
                 .whereIn(FieldPath.documentId(), chunk)
                 .get()
         }
 
         Tasks.whenAllSuccess<QuerySnapshot>(nameTasks)
-            .addOnSuccessListener { nameSnapshots ->
-                val namesByUid = nameSnapshots
-                    .flatMap { it.documents }
-                    .mapNotNull { doc ->
-                        val name = UserProfile.from(doc).displayName?.takeIf { it.isNotBlank() }
-                        name?.let { doc.id to it }
-                    }
-                    .toMap()
-
-                // Matches whose user document is missing or unnamed are dropped
-                // rather than rendered as a blank row.
-                val usable = matches.filter { namesByUid.containsKey(it.otherUserId(selfUid)) }
-                if (usable.isEmpty()) {
-                    showEmpty(getString(R.string.chats_empty))
-                    return@addOnSuccessListener
+            .addOnSuccessListener { snapshots ->
+                snapshots.flatMap { it.documents }.forEach { doc ->
+                    UserProfile.from(doc).displayName
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { nameCache[doc.id] = it }
                 }
-
-                val lastMessageTasks = usable.map { match ->
-                    firestore.collection(Match.COLLECTION)
-                        .document(match.id)
-                        .collection(Match.SUBCOLLECTION_MESSAGES)
-                        .orderBy(Message.FIELD_SENT_AT, Query.Direction.DESCENDING)
-                        .limit(1)
-                        .get()
-                }
-
-                Tasks.whenAllSuccess<QuerySnapshot>(lastMessageTasks)
-                    .addOnSuccessListener { messageSnapshots ->
-                        // whenAllSuccess preserves input order, so index i here
-                        // is the last message for usable[i].
-                        val previews = usable.mapIndexed { index, match ->
-                            val last = messageSnapshots.getOrNull(index)
-                                ?.documents?.firstOrNull()
-                                ?.let { Message.from(it) }
-                            val otherUid = match.otherUserId(selfUid).orEmpty()
-
-                            ChatPreview(
-                                matchId = match.id,
-                                otherUserId = otherUid,
-                                name = namesByUid[otherUid].orEmpty(),
-                                lastMessage = last?.text,
-                                lastMessageAt = last?.sentAt ?: match.createdAt
-                            )
-                        }.sortedByDescending {
-                            it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE
-                        }
-
-                        showConversations(previews)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "Failed to load last messages", e)
-                        showEmpty(getString(R.string.chats_load_error))
-                    }
+                render(matches, selfUid)
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load matched profiles", e)
                 showEmpty(getString(R.string.chats_load_error))
             }
+    }
+
+    private fun render(matches: List<Match>, selfUid: String) {
+        val previews = matches.mapNotNull { match ->
+            val otherUid = match.otherUserId(selfUid) ?: return@mapNotNull null
+            // A match whose user document is missing or unnamed is dropped
+            // rather than rendered as a blank row.
+            val name = nameCache[otherUid] ?: return@mapNotNull null
+            val lastMessage = match.lastMessage
+
+            ChatPreview(
+                matchId = match.id,
+                otherUserId = otherUid,
+                name = name,
+                lastMessage = lastMessage?.text,
+                // Falls back to the match date so a chat nobody has written in
+                // still sorts sensibly among the rest.
+                lastMessageAt = lastMessage?.sentAt ?: match.createdAt,
+                isUnread = match.hasUnreadFor(selfUid),
+                unreadCount = lastMessage?.unreadCount ?: 0
+            )
+        }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
+
+        if (previews.isEmpty()) {
+            showEmpty(getString(R.string.chats_empty))
+        } else {
+            showConversations(previews)
+        }
     }
 
     private fun showLoading() {

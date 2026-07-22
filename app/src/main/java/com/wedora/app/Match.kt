@@ -101,12 +101,40 @@ data class Match(
      */
     val likedBy: String?,
     /** Missing is treated as unseen, so old documents surface as notifications. */
-    val seenByRecipient: Boolean
+    val seenByRecipient: Boolean,
+    /**
+     * Newest message, denormalised onto the match doc so the Chats list can
+     * render (and live-update) without a per-match message query. Null on
+     * matches nobody has messaged yet.
+     */
+    val lastMessage: LastMessage?
 ) {
+
+    /**
+     * Snapshot of the newest message, plus how many the *recipient* (whoever is
+     * not [senderId]) hasn't read. A single counter, so it always refers to the
+     * side that didn't send last.
+     */
+    data class LastMessage(
+        val text: String?,
+        val sentAt: Timestamp?,
+        val senderId: String?,
+        val unreadCount: Int
+    )
 
     /** The other participant's UID, or null if [selfUid] isn't in this match. */
     fun otherUserId(selfUid: String): String? =
         if (selfUid in users) users.firstOrNull { it != selfUid } else null
+
+    /**
+     * True when the newest message is from the other person and [selfUid] still
+     * has some unread — i.e. this row should show an unread badge. False when
+     * [selfUid] sent last (that count is the other side's), or nothing's unread.
+     */
+    fun hasUnreadFor(selfUid: String): Boolean {
+        val lm = lastMessage ?: return false
+        return lm.senderId != null && lm.senderId != selfUid && lm.unreadCount > 0
+    }
 
     /** True when [selfUid] is the one who liked — i.e. not a notification. */
     fun isLikeBy(selfUid: String): Boolean = likedBy != null && likedBy == selfUid
@@ -125,6 +153,23 @@ data class Match(
         const val FIELD_CREATED_AT = "createdAt"
         const val FIELD_LIKED_BY = "likedBy"
         const val FIELD_SEEN_BY_RECIPIENT = "seenByRecipient"
+
+        const val FIELD_LAST_MESSAGE = "lastMessage"
+        const val LM_TEXT = "text"
+        const val LM_SENT_AT = "sentAt"
+        const val LM_SENDER_ID = "senderId"
+        const val LM_UNREAD_COUNT = "unreadCount"
+
+        /**
+         * Dotted paths for updating individual lastMessage keys. Firestore's
+         * varargs update() treats a dot as a nested-field separator and creates
+         * the parent map if it's absent, so the first message on a match works
+         * without seeding the map first.
+         */
+        const val PATH_LM_TEXT = "$FIELD_LAST_MESSAGE.$LM_TEXT"
+        const val PATH_LM_SENT_AT = "$FIELD_LAST_MESSAGE.$LM_SENT_AT"
+        const val PATH_LM_SENDER_ID = "$FIELD_LAST_MESSAGE.$LM_SENDER_ID"
+        const val PATH_LM_UNREAD_COUNT = "$FIELD_LAST_MESSAGE.$LM_UNREAD_COUNT"
 
         /**
          * Deterministic, order-independent document ID for a pair of users.
@@ -146,7 +191,19 @@ data class Match(
                 users = users,
                 createdAt = snapshot.getTimestamp(FIELD_CREATED_AT),
                 likedBy = snapshot.getString(FIELD_LIKED_BY),
-                seenByRecipient = snapshot.getBoolean(FIELD_SEEN_BY_RECIPIENT) ?: false
+                seenByRecipient = snapshot.getBoolean(FIELD_SEEN_BY_RECIPIENT) ?: false,
+                lastMessage = parseLastMessage(snapshot)
+            )
+        }
+
+        /** Null for matches with no messages yet, or a malformed field. */
+        private fun parseLastMessage(snapshot: DocumentSnapshot): LastMessage? {
+            val map = snapshot.get(FIELD_LAST_MESSAGE) as? Map<*, *> ?: return null
+            return LastMessage(
+                text = map[LM_TEXT] as? String,
+                sentAt = map[LM_SENT_AT] as? Timestamp,
+                senderId = map[LM_SENDER_ID] as? String,
+                unreadCount = (map[LM_UNREAD_COUNT] as? Number)?.toInt() ?: 0
             )
         }
     }

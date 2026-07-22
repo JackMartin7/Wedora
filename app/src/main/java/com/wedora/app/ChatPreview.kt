@@ -9,13 +9,16 @@ import com.google.firebase.Timestamp
  * [lastMessage] is null for a match nobody has written in yet, which the
  * adapter renders as "Say hi 👋" rather than an empty line.
  *
- * There is no unread-count field: nothing tracks read state, so the row's
- * unread badge stays hidden rather than showing an invented number.
+ * [isUnread] is resolved where the signed-in UID is known, so the adapter just
+ * renders it — it's true only when the newest message came from the other
+ * person and hasn't been read.
  */
 data class ChatPreview(
     val matchId: String,
     val otherUserId: String,
     val name: String,
     val lastMessage: String?,
-    val lastMessageAt: Timestamp?
+    val lastMessageAt: Timestamp?,
+    val isUnread: Boolean,
+    val unreadCount: Int
 )

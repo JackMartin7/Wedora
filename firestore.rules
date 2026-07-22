@@ -103,6 +103,12 @@ service cloud.firestore {
       // touches *only* seenByRecipient must come from the recipient — that is
       // the notification-clearing write, and the sender of a like has no
       // business marking it read on the other person's behalf.
+      //
+      // This also covers the lastMessage summary (text/sentAt/senderId/
+      // unreadCount) that the chat thread maintains: sending a message writes
+      // it, and opening a thread zeroes unreadCount. Both are member updates
+      // that leave `users` alone and touch more than seenByRecipient, so they
+      // pass here without a separate rule.
       allow update: if isMember()
           && request.resource.data.users == resource.data.users
           && (!onlyChangesSeenFlag() || isRecipient());

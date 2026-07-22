@@ -46,6 +46,12 @@ class ChatThreadActivity : AppCompatActivity() {
     private var messagesListener: ListenerRegistration? = null
     private lateinit var adapter: MessageAdapter
 
+    /**
+     * Newest incoming message already marked read, so a re-delivered snapshot
+     * (metadata changes fire the listener too) doesn't rewrite the same zero.
+     */
+    private var lastReadMessageId: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatThreadBinding.inflate(layoutInflater)
@@ -76,10 +82,11 @@ class ChatThreadActivity : AppCompatActivity() {
         observeMessages()
     }
 
+    private fun matchDocument() =
+        firestore.collection(Match.COLLECTION).document(matchId)
+
     private fun messagesCollection() =
-        firestore.collection(Match.COLLECTION)
-            .document(matchId)
-            .collection(Match.SUBCOLLECTION_MESSAGES)
+        matchDocument().collection(Match.SUBCOLLECTION_MESSAGES)
 
     private fun observeMessages() {
         messagesListener = messagesCollection()
@@ -106,6 +113,8 @@ class ChatThreadActivity : AppCompatActivity() {
     }
 
     private fun showMessages(messages: List<Message>) {
+        markReadIfIncoming(messages)
+
         binding.tvChatEmpty.visibility = if (messages.isEmpty()) View.VISIBLE else View.GONE
         adapter.submitList(messages) {
             // Runs after the list has been diffed and laid out, so the scroll
@@ -131,7 +140,25 @@ class ChatThreadActivity : AppCompatActivity() {
             Message.FIELD_SENT_AT to FieldValue.serverTimestamp()
         )
 
-        messagesCollection().add(message)
+        // The message and the match's lastMessage summary go in one batch, so
+        // the Chats list can never show a preview for a message that failed to
+        // write (or miss one that succeeded).
+        //
+        // unreadCount increments rather than being set: the recipient's unread
+        // count is whatever it was plus this message. It's safe to increment
+        // from wherever it stands because opening a thread zeroes it, so by the
+        // time this user is sending, their own side has already been cleared.
+        val batch = firestore.batch()
+        batch.set(messagesCollection().document(), message)
+        batch.update(
+            matchDocument(),
+            Match.PATH_LM_TEXT, text,
+            Match.PATH_LM_SENT_AT, FieldValue.serverTimestamp(),
+            Match.PATH_LM_SENDER_ID, selfUid,
+            Match.PATH_LM_UNREAD_COUNT, FieldValue.increment(1)
+        )
+
+        batch.commit()
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to send message", e)
                 // Put the text back so it isn't silently lost.
@@ -139,6 +166,28 @@ class ChatThreadActivity : AppCompatActivity() {
                 binding.etMessage.setSelection(text.length)
                 Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
             }
+    }
+
+    /**
+     * Clears this user's unread count once they've actually seen the messages.
+     *
+     * Only when the newest message came from the *other* person. The counter is
+     * shared and always refers to whoever didn't send last, so zeroing it after
+     * sending would wipe the other side's badge instead of this user's.
+     *
+     * Driven off the message list rather than a separate read of the match doc:
+     * the listener already knows who sent last, and it fires both on open and
+     * when a message arrives while the thread is in view — so a chat read live
+     * stays read.
+     */
+    private fun markReadIfIncoming(messages: List<Message>) {
+        val newest = messages.lastOrNull() ?: return
+        if (newest.senderId == selfUid) return
+        if (newest.id == lastReadMessageId) return
+
+        lastReadMessageId = newest.id
+        matchDocument().update(Match.PATH_LM_UNREAD_COUNT, 0L)
+            .addOnFailureListener { e -> Log.w(TAG, "Failed to clear unread count", e) }
     }
 
     /**
