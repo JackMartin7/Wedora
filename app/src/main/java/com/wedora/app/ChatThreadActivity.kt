@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
@@ -62,7 +63,10 @@ class ChatThreadActivity : AppCompatActivity() {
         matchId = Match.idFor(selfUid, otherUserId)
 
         binding.tvChatTitle.text = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener { goToChats() }
+        // Route the system/gesture back to the same place, so it doesn't return
+        // to whatever happened to launch the thread (a Home card, a profile).
+        onBackPressedDispatcher.addCallback(this) { goToChats() }
         binding.btnSend.setOnClickListener { sendMessage() }
 
         adapter = MessageAdapter(selfUid)
@@ -135,6 +139,20 @@ class ChatThreadActivity : AppCompatActivity() {
                 binding.etMessage.setSelection(text.length)
                 Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
             }
+    }
+
+    /**
+     * Back always returns to the Chats list — the conversation's natural parent
+     * — rather than to whatever launched the thread. CLEAR_TOP reuses an
+     * existing Chats instance instead of stacking a second; finish() drops this
+     * thread so it isn't left underneath.
+     */
+    private fun goToChats() {
+        startActivity(
+            Intent(this, ChatsActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        )
+        finish()
     }
 
     override fun onDestroy() {
