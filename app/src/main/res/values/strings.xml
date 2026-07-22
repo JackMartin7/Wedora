@@ -90,7 +90,6 @@
     <string name="cd_dismiss">Dismiss</string>
     <string name="cd_more">More options</string>
     <string name="cd_like">Like</string>
-    <string name="cd_superlike">Super like</string>
     <string name="cd_pass">Pass</string>
 
     <!-- Complete Profile (one-time step after first verified login) -->
@@ -145,6 +144,31 @@
     <string name="match_empty">No matches yet — like someone from Home to get started.</string>
     <string name="match_empty_guest">Sign up to start matching.</string>
     <string name="match_load_error">Couldn\'t load your matches. Check your connection and try again.</string>
+
+    <!-- Report / Block (⋮ menu on feed cards and profile detail) -->
+    <string name="cd_more_options">More options</string>
+    <string name="action_report">Report</string>
+    <string name="action_block">Block</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="report_reason_title">Why are you reporting this?</string>
+    <string name="report_submit">Submit</string>
+    <string name="report_submitted">Report submitted — thank you</string>
+    <string name="report_failed">Couldn\'t submit the report. Please try again.</string>
+    <string name="block_confirm_title">Block this user?</string>
+    <string name="block_confirm_message">They won\'t be able to see your profile or contact you.</string>
+    <string name="block_confirm_button">Block</string>
+    <string name="block_success">User blocked</string>
+    <string name="block_failed">Couldn\'t block this user. Please try again.</string>
+
+    <!-- Order here is the display order; the selected label is stored as the
+         report reason. -->
+    <string-array name="report_reasons">
+        <item>Inappropriate photos</item>
+        <item>Fake profile</item>
+        <item>Offensive behavior</item>
+        <item>Spam</item>
+        <item>Other</item>
+    </string-array>
 
     <!-- Profile detail -->
     <string name="error_profile_load_failed">Couldn\'t load this profile. Please try again.</string>

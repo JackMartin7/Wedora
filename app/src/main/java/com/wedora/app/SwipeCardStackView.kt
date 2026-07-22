@@ -96,11 +96,19 @@ class SwipeCardStackView @JvmOverloads constructor(
     }
 
     fun swipeRight() {
-        if (!animating && topCard != null) flingOff(right = true)
+        if (!animating && topCard != null) flingOff(right = true, notify = true)
     }
 
     fun swipeLeft() {
-        if (!animating && topCard != null) flingOff(right = false)
+        if (!animating && topCard != null) flingOff(right = false, notify = true)
+    }
+
+    /**
+     * Removes the top card without reporting a swipe — for a block, which isn't
+     * a like or a pass. The card slides off left and the next takes its place.
+     */
+    fun dismissTop() {
+        if (!animating && topCard != null) flingOff(right = false, notify = false)
     }
 
     // ----- Stack composition ------------------------------------------------
@@ -231,8 +239,8 @@ class SwipeCardStackView @JvmOverloads constructor(
     private fun settleDrag(top: View) {
         val dx = top.translationX
         when {
-            dx > width * SWIPE_THRESHOLD -> flingOff(right = true)
-            dx < -width * SWIPE_THRESHOLD -> flingOff(right = false)
+            dx > width * SWIPE_THRESHOLD -> flingOff(right = true, notify = true)
+            dx < -width * SWIPE_THRESHOLD -> flingOff(right = false, notify = true)
             else -> springBack(top)
         }
     }
@@ -251,7 +259,7 @@ class SwipeCardStackView @JvmOverloads constructor(
             ?.setDuration(ANIM_MS)?.start()
     }
 
-    private fun flingOff(right: Boolean) {
+    private fun flingOff(right: Boolean, notify: Boolean) {
         val top = topCard ?: return
         animating = true
         val swipedPosition = topPosition
@@ -270,8 +278,10 @@ class SwipeCardStackView @JvmOverloads constructor(
                 animating = false
                 removeView(top)
                 topPosition++
-                if (right) listener?.onSwipedRight(swipedPosition)
-                else listener?.onSwipedLeft(swipedPosition)
+                if (notify) {
+                    if (right) listener?.onSwipedRight(swipedPosition)
+                    else listener?.onSwipedLeft(swipedPosition)
+                }
                 promoteAfterSwipe()
             }
             .start()

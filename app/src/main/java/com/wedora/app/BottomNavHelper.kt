@@ -13,8 +13,8 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
  * Chats and Profile are account-only regardless of which tab you tap them
  * from, so guests are redirected to sign-up instead of navigating — this is
  * the single place that gate is enforced for tab navigation. (HomeActivity
- * separately gates its own like/superlike card actions, which is a different
- * concern from tab switching.)
+ * separately handles its own card actions, which is a different concern from
+ * tab switching.)
  */
 fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, activeTabId: Int) {
     bottomNav.selectedItemId = activeTabId

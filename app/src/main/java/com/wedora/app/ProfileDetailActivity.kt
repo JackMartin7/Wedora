@@ -62,6 +62,12 @@ class ProfileDetailActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
 
+        binding.btnMore.setOnClickListener { view ->
+            // Blocking from here closes the profile — there's nothing left to
+            // show once they're blocked.
+            showReportBlockMenu(view, userId) { finish() }
+        }
+
         // Passing is local-only: there is no `passes` collection, so a passed
         // user reappears in the feed on the next load.
         binding.btnPass.setOnClickListener { finish() }

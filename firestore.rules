@@ -124,5 +124,19 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    // Reports are write-only from the client: a signed-in user can file one
+    // (as themselves), but no client can read, edit or delete them. An admin
+    // reviews them out of band.
+    match /reports/{reportId} {
+      allow create: if request.auth != null
+          && request.resource.data.reporterUid == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // Each user owns their own block list and nobody else can see it.
+    match /blocks/{userId}/blockedUsers/{blockedUid} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }

@@ -189,7 +189,12 @@ class HomeActivity : AppCompatActivity() {
                 if (interestedIn.isNullOrBlank()) {
                     showEmptyState(getString(R.string.home_empty_no_matches))
                 } else {
-                    queryMatches(interestedIn, uid)
+                    // Block list is read before the feed query so blocked users
+                    // are filtered out (client-side, same reasoning as the self
+                    // filter — no composite index, and the block set is small).
+                    loadBlockedUserIds(firestore, uid) { blocked ->
+                        queryMatches(interestedIn, uid, blocked)
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -198,13 +203,13 @@ class HomeActivity : AppCompatActivity() {
             }
     }
 
-    private fun queryMatches(interestedIn: String, selfUid: String) {
+    private fun queryMatches(interestedIn: String, selfUid: String, blockedUids: Set<String>) {
         firestore.collection(UserProfile.COLLECTION)
             .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
                 val loaded = snapshot.documents
-                    .filter { it.id != selfUid }
+                    .filter { it.id != selfUid && it.id !in blockedUids }
                     .mapNotNull { it.toMatchCard() }
 
                 if (loaded.isEmpty()) {
@@ -245,8 +250,8 @@ class HomeActivity : AppCompatActivity() {
      *  - heart: like/unlike toggle — unlike stays in place, a fresh like flings
      *    the card right
      *  - pass / dismiss: fling left
-     *  - superlike: fling right (a like; no distinct superlike model yet)
      *  - chat: open the conversation, matching first if needed
+     *  - more (⋮): report or block this user
      *  - card body: open the full profile
      */
     private fun bindCard(cardView: View, card: MatchCard) {
@@ -280,11 +285,13 @@ class HomeActivity : AppCompatActivity() {
 
         b.root.setOnClickListener { startActivity(ProfileDetailActivity.intent(this, card.id)) }
         b.btnLike.setOnClickListener { onHeartTapped(card, b.btnLike) }
-        b.btnSuperlike.setOnClickListener { binding.cardStack.swipeRight() }
         b.btnPass.setOnClickListener { binding.cardStack.swipeLeft() }
         b.btnDismiss.setOnClickListener { binding.cardStack.swipeLeft() }
         b.btnChat.setOnClickListener { openChatWith(card) }
-        b.btnMore.setOnClickListener { toast("More options for ${card.name}") }
+        b.btnMore.setOnClickListener { view ->
+            // Blocking dismisses the (top) card the menu was opened from.
+            showReportBlockMenu(view, card.id) { binding.cardStack.dismissTop() }
+        }
     }
 
     /**
