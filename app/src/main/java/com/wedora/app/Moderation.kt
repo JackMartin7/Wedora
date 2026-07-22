@@ -11,6 +11,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
 
 private const val TAG = "WedoraModeration"
 
@@ -61,6 +62,26 @@ fun blockUser(
     blockedUsersRef(firestore, selfUid)
         .document(blockedUid)
         .set(mapOf(Moderation.FIELD_BLOCKED_AT to FieldValue.serverTimestamp()))
+
+/**
+ * Removes [blockedUid] from [selfUid]'s block list. The rules scope the whole
+ * subcollection to its owner, so a user can only ever unblock from their own
+ * list.
+ */
+fun unblockUser(
+    firestore: FirebaseFirestore,
+    selfUid: String,
+    blockedUid: String
+): Task<Void> =
+    blockedUsersRef(firestore, selfUid)
+        .document(blockedUid)
+        .delete()
+
+/** The UIDs on [selfUid]'s block list, newest-blocked first where known. */
+fun loadBlockedUserEntries(
+    firestore: FirebaseFirestore,
+    selfUid: String
+): Task<QuerySnapshot> = blockedUsersRef(firestore, selfUid).get()
 
 /**
  * Reads the current user's block list for filtering the feed. Fails *open* —

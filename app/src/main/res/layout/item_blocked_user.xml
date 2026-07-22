@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One blocked user: placeholder avatar, name, and an Unblock action. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingHorizontal="4dp"
+    android:paddingVertical="10dp">
+
+    <!-- Neutral placeholder: blocking is precisely the case where we shouldn't
+         be showing the other person's photo. -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivBlockedAvatar"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_avatar"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+    <TextView
+        android:id="@+id/tvBlockedName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        tools:text="Amelia Hart" />
+
+    <TextView
+        android:id="@+id/btnUnblock"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:layout_marginStart="12dp"
+        android:background="@drawable/bg_pill_outline"
+        android:gravity="center"
+        android:paddingHorizontal="18dp"
+        android:text="@string/action_unblock"
+        android:textColor="@color/wedora_accent"
+        android:textSize="13sp"
+        android:fontFamily="@font/poppins_medium" />
+
+</LinearLayout>

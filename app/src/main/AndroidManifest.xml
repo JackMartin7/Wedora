@@ -63,6 +63,10 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".PrivacySafetyActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

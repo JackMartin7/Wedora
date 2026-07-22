@@ -120,7 +120,7 @@ class ProfileActivity : AppCompatActivity() {
                 toast(getString(R.string.settings_notifications))
             },
             SettingsRow(R.drawable.ic_privacy, R.string.settings_privacy) {
-                toast(getString(R.string.settings_privacy))
+                startActivity(Intent(this, PrivacySafetyActivity::class.java))
             },
             SettingsRow(R.drawable.ic_payment, R.string.settings_payment) {
                 toast(getString(R.string.settings_payment))

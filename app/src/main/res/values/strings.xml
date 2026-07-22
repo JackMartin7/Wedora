@@ -307,4 +307,18 @@
     <string name="reauth_title">Confirm it\'s you</string>
     <string name="reauth_message">Enter your password to continue.</string>
     <string name="reauth_confirm">Continue</string>
+
+    <!-- Privacy &amp; Safety -->
+    <string name="privacy_blocked_users">Blocked Users</string>
+    <string name="privacy_blocked_empty">You haven\'t blocked anyone</string>
+    <string name="privacy_blocked_load_error">Couldn\'t load your blocked users. Check your connection and try again.</string>
+    <string name="blocked_user_unknown">Blocked user</string>
+    <string name="action_unblock">Unblock</string>
+    <string name="unblock_confirm_title">Unblock this user?</string>
+    <string name="unblock_confirm_message">They\'ll be able to see your profile again.</string>
+    <string name="unblock_success">User unblocked</string>
+    <string name="unblock_failed">Couldn\'t unblock this user. Please try again.</string>
+    <string name="privacy_who_can_message">Who Can Message Me</string>
+    <string name="privacy_only_matches_can_message">Only matched users can message me</string>
+    <string name="coming_soon">Coming soon</string>
 </resources>
