@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Switch thumb: accent when on, neutral grey when off.
+
+    The off state is a real colour rather than a washed-out accent, so "off"
+    reads as off at a glance instead of as a dimmer version of "on".
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/wedora_switch_thumb_on" android:state_checked="true" />
+    <item android:color="@color/wedora_switch_thumb_off" />
+</selector>

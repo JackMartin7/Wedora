@@ -25,10 +25,17 @@ object NotificationPrefs {
     private const val PREFS_NAME = "wedora_prefs"
 
     /**
-     * Defaults follow what a user would expect to be told about unprompted:
-     * things another person did that involves them (matches, messages) are on;
-     * everything else is opt-in, and the two marketing-adjacent categories
-     * especially so.
+     * Every category defaults to on, so a new user sees the app's full
+     * behaviour and turns off what they don't want.
+     *
+     * A default only ever applies where no value has been stored, so changing
+     * one can't move a switch a user has already set — [isEnabled] falls back
+     * to it solely when the key is absent. Anyone who has opened this screen
+     * keeps exactly what they chose.
+     *
+     * Note that PROMOTIONS defaulting to on makes marketing opt-out rather
+     * than opt-in, which some jurisdictions treat differently from the rest of
+     * these. Worth a look before launch; nothing sends yet, so it isn't live.
      */
     enum class Toggle(
         val key: String,
@@ -45,15 +52,15 @@ object NotificationPrefs {
             R.string.notif_messages, R.string.notif_messages_caption
         ),
         LIKES(
-            "notif_likes", false,
+            "notif_likes", true,
             R.string.notif_likes, R.string.notif_likes_caption
         ),
         APP_UPDATES(
-            "notif_app_updates", false,
+            "notif_app_updates", true,
             R.string.notif_app_updates, R.string.notif_app_updates_caption
         ),
         PROMOTIONS(
-            "notif_promotions", false,
+            "notif_promotions", true,
             R.string.notif_promotions, R.string.notif_promotions_caption
         )
     }

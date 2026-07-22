@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Switch track: tinted accent when on, neutral grey when off.
+
+    Both states have dark-mode counterparts in values-night/colors.xml. A light
+    track on a dark background glares, and a track close to the background
+    disappears — so the night values are picked against the dark surface rather
+    than reused from light mode.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/wedora_switch_track_on" android:state_checked="true" />
+    <item android:color="@color/wedora_switch_track_off" />
+</selector>
