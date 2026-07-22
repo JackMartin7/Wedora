@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Premium upgrade card. Same brand gradient as the splash screen
+    (wedora_gradient_start -> wedora_gradient_end), but angled 0 so it runs
+    left-to-right across the card rather than top-to-bottom as it does
+    full-screen.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="0"
+        android:startColor="@color/wedora_gradient_start"
+        android:endColor="@color/wedora_gradient_end" />
+    <corners android:radius="12dp" />
+</shape>

@@ -35,6 +35,11 @@ class ProfileActivity : AppCompatActivity() {
         binding.btnEditProfile.setOnClickListener {
             startActivity(Intent(this, EditProfileActivity::class.java))
         }
+        // Replaces the old "Payment & Subscription" settings row, which opened
+        // the same screen from further down the list.
+        binding.cardPremium.setOnClickListener {
+            startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+        }
     }
 
     /**
@@ -66,10 +71,13 @@ class ProfileActivity : AppCompatActivity() {
             // A guest has no Firestore document, so there is nothing for the
             // editor to load or save — it would open, fail its read and close.
             binding.btnEditProfile.visibility = View.GONE
+            // Likewise no account to attach a subscription to.
+            binding.cardPremium.visibility = View.GONE
             return
         }
 
         binding.btnEditProfile.visibility = View.VISIBLE
+        binding.cardPremium.visibility = View.VISIBLE
 
         val user = FirebaseAuth.getInstance().currentUser
         binding.tvProfileName.text = user?.displayName?.takeIf { it.isNotBlank() }
@@ -199,9 +207,6 @@ class ProfileActivity : AppCompatActivity() {
             },
             SettingsRow(R.drawable.ic_privacy, R.string.settings_privacy) {
                 startActivity(Intent(this, PrivacySafetyActivity::class.java))
-            },
-            SettingsRow(R.drawable.ic_payment, R.string.settings_payment) {
-                startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
             },
             SettingsRow(R.drawable.ic_help, R.string.settings_help) {
                 startActivity(Intent(this, HelpCenterActivity::class.java))

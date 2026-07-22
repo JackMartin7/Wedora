@@ -366,6 +366,8 @@
     <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
 
     <!-- Payment &amp; Subscription -->
+    <string name="premium_upgrade_title">Upgrade to Premium</string>
+    <string name="premium_upgrade_cta">Unlock all features →</string>
     <string name="plan_current_label">Current Plan</string>
     <string name="plan_free">Free Plan</string>
     <string name="plan_badge_basic">Basic</string>
