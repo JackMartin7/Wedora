@@ -1,3 +1,14 @@
+// ============================================================================
+//  ⚠️  DEPLOY AFTER EVERY CHANGE  ⚠️
+//
+//      firebase deploy --only firestore:rules
+//
+//  Editing this file does NOTHING until it's deployed. The live ruleset is
+//  what Firestore enforces — an undeployed change leaves new collections
+//  denied by default, which surfaces in-app as PERMISSION_DENIED (matches,
+//  the likedBy/seenByRecipient fields, and reports/blocks each hit this).
+// ============================================================================
+
 rules_version = '2';
 
 service cloud.firestore {

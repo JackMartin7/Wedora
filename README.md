@@ -56,10 +56,23 @@ project, so the app **will not build until you add it**. This file is not commit
 
 ### Firestore security rules
 
-Cloud Firestore stores user profiles (`users/{uid}`), matches (`matches/{matchId}`) and
-messages (`matches/{matchId}/messages`). Access is controlled by [`firestore.rules`](firestore.rules),
+Cloud Firestore stores user profiles (`users/{uid}`), matches (`matches/{matchId}`),
+messages (`matches/{matchId}/messages`), reports (`reports/{id}`) and blocks
+(`blocks/{uid}/blockedUsers`). Access is controlled by [`firestore.rules`](firestore.rules),
 which is deployed from this repo rather than edited in the console — so the live rules and the
 committed ones can't drift apart.
+
+> ### ⚠️ Deploy after **every** change to `firestore.rules`
+> ```bash
+> firebase deploy --only firestore:rules
+> ```
+> Editing the file does nothing until it's deployed — the live ruleset is what Firestore
+> enforces. An undeployed change leaves any newly-referenced collection denied by default,
+> which shows up in-app as `PERMISSION_DENIED`. This has already bitten three features
+> (matches, the `likedBy`/`seenByRecipient` fields, and reports/blocks), so it's worth making
+> a reflex: **touch `firestore.rules` → run the deploy.**
+
+First-time setup:
 
 ```bash
 npm install -g firebase-tools     # once
