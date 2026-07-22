@@ -73,6 +73,7 @@ class ProfileActivity : AppCompatActivity() {
             binding.btnEditProfile.visibility = View.GONE
             // Likewise no account to attach a subscription to.
             binding.cardPremium.visibility = View.GONE
+            binding.tvProfileIntent.visibility = View.GONE
             return
         }
 
@@ -121,6 +122,15 @@ class ProfileActivity : AppCompatActivity() {
                 } else {
                     binding.tvProfileAgeLocation.text = line
                     binding.tvProfileAgeLocation.visibility = View.VISIBLE
+                }
+
+                val intentLine =
+                    MarriageIntent.summaryLine(this, profile.myStatus, profile.lookingFor)
+                if (intentLine == null) {
+                    binding.tvProfileIntent.visibility = View.GONE
+                } else {
+                    binding.tvProfileIntent.text = intentLine
+                    binding.tvProfileIntent.visibility = View.VISIBLE
                 }
 
                 showCompletion(calculateProfileCompletion(this, uid, profile))

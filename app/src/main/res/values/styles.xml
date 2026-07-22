@@ -123,23 +123,6 @@
         <item name="rippleColor">@color/wedora_input_border</item>
     </style>
 
-    <!--
-        Relationship-type chip on the Filter screen. Background and text colour
-        are swapped in code on selection, so only the shared metrics live here.
-    -->
-    <style name="WedoraFilterChip">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">44dp</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:background">@drawable/bg_chip_unselected</item>
-        <item name="android:gravity">center</item>
-        <item name="android:textColor">@color/wedora_text</item>
-        <item name="android:textSize">13sp</item>
-        <item name="android:fontFamily">@font/poppins_medium</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-    </style>
-
     <!-- Social login icon button (Google/Facebook/Apple) -->
     <style name="WedoraSocialButton">
         <item name="android:background">@drawable/bg_social_button</item>

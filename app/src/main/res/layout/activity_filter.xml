@@ -112,65 +112,47 @@
                 app:trackColorInactive="@color/wedora_input_border"
                 app:labelBehavior="gone" />
 
-            <!-- ===== Relationship type ===== -->
+            <!-- ===== Status ===== -->
+            <!-- Options depend on the gender of the people being filtered, so
+                 the chips are built in code once that's known. -->
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                android:text="@string/filter_relationship_type"
+                android:text="@string/filter_by_status"
                 android:textColor="@color/wedora_text"
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_semibold" />
 
-            <LinearLayout
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipsStatusFilter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:orientation="horizontal"
-                android:baselineAligned="false">
+                android:layout_marginTop="10dp"
+                app:singleLine="false"
+                app:singleSelection="false"
+                app:chipSpacingHorizontal="8dp" />
 
-                <TextView
-                    android:id="@+id/chipSerious"
-                    style="@style/WedoraFilterChip"
-                    android:text="@string/filter_relationship_serious" />
-
-                <TextView
-                    android:id="@+id/chipCasual"
-                    style="@style/WedoraFilterChip"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/filter_relationship_casual" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:baselineAligned="false">
-
-                <TextView
-                    android:id="@+id/chipFriendship"
-                    style="@style/WedoraFilterChip"
-                    android:text="@string/filter_relationship_friendship" />
-
-                <TextView
-                    android:id="@+id/chipOpen"
-                    style="@style/WedoraFilterChip"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/filter_relationship_open" />
-
-            </LinearLayout>
+            <!-- ===== Looking For ===== -->
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/filter_by_looking_for"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipsLookingForFilter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/filter_not_yet_applied"
-                android:textColor="@color/wedora_text_secondary"
-                android:textSize="12sp"
-                android:lineSpacingExtra="2sp" />
+                android:layout_marginTop="10dp"
+                app:singleLine="false"
+                app:singleSelection="false"
+                app:chipSpacingHorizontal="8dp" />
 
             <!-- ===== Distance ===== -->
 

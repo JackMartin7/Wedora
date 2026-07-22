@@ -228,6 +228,14 @@ class ProfileDetailActivity : AppCompatActivity() {
             binding.tvDetailAgeLocation.visibility = View.VISIBLE
         }
 
+        val intentLine = MarriageIntent.summaryLine(this, profile.myStatus, profile.lookingFor)
+        if (intentLine == null) {
+            binding.tvDetailIntent.visibility = View.GONE
+        } else {
+            binding.tvDetailIntent.text = intentLine
+            binding.tvDetailIntent.visibility = View.VISIBLE
+        }
+
         val bio = profile.bio?.trim()
         if (bio.isNullOrEmpty()) {
             binding.tvDetailBio.visibility = View.GONE

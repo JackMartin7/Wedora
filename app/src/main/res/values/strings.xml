@@ -380,12 +380,8 @@
     <string name="action_close">Close</string>
     <string name="filter_age_range">Age Range</string>
     <string name="filter_age_value">%1$d – %2$d</string>
-    <string name="filter_relationship_type">Relationship Type</string>
-    <string name="filter_relationship_serious">Serious</string>
-    <string name="filter_relationship_casual">Casual</string>
-    <string name="filter_relationship_friendship">Friendship</string>
-    <string name="filter_relationship_open">Open to all</string>
-    <string name="filter_not_yet_applied">Saved for later — relationship type and distance don\'t affect your feed yet.</string>
+    <string name="filter_by_status">Filter by Status</string>
+    <string name="filter_by_looking_for">Filter by Looking For</string>
     <string name="filter_distance">Distance</string>
     <string name="filter_distance_value">Within %1$d km</string>
     <string name="filter_apply">Apply Filters</string>

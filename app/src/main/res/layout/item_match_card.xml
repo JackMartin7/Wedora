@@ -216,4 +216,23 @@
         tools:visibility="visible"
         tools:text="Coffee, long walks and terrible puns." />
 
+    <!-- "Divorced • Looking for Second Wife". Hidden entirely on accounts that
+         predate these fields, rather than shown as an empty pill. -->
+    <TextView
+        android:id="@+id/tvCardIntent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_intent_badge"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="5dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="Divorced • Looking for Second Wife" />
+
 </LinearLayout>

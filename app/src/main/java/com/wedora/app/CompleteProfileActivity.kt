@@ -83,34 +83,29 @@ class CompleteProfileActivity : AppCompatActivity() {
      * better than an empty group the user can't get past.
      */
     private fun loadIntentSelectors() {
-        binding.chipsMyStatus.setOptions(
-            options = MarriageIntent.STATUS_OPTIONS,
-            selected = emptyList(),
-            onChanged = { updateContinueEnabled() }
-        )
-        showLookingForOptions(gender = null, selected = null)
+        showIntentOptions(gender = null, myStatus = null, lookingFor = null)
 
         val uid = auth.currentUser?.uid ?: return
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 val profile = UserProfile.from(snapshot)
-                binding.chipsMyStatus.setOptions(
-                    options = MarriageIntent.STATUS_OPTIONS,
-                    selected = listOfNotNull(profile.myStatus),
-                    onChanged = { updateContinueEnabled() }
-                )
-                showLookingForOptions(profile.gender, profile.lookingFor)
+                showIntentOptions(profile.gender, profile.myStatus, profile.lookingFor)
                 updateContinueEnabled()
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Couldn't read gender for the Looking For options", e)
+                Log.w(TAG, "Couldn't read gender for the intent options", e)
             }
     }
 
-    private fun showLookingForOptions(gender: String?, selected: String?) {
+    private fun showIntentOptions(gender: String?, myStatus: String?, lookingFor: String?) {
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.statusOptions(gender),
+            selected = listOfNotNull(myStatus),
+            onChanged = { updateContinueEnabled() }
+        )
         binding.chipsLookingFor.setOptions(
             options = MarriageIntent.lookingForOptions(gender),
-            selected = listOfNotNull(selected),
+            selected = listOfNotNull(lookingFor),
             onChanged = { updateContinueEnabled() }
         )
     }

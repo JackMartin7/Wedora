@@ -96,10 +96,11 @@ class SignUpActivity : AppCompatActivity() {
                 binding.tvGenderFemale to Gender.FEMALE,
                 binding.tvGenderOther to Gender.OTHER
             ),
-            // Looking For offers different options per gender, so changing
-            // gender rebuilds that group. Any selection that isn't in the new
-            // list is dropped rather than carried over — see ChipGroup.setOptions.
-            onSelected = { showLookingForOptions() }
+            // Both groups offer different options per gender — a man is a
+            // widower, and looks for a wife rather than a marriage — so a
+            // gender change rebuilds both. Any selection absent from the new
+            // list is dropped rather than carried over; see setOptions.
+            onSelected = { showIntentOptions() }
         )
         interestedInControl = SegmentedControl(
             listOf(
@@ -109,17 +110,18 @@ class SignUpActivity : AppCompatActivity() {
             )
         )
 
-        binding.chipsMyStatus.setOptions(
-            options = MarriageIntent.STATUS_OPTIONS,
-            selected = emptyList()
-        )
-        showLookingForOptions()
+        showIntentOptions()
     }
 
-    /** Rebuilds the Looking For chips for whichever gender is selected now. */
-    private fun showLookingForOptions() {
+    /** Rebuilds both intent groups for whichever gender is selected now. */
+    private fun showIntentOptions() {
+        val gender = genderControl.selected?.firestoreValue
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.statusOptions(gender),
+            selected = binding.chipsMyStatus.selectedOptions()
+        )
         binding.chipsLookingFor.setOptions(
-            options = MarriageIntent.lookingForOptions(genderControl.selected?.firestoreValue),
+            options = MarriageIntent.lookingForOptions(gender),
             selected = binding.chipsLookingFor.selectedOptions()
         )
     }

@@ -155,11 +155,15 @@ class EditProfileActivity : AppCompatActivity() {
                 binding.tvGenderOther to Gender.OTHER
             ),
             onSelected = {
-                // Looking For offers different options per gender, so a gender
-                // change rebuilds that group. A selection absent from the new
-                // list is dropped rather than carried across — the user has to
-                // pick again from what now applies.
-                showLookingForOptions(selected = binding.chipsLookingFor.selectedOption())
+                // Both groups offer different options per gender — a man is a
+                // widower, and looks for a wife rather than a marriage — so a
+                // gender change rebuilds both. A selection absent from the new
+                // list is dropped rather than carried across; the user picks
+                // again from what now applies.
+                showIntentOptions(
+                    myStatus = binding.chipsMyStatus.selectedOption(),
+                    lookingFor = binding.chipsLookingFor.selectedOption()
+                )
                 updateSaveEnabled()
             }
         )
@@ -172,19 +176,20 @@ class EditProfileActivity : AppCompatActivity() {
             onSelected = { updateSaveEnabled() }
         )
 
-        binding.chipsMyStatus.setOptions(
-            options = MarriageIntent.STATUS_OPTIONS,
-            selected = emptyList(),
-            onChanged = { updateSaveEnabled() }
-        )
-        showLookingForOptions(selected = null)
+        showIntentOptions(myStatus = null, lookingFor = null)
     }
 
-    /** Rebuilds the Looking For chips for whichever gender is selected now. */
-    private fun showLookingForOptions(selected: String?) {
+    /** Rebuilds both intent groups for whichever gender is selected now. */
+    private fun showIntentOptions(myStatus: String?, lookingFor: String?) {
+        val gender = genderControl.selected?.firestoreValue
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.statusOptions(gender),
+            selected = listOfNotNull(myStatus),
+            onChanged = { updateSaveEnabled() }
+        )
         binding.chipsLookingFor.setOptions(
-            options = MarriageIntent.lookingForOptions(genderControl.selected?.firestoreValue),
-            selected = listOfNotNull(selected),
+            options = MarriageIntent.lookingForOptions(gender),
+            selected = listOfNotNull(lookingFor),
             onChanged = { updateSaveEnabled() }
         )
     }
@@ -226,14 +231,9 @@ class EditProfileActivity : AppCompatActivity() {
         genderFrom(profile.gender)?.let { genderControl.select(it) }
         genderFrom(profile.interestedIn)?.let { interestedInControl.select(it) }
 
-        binding.chipsMyStatus.setOptions(
-            options = MarriageIntent.STATUS_OPTIONS,
-            selected = listOfNotNull(profile.myStatus),
-            onChanged = { updateSaveEnabled() }
-        )
-        // After the gender control has been set, so the option list matches the
+        // After the gender control has been set, so the option lists match the
         // stored gender rather than the empty default.
-        showLookingForOptions(selected = profile.lookingFor)
+        showIntentOptions(myStatus = profile.myStatus, lookingFor = profile.lookingFor)
 
         updateBioCounter()
     }
@@ -516,12 +516,17 @@ class EditProfileActivity : AppCompatActivity() {
      * sync only because Home and Profile read the greeting from it.
      */
     private fun onSaved(changes: Map<String, Any?>) {
-        // A gender change swaps the Looking For option list, so any stored
-        // filter built from the old list is dropped. Left alone it would keep
-        // narrowing the feed while the filter screen — now showing the other
-        // wording — offered no way to see or clear it.
-        if (changes.containsKey(UserProfile.FIELD_GENDER)) {
-            FilterPrefs.clearLookingForFilter(this)
+        // Changing gender or who they're interested in re-words the status and
+        // looking-for options, so any filter built from the old list is
+        // dropped. Left alone it would keep narrowing the feed while the filter
+        // screen — now showing the other wording — offered no way to clear it.
+        //
+        // interestedIn matters because the filter's options follow the gender
+        // of the people being filtered, not the viewer's own.
+        if (changes.containsKey(UserProfile.FIELD_GENDER) ||
+            changes.containsKey(UserProfile.FIELD_INTERESTED_IN)
+        ) {
+            FilterPrefs.clearIntentFilters(this)
         }
 
         val newName = changes[UserProfile.FIELD_DISPLAY_NAME] as? String

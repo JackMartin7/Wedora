@@ -300,7 +300,20 @@ class HomeActivity : AppCompatActivity() {
         // Empty means "don't narrow" — there is no UI setting this yet, so it
         // stays empty and the gender query alone decides.
         val genders = FilterPrefs.getInterestedIn(this)
-        return genders.isEmpty() || card.gender in genders
+        if (genders.isNotEmpty() && card.gender !in genders) return false
+
+        // Null means every option is ticked, i.e. no narrowing — so a profile
+        // missing the field is kept. Once a filter IS active it's excluded,
+        // because there's no way to know whether it would have qualified and
+        // showing it anyway would ignore what the user asked for.
+        FilterPrefs.getMyStatusFilter(this)?.let { allowed ->
+            if (card.myStatus !in allowed) return false
+        }
+        FilterPrefs.getLookingForFilter(this, MarriageIntent.ALL_LOOKING_FOR)?.let { allowed ->
+            if (card.lookingFor !in allowed) return false
+        }
+
+        return true
     }
 
     /** Accent dot over the filter icon whenever anything differs from default. */
@@ -323,7 +336,9 @@ class HomeActivity : AppCompatActivity() {
             age = profile.age,
             city = profile.city,
             country = profile.country,
-            gender = profile.gender
+            gender = profile.gender,
+            myStatus = profile.myStatus,
+            lookingFor = profile.lookingFor
         )
     }
 
@@ -371,6 +386,14 @@ class HomeActivity : AppCompatActivity() {
         } else {
             b.tvCardBioPreview.visibility = View.VISIBLE
             b.tvCardBioPreview.text = bioPreview
+        }
+
+        val intent = card.marriageIntentLine(this)
+        if (intent == null) {
+            b.tvCardIntent.visibility = View.GONE
+        } else {
+            b.tvCardIntent.visibility = View.VISIBLE
+            b.tvCardIntent.text = intent
         }
 
         if (card.distanceKm == null) {

@@ -7,11 +7,10 @@ import android.content.Context
  * [OnboardingPrefs], [ThemePrefs], [GuestPrefs], [LocalProfilePrefs] and
  * [NotificationPrefs] — so account deletion clears them via clearAllWedoraData.
  *
- * Only age and interestedIn actually narrow the feed today. Relationship type
- * and distance are stored and restored so the screen remembers what the user
- * chose, but nothing reads them when querying: there is no relationshipType
- * field on user documents, and no distance to compute without coordinates on
- * both sides. Both are marked at their accessors.
+ * Age, status and looking-for narrow the feed. Distance is stored and restored
+ * so the screen remembers what the user chose, but nothing reads it when
+ * querying — there are no coordinates on either side to measure between. It's
+ * marked at its accessor.
  */
 object FilterPrefs {
 
@@ -20,7 +19,6 @@ object FilterPrefs {
     private const val KEY_INTERESTED_IN = "filter_interested_in"
     private const val KEY_AGE_MIN = "filter_age_min"
     private const val KEY_AGE_MAX = "filter_age_max"
-    private const val KEY_RELATIONSHIP_TYPE = "filter_relationship_type"
     private const val KEY_DISTANCE_KM = "filter_distance_km"
     private const val KEY_MY_STATUS = "filter_my_status"
     private const val KEY_LOOKING_FOR = "filter_looking_for"
@@ -35,12 +33,6 @@ object FilterPrefs {
     const val DEFAULT_DISTANCE_KM = 50
     const val MIN_DISTANCE_KM = 1
     const val MAX_DISTANCE_KM = 100
-
-    const val RELATIONSHIP_SERIOUS = "serious"
-    const val RELATIONSHIP_CASUAL = "casual"
-    const val RELATIONSHIP_FRIENDSHIP = "friendship"
-    const val RELATIONSHIP_OPEN = "open"
-    const val DEFAULT_RELATIONSHIP = RELATIONSHIP_OPEN
 
     /**
      * Genders to show. Empty — the default — means "don't narrow", leaving the
@@ -68,18 +60,6 @@ object FilterPrefs {
     }
 
     /**
-     * UI-only. User documents have no relationshipType field, so this narrows
-     * nothing — it's stored so the screen remembers the choice.
-     */
-    fun getRelationshipType(context: Context): String =
-        prefs(context).getString(KEY_RELATIONSHIP_TYPE, DEFAULT_RELATIONSHIP)
-            ?: DEFAULT_RELATIONSHIP
-
-    fun setRelationshipType(context: Context, type: String) {
-        prefs(context).edit().putString(KEY_RELATIONSHIP_TYPE, type).apply()
-    }
-
-    /**
      * UI-only.
      * TODO: wire to real distance calculation when Maps is implemented
      */
@@ -101,9 +81,10 @@ object FilterPrefs {
     fun hasActiveFilters(context: Context): Boolean =
         getAgeMin(context) != DEFAULT_AGE_MIN ||
             getAgeMax(context) != DEFAULT_AGE_MAX ||
-            getRelationshipType(context) != DEFAULT_RELATIONSHIP ||
             getDistanceKm(context) != DEFAULT_DISTANCE_KM ||
-            getInterestedIn(context).isNotEmpty()
+            getInterestedIn(context).isNotEmpty() ||
+            getMyStatusFilter(context) != null ||
+            getLookingForFilter(context, MarriageIntent.ALL_LOOKING_FOR) != null
 
     /**
      * Statuses to include. An unset filter — and one with every option ticked
@@ -112,15 +93,21 @@ object FilterPrefs {
      * testing membership against everything.
      */
     fun getMyStatusFilter(context: Context): Set<String>? =
-        activeSubsetOf(prefs(context).getStringSet(KEY_MY_STATUS, null), MarriageIntent.STATUS_OPTIONS)
+        activeSubsetOf(
+            prefs(context).getStringSet(KEY_MY_STATUS, null),
+            MarriageIntent.ALL_STATUS
+        )
 
     fun setMyStatusFilter(context: Context, statuses: Set<String>) {
         prefs(context).edit().putStringSet(KEY_MY_STATUS, statuses).apply()
     }
 
-    /** Raw stored set, for the filter screen to restore its chips from. */
+    /**
+     * Raw stored set, for the filter screen to restore its chips from. Absent
+     * means every option, which is how a first visit shows all chips ticked.
+     */
     fun getRawMyStatusFilter(context: Context): Set<String> =
-        prefs(context).getStringSet(KEY_MY_STATUS, null) ?: MarriageIntent.STATUS_OPTIONS.toSet()
+        prefs(context).getStringSet(KEY_MY_STATUS, null) ?: MarriageIntent.ALL_STATUS.toSet()
 
     fun getLookingForFilter(context: Context, options: List<String>): Set<String>? =
         activeSubsetOf(prefs(context).getStringSet(KEY_LOOKING_FOR, null), options)
@@ -146,23 +133,29 @@ object FilterPrefs {
      * Drops a stored Looking For filter, leaving it at its default of "no
      * filter".
      *
-     * Called when the user changes their own gender, because the option list
-     * changes with it: a filter holding "Second Wife" would keep narrowing the
-     * feed while the filter screen — now showing the marriage-worded options —
-     * offers no way to see or clear it.
+     * Called when the user changes their gender or who they're interested in,
+     * because either can change the wording of the options: a filter holding
+     * "Second Wife" would keep narrowing the feed while the filter screen — now
+     * showing the marriage-worded options — offers no way to see or clear it.
+     *
+     * Status goes with it, since "Widower" and "Widowed" split the same way.
      */
-    fun clearLookingForFilter(context: Context) {
-        prefs(context).edit().remove(KEY_LOOKING_FOR).apply()
+    fun clearIntentFilters(context: Context) {
+        prefs(context).edit()
+            .remove(KEY_LOOKING_FOR)
+            .remove(KEY_MY_STATUS)
+            .apply()
     }
 
-    /** Restores every filter to its default. Backs the Reset action. */
+    /** Restores every filter to its default. */
     fun reset(context: Context) {
         prefs(context).edit()
             .remove(KEY_INTERESTED_IN)
             .remove(KEY_AGE_MIN)
             .remove(KEY_AGE_MAX)
-            .remove(KEY_RELATIONSHIP_TYPE)
             .remove(KEY_DISTANCE_KM)
+            .remove(KEY_MY_STATUS)
+            .remove(KEY_LOOKING_FOR)
             .apply()
     }
 

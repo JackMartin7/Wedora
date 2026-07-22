@@ -19,10 +19,27 @@ object MarriageIntent {
     const val STATUS_MARRIED = "Married"
     const val STATUS_DIVORCED = "Divorced"
     const val STATUS_WIDOWED = "Widowed"
+    const val STATUS_WIDOWER = "Widower"
 
-    val STATUS_OPTIONS = listOf(
+    private val STATUS_MALE = listOf(
+        STATUS_SINGLE, STATUS_MARRIED, STATUS_DIVORCED, STATUS_WIDOWER
+    )
+    private val STATUS_OTHER = listOf(
         STATUS_SINGLE, STATUS_MARRIED, STATUS_DIVORCED, STATUS_WIDOWED
     )
+
+    /**
+     * Marital statuses this user can pick, given their gender — a man is a
+     * widower, not widowed. Only that last option differs.
+     *
+     * Unrecognised or absent gender falls back to the non-male list, matching
+     * [lookingForOptions].
+     */
+    fun statusOptions(gender: String?): List<String> =
+        if (gender == Gender.MALE.firestoreValue) STATUS_MALE else STATUS_OTHER
+
+    /** Every status across both genders — used by the filter's default set. */
+    val ALL_STATUS: List<String> = (STATUS_MALE + STATUS_OTHER).distinct()
 
     private val LOOKING_FOR_MALE = listOf("First Wife", "Second Wife", "Third Wife", "Any")
     private val LOOKING_FOR_OTHER = listOf("First Marriage", "Second Marriage", "Any")

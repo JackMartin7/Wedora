@@ -1,46 +1,49 @@
 package com.wedora.app
 
 import android.os.Bundle
-import android.widget.TextView
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityFilterBinding
 
 /**
- * Feed filters: age range, relationship type and distance.
+ * Feed filters: age range, marital status, what they're looking for, and
+ * distance.
  *
- * Only the age range narrows the feed. Relationship type has no
- * `relationshipType` field on user documents to compare against, and distance
- * has no coordinates stored on either side to measure between — both are saved
- * and restored so the screen remembers the choice, and the screen says so
- * rather than implying a filter that isn't running.
+ * Status and Looking For are worded differently per gender — a man is a
+ * widower and looks for a wife; everyone else is widowed and looks for a
+ * marriage — so the chips are built once the relevant gender is known.
+ *
+ * That gender is the user's `interestedIn`, NOT their own. These filters
+ * narrow the people in the feed, and the feed shows users whose gender matches
+ * `interestedIn` — so their values are the ones being compared against. Using
+ * the viewer's own gender would offer a man "First Wife", which no woman in
+ * his feed can ever have stored, and the filter would return nothing.
+ *
+ * Distance is stored but inert: there are no coordinates on either side to
+ * measure between. The screen says so rather than implying a live filter.
  *
  * Values are written on Apply, not as the controls move, so backing out leaves
  * the feed as it was.
  */
 class FilterActivity : AppCompatActivity() {
 
+    private companion object {
+        const val TAG = "WedoraFilter"
+    }
+
     private lateinit var binding: ActivityFilterBinding
+    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
-    private var relationship = FilterPrefs.DEFAULT_RELATIONSHIP
-
-    /** Chip views paired with the value each one stores. */
-    private lateinit var chips: List<Pair<TextView, String>>
+    /** Gender of the people being filtered; drives both chip option lists. */
+    private var candidateGender: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        chips = listOf(
-            binding.chipSerious to FilterPrefs.RELATIONSHIP_SERIOUS,
-            binding.chipCasual to FilterPrefs.RELATIONSHIP_CASUAL,
-            binding.chipFriendship to FilterPrefs.RELATIONSHIP_FRIENDSHIP,
-            binding.chipOpen to FilterPrefs.RELATIONSHIP_OPEN
-        )
-        chips.forEach { (view, value) ->
-            view.setOnClickListener { selectRelationship(value) }
-        }
 
         binding.btnClose.setOnClickListener { finish() }
         binding.btnReset.setOnClickListener { resetToDefaults() }
@@ -50,16 +53,59 @@ class FilterActivity : AppCompatActivity() {
         binding.sliderDistance.addOnChangeListener { _, _, _ -> showDistanceLabel() }
 
         loadSavedFilters()
+        loadCandidateGender()
     }
 
     // ----- Load / reset ---------------------------------------------------
 
     private fun loadSavedFilters() {
-        applyValues(
-            ageMin = FilterPrefs.getAgeMin(this),
-            ageMax = FilterPrefs.getAgeMax(this),
-            distance = FilterPrefs.getDistanceKm(this),
-            relationshipType = FilterPrefs.getRelationshipType(this)
+        binding.sliderAge.values = listOf(
+            FilterPrefs.getAgeMin(this)
+                .coerceIn(FilterPrefs.AGE_FLOOR, FilterPrefs.AGE_CEILING).toFloat(),
+            FilterPrefs.getAgeMax(this)
+                .coerceIn(FilterPrefs.AGE_FLOOR, FilterPrefs.AGE_CEILING).toFloat()
+        )
+        binding.sliderDistance.value = FilterPrefs.getDistanceKm(this)
+            .coerceIn(FilterPrefs.MIN_DISTANCE_KM, FilterPrefs.MAX_DISTANCE_KM)
+            .toFloat()
+
+        showAgeLabel()
+        showDistanceLabel()
+        showIntentChips()
+    }
+
+    /**
+     * Reads whose profiles this user sees, so the chips are worded for them.
+     * On failure the fallback list still contains every shared option, so the
+     * screen stays usable rather than empty.
+     */
+    private fun loadCandidateGender() {
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
+            .addOnSuccessListener { snapshot ->
+                candidateGender = UserProfile.from(snapshot).interestedIn
+                showIntentChips()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Couldn't read interestedIn for the filter options", e)
+            }
+    }
+
+    /** (Re)builds both filter groups, restoring whatever was saved. */
+    private fun showIntentChips() {
+        val statusOptions = MarriageIntent.statusOptions(candidateGender)
+        binding.chipsStatusFilter.setOptions(
+            options = statusOptions,
+            selected = FilterPrefs.getRawMyStatusFilter(this).ifEmpty { statusOptions.toSet() },
+            multiSelect = true
+        )
+
+        val lookingForOptions = MarriageIntent.lookingForOptions(candidateGender)
+        binding.chipsLookingForFilter.setOptions(
+            options = lookingForOptions,
+            selected = FilterPrefs.getRawLookingForFilter(this, lookingForOptions)
+                .ifEmpty { lookingForOptions.toSet() },
+            multiSelect = true
         )
     }
 
@@ -69,48 +115,26 @@ class FilterActivity : AppCompatActivity() {
      * rule every other control on this screen follows.
      */
     private fun resetToDefaults() {
-        applyValues(
-            ageMin = FilterPrefs.DEFAULT_AGE_MIN,
-            ageMax = FilterPrefs.DEFAULT_AGE_MAX,
-            distance = FilterPrefs.DEFAULT_DISTANCE_KM,
-            relationshipType = FilterPrefs.DEFAULT_RELATIONSHIP
+        binding.sliderAge.values = listOf(
+            FilterPrefs.DEFAULT_AGE_MIN.toFloat(),
+            FilterPrefs.DEFAULT_AGE_MAX.toFloat()
         )
-    }
+        binding.sliderDistance.value = FilterPrefs.DEFAULT_DISTANCE_KM.toFloat()
 
-    private fun applyValues(ageMin: Int, ageMax: Int, distance: Int, relationshipType: String) {
-        // Clamped because a stored pair could sit outside the slider's range if
-        // the bounds are ever narrowed; RangeSlider throws rather than clamping
-        // for itself.
-        val min = ageMin.coerceIn(FilterPrefs.AGE_FLOOR, FilterPrefs.AGE_CEILING)
-        val max = ageMax.coerceIn(min, FilterPrefs.AGE_CEILING)
-        binding.sliderAge.values = listOf(min.toFloat(), max.toFloat())
+        // Default is everything ticked, which reads as "don't narrow".
+        val statusOptions = MarriageIntent.statusOptions(candidateGender)
+        binding.chipsStatusFilter.setOptions(statusOptions, statusOptions, multiSelect = true)
 
-        binding.sliderDistance.value = distance
-            .coerceIn(FilterPrefs.MIN_DISTANCE_KM, FilterPrefs.MAX_DISTANCE_KM)
-            .toFloat()
+        val lookingForOptions = MarriageIntent.lookingForOptions(candidateGender)
+        binding.chipsLookingForFilter.setOptions(
+            lookingForOptions, lookingForOptions, multiSelect = true
+        )
 
-        selectRelationship(relationshipType)
         showAgeLabel()
         showDistanceLabel()
     }
 
-    // ----- Controls -------------------------------------------------------
-
-    private fun selectRelationship(value: String) {
-        relationship = value
-        chips.forEach { (view, chipValue) ->
-            val selected = chipValue == value
-            view.setBackgroundResource(
-                if (selected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected
-            )
-            view.setTextColor(
-                ContextCompat.getColor(
-                    this,
-                    if (selected) R.color.white else R.color.wedora_text
-                )
-            )
-        }
-    }
+    // ----- Labels ---------------------------------------------------------
 
     private fun showAgeLabel() {
         binding.tvAgeValue.text =
@@ -132,9 +156,30 @@ class FilterActivity : AppCompatActivity() {
 
     // ----- Apply ----------------------------------------------------------
 
+    /**
+     * An empty selection is stored as the full option set rather than as
+     * nothing. Unticking every chip means "no preference" to a user, but as a
+     * filter it would match nobody and empty the feed with no obvious cause.
+     */
     private fun applyAndFinish() {
         FilterPrefs.setAgeRange(this, selectedAgeMin(), selectedAgeMax())
-        FilterPrefs.setRelationshipType(this, relationship)
+
+        val statusOptions = MarriageIntent.statusOptions(candidateGender)
+        FilterPrefs.setMyStatusFilter(
+            this,
+            binding.chipsStatusFilter.selectedOptions()
+                .ifEmpty { statusOptions }
+                .toSet()
+        )
+
+        val lookingForOptions = MarriageIntent.lookingForOptions(candidateGender)
+        FilterPrefs.setLookingForFilter(
+            this,
+            binding.chipsLookingForFilter.selectedOptions()
+                .ifEmpty { lookingForOptions }
+                .toSet()
+        )
+
         // TODO: wire to real distance calculation when Maps is implemented
         FilterPrefs.setDistanceKm(this, selectedDistance())
 

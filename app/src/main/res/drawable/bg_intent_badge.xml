@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral pill behind the "status • looking for" line on profiles. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_input_bg" />
+    <corners android:radius="10dp" />
+</shape>

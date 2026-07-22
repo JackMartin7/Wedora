@@ -92,6 +92,23 @@
                 tools:visibility="visible"
                 tools:text="24 • Islamabad, Pakistan" />
 
+            <!-- "Divorced • Looking for Second Wife"; hidden on accounts that
+                 predate these fields. -->
+            <TextView
+                android:id="@+id/tvDetailIntent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_intent_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="5dp"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="Divorced • Looking for Second Wife" />
+
             <!-- The user's bio; hidden entirely when they haven't written one. -->
             <TextView
                 android:id="@+id/tvDetailBio"

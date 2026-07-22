@@ -56,7 +56,7 @@ data class UserProfile(
      */
     val onlyMatchesCanMessage: Boolean,
     /**
-     * Marital status — one of [MarriageIntent.STATUS_OPTIONS]. Null on accounts
+     * Marital status — one of [MarriageIntent.statusOptions]. Null on accounts
      * created before these fields existed; the Complete Profile gate collects
      * it on their next login.
      */

@@ -33,8 +33,15 @@ data class MatchCard(
      * This user's own gender, as stored in Firestore. Carried so the feed can
      * apply a gender filter client-side; null on a profile that never set one.
      */
-    val gender: String?
+    val gender: String?,
+    /** Null on accounts predating the field — the badge is hidden, not blank. */
+    val myStatus: String?,
+    val lookingFor: String?
 ) {
+
+    /** "Divorced • Looking for Second Wife", or null when neither is set. */
+    fun marriageIntentLine(context: Context): String? =
+        MarriageIntent.summaryLine(context, myStatus, lookingFor)
     /** "24 • Islamabad, Pakistan", or null if this user hasn't completed their profile. */
     fun ageLocationLine(context: Context): String? =
         formatAgeLocation(context, R.string.match_card_age_location_format, age, city, country)
