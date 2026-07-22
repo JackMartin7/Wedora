@@ -71,6 +71,12 @@ class HomeActivity : AppCompatActivity() {
             startActivity(Intent(this, NotificationsActivity::class.java))
         }
 
+        // Shown to guests too — they're the likeliest upgrade, and the
+        // subscription screen doesn't read any account data.
+        binding.btnPremium.setOnClickListener {
+            startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+        }
+
         // Tapping your own avatar/name opens your profile — the same
         // destination as the Profile tab, so it navigates the same way the tab
         // does: start it and finish this one.

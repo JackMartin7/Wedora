@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Likes tab.
+
+    Count, the locked "featured" teaser, the upgrade banner and the rest of the
+    grid all scroll together inside one NestedScrollView — the grid has nested
+    scrolling off and wraps its content, so the page moves as a whole rather
+    than the list scrolling inside a fixed frame beneath the banner.
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -20,19 +28,116 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvLikes"
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/likesScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="10dp"
         android:paddingBottom="12dp"
         android:scrollbars="none"
         app:layout_constraintTop_toBottomOf="@id/tvLikesTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav" />
+        app:layout_constraintBottom_toTopOf="@id/bottomNav">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvLikeCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="7 people liked you" />
+
+            <!-- Two locked tiles, added by LikesActivity. -->
+            <LinearLayout
+                android:id="@+id/featuredContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Upgrade banner. Copy and destination differ for guests, so
+                 both are set in code. -->
+            <LinearLayout
+                android:id="@+id/premiumBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_premium_card"
+                android:elevation="6dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="14dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_crown"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/tvBannerText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2sp"
+                    android:fontFamily="@font/poppins_medium"
+                    tools:text="Upgrade to Premium to see who liked you" />
+
+                <TextView
+                    android:id="@+id/btnBannerAction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="34dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_badge_on_accent"
+                    android:gravity="center"
+                    android:paddingHorizontal="14dp"
+                    android:textColor="@color/wedora_accent"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    tools:text="Upgrade Now" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvLikes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="10dp"
+                android:nestedScrollingEnabled="false"
+                android:scrollbars="none"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
 
     <ProgressBar
         android:id="@+id/progressLoading"

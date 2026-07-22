@@ -367,6 +367,16 @@
 
     <!-- Payment &amp; Subscription -->
     <string name="premium_upgrade_title">Upgrade to Premium</string>
+    <string name="premium_banner_likes">Upgrade to Premium to see who liked you</string>
+    <string name="premium_banner_guest">Sign up to see who liked you</string>
+    <string name="premium_banner_upgrade_action">Upgrade Now</string>
+    <string name="premium_banner_signup_action">Sign Up</string>
+    <string name="cd_locked_like">Locked profile</string>
+    <string name="cd_premium">Upgrade to Premium</string>
+    <plurals name="likes_count">
+        <item quantity="one">%1$d person liked you</item>
+        <item quantity="other">%1$d people liked you</item>
+    </plurals>
     <string name="premium_upgrade_cta">Unlock all features →</string>
     <string name="plan_current_label">Current Plan</string>
     <string name="plan_free">Free Plan</string>
