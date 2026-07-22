@@ -140,7 +140,8 @@
                         android:id="@+id/tvStatMatches"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_matches_value"
+                        android:text="@string/profile_stat_placeholder"
+                        tools:text="128"
                         android:textColor="@color/wedora_text"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold" />
@@ -168,7 +169,8 @@
                         android:id="@+id/tvStatLikes"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_likes_value"
+                        android:text="@string/profile_stat_placeholder"
+                        tools:text="342"
                         android:textColor="@color/wedora_text"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold" />
@@ -196,7 +198,8 @@
                         android:id="@+id/tvStatProfilePercent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_percent_value"
+                        android:text="@string/profile_stat_placeholder"
+                        tools:text="86%"
                         android:textColor="@color/wedora_text"
                         android:textSize="18sp"
                         android:fontFamily="@font/poppins_semibold" />

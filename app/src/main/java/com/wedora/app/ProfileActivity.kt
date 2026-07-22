@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityProfileBinding
@@ -54,6 +55,10 @@ class ProfileActivity : AppCompatActivity() {
      * stats card stays a placeholder — there's no backend field for it yet.
      */
     private fun showSignedInUser() {
+        // Cleared first so a resume never shows the last visit's numbers while
+        // the new ones load, and so a guest never sees a signed-in user's.
+        resetStats()
+
         if (GuestPrefs.isGuest(this)) {
             binding.tvProfileName.text = getString(R.string.guest_label)
             binding.tvProfileEmail.visibility = View.GONE
@@ -80,31 +85,99 @@ class ProfileActivity : AppCompatActivity() {
 
         user?.uid?.let {
             binding.ivProfilePhoto.loadLocalProfilePhoto(this, it)
-            showAgeAndLocation(it)
+            // Fired together, not chained: the two reads are independent, so
+            // each stat appears as soon as its own data lands.
+            loadProfileDocument(it)
+            loadMatchStats(it)
         }
     }
 
     /**
-     * Populates "{age} years old • {city}, {country}" from the user's Firestore
-     * doc. Stays hidden if the read fails or the fields aren't there — the
+     * One read of the user document, serving both the "{age} years old •
+     * {city}, {country}" line and the profile-completion stat — they need the
+     * same fields, and this runs on every resume, so reading twice would
+     * double the cost of every visit to this screen for nothing.
+     *
+     * The line stays hidden if the read fails or the fields aren't there — the
      * Complete Profile gate normally guarantees they are, but an older session
      * or a network failure shouldn't render a half-empty line.
      */
-    private fun showAgeAndLocation(uid: String) {
+    private fun loadProfileDocument(uid: String) {
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
-                val line = UserProfile.from(snapshot).ageLocationLine(this)
+                val profile = UserProfile.from(snapshot)
+
+                val line = profile.ageLocationLine(this)
                 if (line == null) {
                     binding.tvProfileAgeLocation.visibility = View.GONE
                 } else {
                     binding.tvProfileAgeLocation.text = line
                     binding.tvProfileAgeLocation.visibility = View.VISIBLE
                 }
+
+                showCompletion(calculateProfileCompletion(this, uid, profile))
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Couldn't load age/location for profile", e)
+                // The placeholder stays rather than showing a figure: a wrong
+                // completion score would send the user editing fields that are
+                // already filled in.
+                Log.w(TAG, "Couldn't load the profile document", e)
                 binding.tvProfileAgeLocation.visibility = View.GONE
             }
+    }
+
+    // ----- Stats ----------------------------------------------------------
+
+    /**
+     * Both counts come from a single query. "Matches" is every match document
+     * containing me; "Likes" is the subset someone else initiated, which is a
+     * client-side filter rather than a second query — pairing array-contains
+     * with an inequality would need a composite index, and an inequality also
+     * silently drops documents that lack the field, which is exactly the
+     * legacy data the filter has to keep counting.
+     */
+    private fun loadMatchStats(uid: String) {
+        firestore.collection(Match.COLLECTION)
+            .whereArrayContains(Match.FIELD_USERS, uid)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val matches = snapshot.documents.mapNotNull { Match.from(it) }
+                binding.tvStatMatches.text = formatStatCount(matches.size)
+                binding.tvStatLikes.text =
+                    formatStatCount(matches.count { it.isLikeFor(uid) })
+            }
+            .addOnFailureListener { e ->
+                // Left as the placeholder — showing 0 would read as "nobody
+                // likes you" when the truth is that we don't know yet.
+                Log.w(TAG, "Couldn't load match stats", e)
+            }
+    }
+
+    private fun showCompletion(percent: Int) {
+        binding.tvStatProfilePercent.text =
+            getString(R.string.profile_stat_percent_format, percent)
+        binding.tvStatProfilePercent.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (percent >= PROFILE_COMPLETE_THRESHOLD) R.color.wedora_success
+                else R.color.wedora_accent
+            )
+        )
+    }
+
+    /**
+     * Back to "—" before each load. Without this a resume would show the
+     * previous visit's figures while the new ones are in flight, which is
+     * indistinguishable from fresh data that simply hasn't changed.
+     */
+    private fun resetStats() {
+        val placeholder = getString(R.string.profile_stat_placeholder)
+        binding.tvStatMatches.text = placeholder
+        binding.tvStatLikes.text = placeholder
+        binding.tvStatProfilePercent.text = placeholder
+        binding.tvStatProfilePercent.setTextColor(
+            ContextCompat.getColor(this, R.color.wedora_text)
+        )
     }
 
     private fun setUpDarkModeSwitch() {
