@@ -80,6 +80,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".FilterActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

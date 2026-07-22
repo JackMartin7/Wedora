@@ -366,6 +366,24 @@
     <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
 
     <!-- Payment &amp; Subscription -->
+    <!-- Feed filters -->
+    <string name="filter_title">Filter</string>
+    <string name="filter_reset">Reset</string>
+    <string name="action_close">Close</string>
+    <string name="filter_age_range">Age Range</string>
+    <string name="filter_age_value">%1$d – %2$d</string>
+    <string name="filter_relationship_type">Relationship Type</string>
+    <string name="filter_relationship_serious">Serious</string>
+    <string name="filter_relationship_casual">Casual</string>
+    <string name="filter_relationship_friendship">Friendship</string>
+    <string name="filter_relationship_open">Open to all</string>
+    <string name="filter_not_yet_applied">Saved for later — relationship type and distance don\'t affect your feed yet.</string>
+    <string name="filter_distance">Distance</string>
+    <string name="filter_distance_value">Within %1$d km</string>
+    <string name="filter_apply">Apply Filters</string>
+    <string name="cd_filter">Filter</string>
+    <string name="home_empty_filtered">No one matches these filters. Try widening your age range.</string>
+
     <string name="premium_upgrade_title">Upgrade to Premium</string>
     <string name="premium_banner_likes">Upgrade to Premium to see who liked you</string>
     <string name="premium_banner_guest">Sign up to see who liked you</string>

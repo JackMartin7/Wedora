@@ -78,16 +78,43 @@
         recolours it for this light background.
     -->
     <ImageButton
-        android:id="@+id/btnPremium"
+        android:id="@+id/btnFilter"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="20dp"
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_filter"
+        android:tint="@color/wedora_text"
+        android:contentDescription="@string/cd_filter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/greetingContainer"
+        app:layout_constraintBottom_toBottomOf="@id/greetingContainer" />
+
+    <!-- Marks non-default filters. Overlays the icon's top-end corner. -->
+    <View
+        android:id="@+id/filterDot"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:background="@drawable/bg_filter_dot"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_marginEnd="6dp"
+        android:layout_marginTop="6dp"
+        app:layout_constraintEnd_toEndOf="@id/btnFilter"
+        app:layout_constraintTop_toTopOf="@id/btnFilter" />
+
+    <ImageButton
+        android:id="@+id/btnPremium"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="4dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_crown"
         android:tint="@color/wedora_accent"
         android:contentDescription="@string/cd_premium"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnFilter"
         app:layout_constraintTop_toTopOf="@id/greetingContainer"
         app:layout_constraintBottom_toBottomOf="@id/greetingContainer" />
 

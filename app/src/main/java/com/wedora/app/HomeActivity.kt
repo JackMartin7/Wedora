@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -55,6 +56,20 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Only reloads on RESULT_OK — i.e. Apply. Backing out of the filter screen
+     * changes nothing, so re-querying would throw away the user's place in the
+     * card stack for no reason.
+     */
+    private val filterLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            showFilterIndicator()
+            loadMatches()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -76,6 +91,11 @@ class HomeActivity : AppCompatActivity() {
         binding.btnPremium.setOnClickListener {
             startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
         }
+
+        binding.btnFilter.setOnClickListener {
+            filterLauncher.launch(Intent(this, FilterActivity::class.java))
+        }
+        showFilterIndicator()
 
         // Tapping your own avatar/name opens your profile — the same
         // destination as the Profile tab, so it navigates the same way the tab
@@ -236,20 +256,57 @@ class HomeActivity : AppCompatActivity() {
             .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
-                val loaded = snapshot.documents
+                val candidates = snapshot.documents
                     .filter { it.id != selfUid && it.id !in blockedUids }
                     .mapNotNull { it.toMatchCard() }
 
-                if (loaded.isEmpty()) {
-                    showEmptyState(getString(R.string.home_empty_no_matches))
-                } else {
-                    showCards(loaded)
+                val loaded = candidates.filter { matchesFilters(it) }
+
+                when {
+                    // Distinguishes "nobody at all" from "nobody once your
+                    // filters applied" — the second is fixable by the user, and
+                    // pointing at the filters is the useful thing to say.
+                    loaded.isNotEmpty() -> showCards(loaded)
+                    candidates.isNotEmpty() ->
+                        showEmptyState(getString(R.string.home_empty_filtered))
+                    else -> showEmptyState(getString(R.string.home_empty_no_matches))
                 }
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to query matches", e)
                 showEmptyState(getString(R.string.home_empty_error))
             }
+    }
+
+    /**
+     * Client-side filtering, consistent with the existing self and block
+     * filters — pairing more conditions onto the gender query would need
+     * composite indexes, and an inequality on age would silently drop every
+     * document that has no age rather than letting us decide.
+     *
+     * A card with no age is excluded, deliberately: an age filter that keeps
+     * unknown ages isn't filtering by age. That's the one case where "handle
+     * missing gracefully" and "respect what the user asked for" disagree, and
+     * the user's request wins.
+     *
+     * Relationship type and distance are not applied — there is no
+     * relationshipType field to compare and no coordinates to measure between.
+     * They're stored in FilterPrefs, and the filter screen says so.
+     */
+    private fun matchesFilters(card: MatchCard): Boolean {
+        val age = card.age ?: return false
+        if (age < FilterPrefs.getAgeMin(this) || age > FilterPrefs.getAgeMax(this)) return false
+
+        // Empty means "don't narrow" — there is no UI setting this yet, so it
+        // stays empty and the gender query alone decides.
+        val genders = FilterPrefs.getInterestedIn(this)
+        return genders.isEmpty() || card.gender in genders
+    }
+
+    /** Accent dot over the filter icon whenever anything differs from default. */
+    private fun showFilterIndicator() {
+        binding.filterDot.visibility =
+            if (FilterPrefs.hasActiveFilters(this)) View.VISIBLE else View.GONE
     }
 
     private fun DocumentSnapshot.toMatchCard(): MatchCard? {
@@ -265,7 +322,8 @@ class HomeActivity : AppCompatActivity() {
             bio = profile.bio.orEmpty(),
             age = profile.age,
             city = profile.city,
-            country = profile.country
+            country = profile.country,
+            gender = profile.gender
         )
     }
 

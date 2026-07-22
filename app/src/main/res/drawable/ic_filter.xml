@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sliders icon for the Home feed filter. White so callers can tint it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M3,6 L9,6 L9,4.5 L12,4.5 L12,9 L9,9 L9,7.5 L3,7.5 Z M14,6 L21,6 L21,7.5 L14,7.5 Z M3,11.25 L10,11.25 L10,12.75 L3,12.75 Z M12,9.75 L15,9.75 L15,14.25 L12,14.25 L12,12.75 L12,11.25 Z M17,11.25 L21,11.25 L21,12.75 L17,12.75 Z M3,16.5 L7,16.5 L7,15 L10,15 L10,19.5 L7,19.5 L7,18 L3,18 Z M12,16.5 L21,16.5 L21,18 L12,18 Z" />
+</vector>

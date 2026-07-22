@@ -28,7 +28,12 @@ data class MatchCard(
     val bio: String,
     val age: Int?,
     val city: String?,
-    val country: String?
+    val country: String?,
+    /**
+     * This user's own gender, as stored in Firestore. Carried so the feed can
+     * apply a gender filter client-side; null on a profile that never set one.
+     */
+    val gender: String?
 ) {
     /** "24 • Islamabad, Pakistan", or null if this user hasn't completed their profile. */
     fun ageLocationLine(context: Context): String? =

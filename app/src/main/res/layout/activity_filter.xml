@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Feed filters. Age is the only section that narrows the query today;
+    relationship type and distance are stored and restored but inert — see
+    FilterActivity and FilterPrefs.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg">
+
+    <!-- ===== Top bar ===== -->
+
+    <ImageButton
+        android:id="@+id/btnClose"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="16dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_close"
+        android:contentDescription="@string/action_close"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:text="@string/filter_title"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/btnClose"
+        app:layout_constraintTop_toTopOf="@id/btnClose"
+        app:layout_constraintBottom_toBottomOf="@id/btnClose" />
+
+    <TextView
+        android:id="@+id/btnReset"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:paddingHorizontal="8dp"
+        android:text="@string/filter_reset"
+        android:textColor="@color/wedora_accent"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnClose"
+        app:layout_constraintBottom_toBottomOf="@id/btnClose" />
+
+    <View
+        android:id="@+id/dividerTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="@color/wedora_border"
+        app:layout_constraintTop_toBottomOf="@id/btnClose" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/dividerTopBar"
+        app:layout_constraintBottom_toTopOf="@id/btnApply">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="24dp">
+
+            <!-- ===== Age range ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="@string/filter_age_range"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                android:id="@+id/tvAgeValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/wedora_accent"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                tools:text="18 – 40" />
+
+            <com.google.android.material.slider.RangeSlider
+                android:id="@+id/sliderAge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:valueFrom="18"
+                android:valueTo="80"
+                android:stepSize="1"
+                app:thumbColor="@color/wedora_accent"
+                app:trackColorActive="@color/wedora_accent"
+                app:trackColorInactive="@color/wedora_input_border"
+                app:labelBehavior="gone" />
+
+            <!-- ===== Relationship type ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/filter_relationship_type"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
+
+                <TextView
+                    android:id="@+id/chipSerious"
+                    style="@style/WedoraFilterChip"
+                    android:text="@string/filter_relationship_serious" />
+
+                <TextView
+                    android:id="@+id/chipCasual"
+                    style="@style/WedoraFilterChip"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/filter_relationship_casual" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:baselineAligned="false">
+
+                <TextView
+                    android:id="@+id/chipFriendship"
+                    style="@style/WedoraFilterChip"
+                    android:text="@string/filter_relationship_friendship" />
+
+                <TextView
+                    android:id="@+id/chipOpen"
+                    style="@style/WedoraFilterChip"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/filter_relationship_open" />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/filter_not_yet_applied"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp"
+                android:lineSpacingExtra="2sp" />
+
+            <!-- ===== Distance ===== -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/filter_distance"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                android:id="@+id/tvDistanceValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/wedora_accent"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                tools:text="Within 50 km" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sliderDistance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:valueFrom="1"
+                android:valueTo="100"
+                android:stepSize="1"
+                app:thumbColor="@color/wedora_accent"
+                app:trackColorActive="@color/wedora_accent"
+                app:trackColorInactive="@color/wedora_input_border"
+                app:labelBehavior="gone" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnApply"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="0dp"
+        android:layout_height="54dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/filter_apply"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
