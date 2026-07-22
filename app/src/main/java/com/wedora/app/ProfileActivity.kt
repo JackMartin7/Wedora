@@ -58,8 +58,13 @@ class ProfileActivity : AppCompatActivity() {
             binding.tvProfileName.text = getString(R.string.guest_label)
             binding.tvProfileEmail.visibility = View.GONE
             binding.tvProfileAgeLocation.visibility = View.GONE
+            // A guest has no Firestore document, so there is nothing for the
+            // editor to load or save — it would open, fail its read and close.
+            binding.btnEditProfile.visibility = View.GONE
             return
         }
+
+        binding.btnEditProfile.visibility = View.VISIBLE
 
         val user = FirebaseAuth.getInstance().currentUser
         binding.tvProfileName.text = user?.displayName?.takeIf { it.isNotBlank() }
