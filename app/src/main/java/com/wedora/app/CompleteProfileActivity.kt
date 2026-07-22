@@ -67,6 +67,52 @@ class CompleteProfileActivity : AppCompatActivity() {
 
         updateContinueEnabled()
         requestLocationOrFallBack()
+        loadIntentSelectors()
+    }
+
+    // ----- Marriage intent ------------------------------------------------
+
+    /**
+     * Builds the two chip groups, pre-selecting anything already stored — an
+     * account that has one field but not the other passes back through this
+     * gate, and shouldn't have to re-answer what it already answered.
+     *
+     * The Looking For options depend on gender, which is set at sign-up and
+     * lives in Firestore, so the read has to land before the chips are built.
+     * On a failed read the non-male list is used, which still offers "Any" —
+     * better than an empty group the user can't get past.
+     */
+    private fun loadIntentSelectors() {
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.STATUS_OPTIONS,
+            selected = emptyList(),
+            onChanged = { updateContinueEnabled() }
+        )
+        showLookingForOptions(gender = null, selected = null)
+
+        val uid = auth.currentUser?.uid ?: return
+        firestore.collection(UserProfile.COLLECTION).document(uid).get()
+            .addOnSuccessListener { snapshot ->
+                val profile = UserProfile.from(snapshot)
+                binding.chipsMyStatus.setOptions(
+                    options = MarriageIntent.STATUS_OPTIONS,
+                    selected = listOfNotNull(profile.myStatus),
+                    onChanged = { updateContinueEnabled() }
+                )
+                showLookingForOptions(profile.gender, profile.lookingFor)
+                updateContinueEnabled()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Couldn't read gender for the Looking For options", e)
+            }
+    }
+
+    private fun showLookingForOptions(gender: String?, selected: String?) {
+        binding.chipsLookingFor.setOptions(
+            options = MarriageIntent.lookingForOptions(gender),
+            selected = listOfNotNull(selected),
+            onChanged = { updateContinueEnabled() }
+        )
     }
 
     // ----- Location -------------------------------------------------------
@@ -145,7 +191,10 @@ class CompleteProfileActivity : AppCompatActivity() {
     }
 
     private fun updateContinueEnabled() {
-        binding.btnContinue.isEnabled = enteredAge() != null && currentPlace() != null
+        binding.btnContinue.isEnabled = enteredAge() != null &&
+            currentPlace() != null &&
+            binding.chipsMyStatus.selectedOption() != null &&
+            binding.chipsLookingFor.selectedOption() != null
     }
 
     // ----- Save -----------------------------------------------------------
@@ -182,6 +231,17 @@ class CompleteProfileActivity : AppCompatActivity() {
             }
         }
 
+        val myStatus = binding.chipsMyStatus.selectedOption()
+        if (myStatus == null) {
+            Toast.makeText(this, R.string.error_my_status_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val lookingFor = binding.chipsLookingFor.selectedOption()
+        if (lookingFor == null) {
+            Toast.makeText(this, R.string.error_looking_for_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val place = currentPlace() ?: return
         val uid = auth.currentUser?.uid
         if (uid == null) {
@@ -193,7 +253,9 @@ class CompleteProfileActivity : AppCompatActivity() {
         val updates = mapOf(
             UserProfile.FIELD_AGE to age,
             UserProfile.FIELD_CITY to place.city,
-            UserProfile.FIELD_COUNTRY to place.country
+            UserProfile.FIELD_COUNTRY to place.country,
+            UserProfile.FIELD_MY_STATUS to myStatus,
+            UserProfile.FIELD_LOOKING_FOR to lookingFor
         )
         // merge, not update(): accounts created before the Firestore user-doc
         // feature existed have no document at all, and update() would fail on

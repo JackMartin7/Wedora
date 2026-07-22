@@ -154,7 +154,14 @@ class EditProfileActivity : AppCompatActivity() {
                 binding.tvGenderFemale to Gender.FEMALE,
                 binding.tvGenderOther to Gender.OTHER
             ),
-            onSelected = { updateSaveEnabled() }
+            onSelected = {
+                // Looking For offers different options per gender, so a gender
+                // change rebuilds that group. A selection absent from the new
+                // list is dropped rather than carried across — the user has to
+                // pick again from what now applies.
+                showLookingForOptions(selected = binding.chipsLookingFor.selectedOption())
+                updateSaveEnabled()
+            }
         )
         interestedInControl = SegmentedControl(
             listOf(
@@ -163,6 +170,22 @@ class EditProfileActivity : AppCompatActivity() {
                 binding.tvInterestedOther to Gender.OTHER
             ),
             onSelected = { updateSaveEnabled() }
+        )
+
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.STATUS_OPTIONS,
+            selected = emptyList(),
+            onChanged = { updateSaveEnabled() }
+        )
+        showLookingForOptions(selected = null)
+    }
+
+    /** Rebuilds the Looking For chips for whichever gender is selected now. */
+    private fun showLookingForOptions(selected: String?) {
+        binding.chipsLookingFor.setOptions(
+            options = MarriageIntent.lookingForOptions(genderControl.selected?.firestoreValue),
+            selected = listOfNotNull(selected),
+            onChanged = { updateSaveEnabled() }
         )
     }
 
@@ -202,6 +225,15 @@ class EditProfileActivity : AppCompatActivity() {
 
         genderFrom(profile.gender)?.let { genderControl.select(it) }
         genderFrom(profile.interestedIn)?.let { interestedInControl.select(it) }
+
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.STATUS_OPTIONS,
+            selected = listOfNotNull(profile.myStatus),
+            onChanged = { updateSaveEnabled() }
+        )
+        // After the gender control has been set, so the option list matches the
+        // stored gender rather than the empty default.
+        showLookingForOptions(selected = profile.lookingFor)
 
         updateBioCounter()
     }
@@ -274,6 +306,16 @@ class EditProfileActivity : AppCompatActivity() {
         val interestedIn = interestedInControl.selected?.firestoreValue
         if (interestedIn != null && interestedIn != original.interestedIn) {
             changes[UserProfile.FIELD_INTERESTED_IN] = interestedIn
+        }
+
+        val myStatus = binding.chipsMyStatus.selectedOption()
+        if (myStatus != null && myStatus != original.myStatus) {
+            changes[UserProfile.FIELD_MY_STATUS] = myStatus
+        }
+
+        val lookingFor = binding.chipsLookingFor.selectedOption()
+        if (lookingFor != null && lookingFor != original.lookingFor) {
+            changes[UserProfile.FIELD_LOOKING_FOR] = lookingFor
         }
 
         return changes
@@ -414,6 +456,18 @@ class EditProfileActivity : AppCompatActivity() {
             return
         }
 
+        // Both are required. The chips can only be empty on a profile that
+        // predates these fields — the completion gate normally fills them in
+        // first, but an edit shouldn't be able to save without them either.
+        if (binding.chipsMyStatus.selectedOption() == null) {
+            Toast.makeText(this, R.string.error_my_status_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (binding.chipsLookingFor.selectedOption() == null) {
+            Toast.makeText(this, R.string.error_looking_for_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+
         setSaving(true)
 
         // Photo-only save: nothing to send, so skip the round trip entirely
@@ -462,6 +516,14 @@ class EditProfileActivity : AppCompatActivity() {
      * sync only because Home and Profile read the greeting from it.
      */
     private fun onSaved(changes: Map<String, Any?>) {
+        // A gender change swaps the Looking For option list, so any stored
+        // filter built from the old list is dropped. Left alone it would keep
+        // narrowing the feed while the filter screen — now showing the other
+        // wording — offered no way to see or clear it.
+        if (changes.containsKey(UserProfile.FIELD_GENDER)) {
+            FilterPrefs.clearLookingForFilter(this)
+        }
+
         val newName = changes[UserProfile.FIELD_DISPLAY_NAME] as? String
         if (newName.isNullOrBlank()) {
             finishSaved()

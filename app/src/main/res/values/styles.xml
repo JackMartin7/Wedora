@@ -103,6 +103,27 @@
     </style>
 
     <!--
+        Pill chip for the marriage-intent selectors and the feed filters.
+        Built on the Choice chip so ChipGroup handles selection and wrapping;
+        the tints are ColorStateLists keyed on state_checked, so a chip added
+        at runtime is styled without any per-chip code.
+    -->
+    <style name="WedoraChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="chipBackgroundColor">@color/chip_bg_tint</item>
+        <item name="android:textColor">@color/chip_text_tint</item>
+        <item name="chipStrokeColor">@color/chip_stroke_tint</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipCornerRadius">20dp</item>
+        <item name="chipMinHeight">40dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="chipIconVisible">false</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="rippleColor">@color/wedora_input_border</item>
+    </style>
+
+    <!--
         Relationship-type chip on the Filter screen. Background and text colour
         are swapped in code on selection, so only the shared metrics live here.
     -->

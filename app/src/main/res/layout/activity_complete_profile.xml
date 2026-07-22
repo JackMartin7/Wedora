@@ -176,6 +176,54 @@
             app:barrierAllowsGoneWidgets="false"
             app:constraint_referenced_ids="tvDetectedLocation,etCountry" />
 
+        <!-- ===== My Status ===== -->
+        <TextView
+            android:id="@+id/labelMyStatus"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/label_my_status"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/barrierLocation" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipsMyStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:singleLine="false"
+            app:singleSelection="true"
+            app:chipSpacingHorizontal="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelMyStatus" />
+
+        <!-- ===== Looking For ===== -->
+        <!-- Options depend on the gender stored at sign-up, which this screen
+             reads before building the chips. -->
+        <TextView
+            android:id="@+id/labelLookingFor"
+            style="@style/WedoraFieldLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:text="@string/label_looking_for"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/chipsMyStatus" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipsLookingFor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:singleLine="false"
+            app:singleSelection="true"
+            app:chipSpacingHorizontal="8dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/labelLookingFor" />
+
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnContinue"
             style="@style/WedoraPrimaryButton"
@@ -185,7 +233,7 @@
             tools:enabled="false"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/barrierLocation" />
+            app:layout_constraintTop_toBottomOf="@id/chipsLookingFor" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

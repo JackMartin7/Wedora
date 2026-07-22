@@ -366,6 +366,14 @@
     <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
 
     <!-- Payment &amp; Subscription -->
+    <!-- Marriage intent -->
+    <string name="label_my_status">My Status</string>
+    <string name="label_looking_for">Looking For</string>
+    <string name="looking_for_format">Looking for %1$s</string>
+    <string name="marriage_intent_format">%1$s • %2$s</string>
+    <string name="error_my_status_required">Please select your status</string>
+    <string name="error_looking_for_required">Please select what you\'re looking for</string>
+
     <!-- Feed filters -->
     <string name="filter_title">Filter</string>
     <string name="filter_reset">Reset</string>

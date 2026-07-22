@@ -22,6 +22,8 @@ object FilterPrefs {
     private const val KEY_AGE_MAX = "filter_age_max"
     private const val KEY_RELATIONSHIP_TYPE = "filter_relationship_type"
     private const val KEY_DISTANCE_KM = "filter_distance_km"
+    private const val KEY_MY_STATUS = "filter_my_status"
+    private const val KEY_LOOKING_FOR = "filter_looking_for"
 
     const val DEFAULT_AGE_MIN = 18
     const val DEFAULT_AGE_MAX = 40
@@ -102,6 +104,56 @@ object FilterPrefs {
             getRelationshipType(context) != DEFAULT_RELATIONSHIP ||
             getDistanceKm(context) != DEFAULT_DISTANCE_KM ||
             getInterestedIn(context).isNotEmpty()
+
+    /**
+     * Statuses to include. An unset filter — and one with every option ticked
+     * — both mean "don't narrow", which is why the getters return null rather
+     * than a full set: the feed can then skip the check entirely instead of
+     * testing membership against everything.
+     */
+    fun getMyStatusFilter(context: Context): Set<String>? =
+        activeSubsetOf(prefs(context).getStringSet(KEY_MY_STATUS, null), MarriageIntent.STATUS_OPTIONS)
+
+    fun setMyStatusFilter(context: Context, statuses: Set<String>) {
+        prefs(context).edit().putStringSet(KEY_MY_STATUS, statuses).apply()
+    }
+
+    /** Raw stored set, for the filter screen to restore its chips from. */
+    fun getRawMyStatusFilter(context: Context): Set<String> =
+        prefs(context).getStringSet(KEY_MY_STATUS, null) ?: MarriageIntent.STATUS_OPTIONS.toSet()
+
+    fun getLookingForFilter(context: Context, options: List<String>): Set<String>? =
+        activeSubsetOf(prefs(context).getStringSet(KEY_LOOKING_FOR, null), options)
+
+    fun setLookingForFilter(context: Context, values: Set<String>) {
+        prefs(context).edit().putStringSet(KEY_LOOKING_FOR, values).apply()
+    }
+
+    /** Raw stored set, defaulting to every option for the given gender. */
+    fun getRawLookingForFilter(context: Context, options: List<String>): Set<String> =
+        prefs(context).getStringSet(KEY_LOOKING_FOR, null) ?: options.toSet()
+
+    /**
+     * Null when [stored] is absent or covers every option — i.e. when it isn't
+     * actually narrowing anything.
+     */
+    private fun activeSubsetOf(stored: Set<String>?, options: List<String>): Set<String>? {
+        if (stored == null) return null
+        return if (stored.containsAll(options)) null else stored
+    }
+
+    /**
+     * Drops a stored Looking For filter, leaving it at its default of "no
+     * filter".
+     *
+     * Called when the user changes their own gender, because the option list
+     * changes with it: a filter holding "Second Wife" would keep narrowing the
+     * feed while the filter screen — now showing the marriage-worded options —
+     * offers no way to see or clear it.
+     */
+    fun clearLookingForFilter(context: Context) {
+        prefs(context).edit().remove(KEY_LOOKING_FOR).apply()
+    }
 
     /** Restores every filter to its default. Backs the Reset action. */
     fun reset(context: Context) {

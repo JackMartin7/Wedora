@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A single option chip, inflated by ChipSelection.setOptions. Exists as a
+    layout because a Chip has to be inflated to pick up its style — setting a
+    style on a Chip constructed in code does not apply it.
+-->
+<com.google.android.material.chip.Chip
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/WedoraChip"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:checkable="true" />

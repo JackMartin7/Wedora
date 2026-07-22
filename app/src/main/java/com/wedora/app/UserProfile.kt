@@ -54,12 +54,34 @@ data class UserProfile(
      * setting is opt-in, and applying it to someone who never turned it on
      * would silently mute their existing conversations.
      */
-    val onlyMatchesCanMessage: Boolean
+    val onlyMatchesCanMessage: Boolean,
+    /**
+     * Marital status — one of [MarriageIntent.STATUS_OPTIONS]. Null on accounts
+     * created before these fields existed; the Complete Profile gate collects
+     * it on their next login.
+     */
+    val myStatus: String?,
+    /**
+     * What this user is looking for. The available options depend on their
+     * gender (see [MarriageIntent.lookingForOptions]), and the stored value is
+     * the display string itself, so anything reading it can render it as-is.
+     */
+    val lookingFor: String?
 ) {
 
-    /** True once the Complete Profile step has been satisfied. */
+    /**
+     * True once the Complete Profile step has been satisfied.
+     *
+     * Includes the marriage-intent fields, which is what routes accounts
+     * created before they existed back through the gate on their next login —
+     * the same mechanism that caught accounts predating age and location.
+     */
     val isComplete: Boolean
-        get() = age != null && !city.isNullOrBlank() && !country.isNullOrBlank()
+        get() = age != null &&
+            !city.isNullOrBlank() &&
+            !country.isNullOrBlank() &&
+            !myStatus.isNullOrBlank() &&
+            !lookingFor.isNullOrBlank()
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
     fun ageLocationLine(context: Context): String? =
@@ -78,6 +100,8 @@ data class UserProfile(
         const val FIELD_COUNTRY = "country"
         const val FIELD_BIO = "bio"
         const val FIELD_ONLY_MATCHES_CAN_MESSAGE = "onlyMatchesCanMessage"
+        const val FIELD_MY_STATUS = "myStatus"
+        const val FIELD_LOOKING_FOR = "lookingFor"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -98,7 +122,9 @@ data class UserProfile(
             country = snapshot.getString(FIELD_COUNTRY),
             bio = snapshot.getString(FIELD_BIO),
             onlyMatchesCanMessage =
-                snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false
+                snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false,
+            myStatus = snapshot.getString(FIELD_MY_STATUS),
+            lookingFor = snapshot.getString(FIELD_LOOKING_FOR)
         )
     }
 }

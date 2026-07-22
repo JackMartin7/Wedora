@@ -95,7 +95,11 @@ class SignUpActivity : AppCompatActivity() {
                 binding.tvGenderMale to Gender.MALE,
                 binding.tvGenderFemale to Gender.FEMALE,
                 binding.tvGenderOther to Gender.OTHER
-            )
+            ),
+            // Looking For offers different options per gender, so changing
+            // gender rebuilds that group. Any selection that isn't in the new
+            // list is dropped rather than carried over — see ChipGroup.setOptions.
+            onSelected = { showLookingForOptions() }
         )
         interestedInControl = SegmentedControl(
             listOf(
@@ -103,6 +107,20 @@ class SignUpActivity : AppCompatActivity() {
                 binding.tvInterestedFemale to Gender.FEMALE,
                 binding.tvInterestedOther to Gender.OTHER
             )
+        )
+
+        binding.chipsMyStatus.setOptions(
+            options = MarriageIntent.STATUS_OPTIONS,
+            selected = emptyList()
+        )
+        showLookingForOptions()
+    }
+
+    /** Rebuilds the Looking For chips for whichever gender is selected now. */
+    private fun showLookingForOptions() {
+        binding.chipsLookingFor.setOptions(
+            options = MarriageIntent.lookingForOptions(genderControl.selected?.firestoreValue),
+            selected = binding.chipsLookingFor.selectedOptions()
         )
     }
 
@@ -164,11 +182,22 @@ class SignUpActivity : AppCompatActivity() {
             return
         }
 
+        val myStatus = binding.chipsMyStatus.selectedOption()
+        if (myStatus == null) {
+            Toast.makeText(this, R.string.error_my_status_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val lookingFor = binding.chipsLookingFor.selectedOption()
+        if (lookingFor == null) {
+            Toast.makeText(this, R.string.error_looking_for_required, Toast.LENGTH_SHORT).show()
+            return
+        }
+
         setLoading(true)
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    setUserDisplayName(username, gender, interestedIn)
+                    setUserDisplayName(username, gender, interestedIn, myStatus, lookingFor)
                 } else {
                     setLoading(false)
                     Toast.makeText(this, signUpErrorMessage(task.exception), Toast.LENGTH_LONG).show()
@@ -176,7 +205,13 @@ class SignUpActivity : AppCompatActivity() {
             }
     }
 
-    private fun setUserDisplayName(username: String, gender: Gender, interestedIn: Gender) {
+    private fun setUserDisplayName(
+        username: String,
+        gender: Gender,
+        interestedIn: Gender,
+        myStatus: String,
+        lookingFor: String
+    ) {
         val user = auth.currentUser
         if (user == null) {
             finishSignUp()
@@ -189,7 +224,7 @@ class SignUpActivity : AppCompatActivity() {
         user.updateProfile(request).addOnCompleteListener(this) {
             // Whether or not the display name stuck, the account exists — carry on
             // and write the Firestore profile document.
-            writeUserDocument(user, username, gender, interestedIn)
+            writeUserDocument(user, username, gender, interestedIn, myStatus, lookingFor)
         }
     }
 
@@ -197,12 +232,21 @@ class SignUpActivity : AppCompatActivity() {
      * The photo is deliberately NOT included here — it stays device-local
      * (see [finalizeLocalPhoto]), never uploaded or written to Firestore.
      */
-    private fun writeUserDocument(user: FirebaseUser, username: String, gender: Gender, interestedIn: Gender) {
+    private fun writeUserDocument(
+        user: FirebaseUser,
+        username: String,
+        gender: Gender,
+        interestedIn: Gender,
+        myStatus: String,
+        lookingFor: String
+    ) {
         val userDoc = hashMapOf(
             UserProfile.FIELD_DISPLAY_NAME to username,
             UserProfile.FIELD_EMAIL to user.email,
             UserProfile.FIELD_GENDER to gender.firestoreValue,
             UserProfile.FIELD_INTERESTED_IN to interestedIn.firestoreValue,
+            UserProfile.FIELD_MY_STATUS to myStatus,
+            UserProfile.FIELD_LOOKING_FOR to lookingFor,
             UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
         )
         firestore.collection(UserProfile.COLLECTION).document(user.uid).set(userDoc)
