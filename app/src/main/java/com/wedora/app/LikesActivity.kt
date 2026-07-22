@@ -66,7 +66,7 @@ class LikesActivity : AppCompatActivity() {
                 // Marks seen even when the display list is empty but unseen ids
                 // exist (all likers' profiles were missing), so the badge still
                 // clears.
-                markLikesSeen(firestore, unseenMatchIds)
+                markLikesSeen(firestore, selfUid, unseenMatchIds)
             },
             onError = { showEmpty(getString(R.string.likes_empty)) }
         )

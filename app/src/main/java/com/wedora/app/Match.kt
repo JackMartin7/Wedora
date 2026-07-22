@@ -1,11 +1,13 @@
 package com.wedora.app
 
+import android.util.Log
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
 
@@ -51,15 +53,56 @@ fun createMatchDocument(
     otherUid: String
 ): Task<Void> {
     val matchData = mapOf(
-        Match.FIELD_USERS to listOf(selfUid, otherUid),
+        // Sorted, so both participants write the byte-identical array.
+        //
+        // This is what made mutual likes fail. The document ID is sorted, so
+        // the second person to like lands on the document the first one
+        // created — a merge, i.e. an update. Written in caller order this
+        // array arrived reversed ([B, A] over a stored [A, B]), and the rules'
+        // "participants can never change" check is an order-sensitive list
+        // comparison, so it rejected every like-back with PERMISSION_DENIED.
+        Match.FIELD_USERS to listOf(selfUid, otherUid).sorted(),
         Match.FIELD_CREATED_AT to FieldValue.serverTimestamp(),
-        // Who initiated. Drives the other participant's notification, and the
-        // security rules require it to be the caller.
-        Match.FIELD_LIKED_BY to selfUid
+        // Adds the caller to the set of people who have liked. arrayUnion is
+        // commutative and idempotent, so a like-back adds the second person
+        // without disturbing the first, and re-liking is a no-op.
+        //
+        // This replaces the scalar likedBy, which held only one UID: the
+        // second liker overwrote it, flipping the like's attribution. That
+        // silently broke the like-back case even once the write was permitted
+        // — the first liker's heart reverted to grey, they could no longer
+        // unlike (the delete rule keyed off likedBy), and because the
+        // recipient had already marked the like seen, neither side was
+        // notified that it was now mutual.
+        Match.FIELD_LIKED_USERS to FieldValue.arrayUnion(selfUid)
     )
     return firestore.collection(Match.COLLECTION)
         .document(Match.idFor(selfUid, otherUid))
         .set(matchData, SetOptions.merge())
+}
+
+/**
+ * Logs a failed match write with its Firestore error code, rather than leaving
+ * only the generic toast the user sees.
+ *
+ * PERMISSION_DENIED is called out by name because it has one overwhelmingly
+ * likely cause here — firestore.rules changed but was never deployed — and
+ * that has cost real debugging time on this project more than once. The
+ * message names the command so the log line is self-explanatory.
+ */
+fun logMatchWriteFailure(tag: String, what: String, e: Exception) {
+    val code = (e as? FirebaseFirestoreException)?.code
+    if (code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+        Log.w(
+            tag,
+            "$what: PERMISSION_DENIED. The live ruleset rejected this write — " +
+                "firestore.rules is probably not deployed. " +
+                "Run: firebase deploy --only firestore:rules",
+            e
+        )
+    } else {
+        Log.w(tag, "$what: ${code?.name ?: e.javaClass.simpleName}", e)
+    }
 }
 
 /**
@@ -95,13 +138,18 @@ data class Match(
     /** Null while the server timestamp is still pending on a just-written doc. */
     val createdAt: Timestamp?,
     /**
-     * Who initiated the like. Null on matches written before this field
-     * existed — those can't be attributed, so they're excluded from
-     * notifications rather than guessed at or migrated.
+     * Everyone who has liked, in no particular order — one UID for a one-sided
+     * like, both for a mutual one. Empty on matches written before likes were
+     * attributed at all; those can't be attributed, so they're excluded from
+     * notifications rather than guessed at.
      */
-    val likedBy: String?,
-    /** Missing is treated as unseen, so old documents surface as notifications. */
-    val seenByRecipient: Boolean,
+    val likedUsers: List<String>,
+    /**
+     * Who has already seen the like they received. Per-user rather than a
+     * single flag, because a mutual match has a notification for each side and
+     * one boolean can only clear one of them.
+     */
+    val seenBy: List<String>,
     /**
      * Newest message, denormalised onto the match doc so the Chats list can
      * render (and live-update) without a per-match message query. Null on
@@ -136,14 +184,20 @@ data class Match(
         return lm.senderId != null && lm.senderId != selfUid && lm.unreadCount > 0
     }
 
-    /** True when [selfUid] is the one who liked — i.e. not a notification. */
-    fun isLikeBy(selfUid: String): Boolean = likedBy != null && likedBy == selfUid
+    /** True when [selfUid] has liked. Stays true after the other person likes back. */
+    fun isLikeBy(selfUid: String): Boolean = selfUid in likedUsers
 
-    /** True when someone else liked [selfUid], regardless of seen state. */
-    fun isLikeFor(selfUid: String): Boolean = likedBy != null && likedBy != selfUid
+    /** True when the other participant has liked [selfUid], regardless of seen state. */
+    fun isLikeFor(selfUid: String): Boolean = likedUsers.any { it != selfUid }
+
+    /** Both participants have liked — the match is live for both of them. */
+    fun isMutual(): Boolean = users.isNotEmpty() && users.all { it in likedUsers }
 
     /** A like for [selfUid] that they haven't looked at yet — drives the badge. */
-    fun isUnseenLikeFor(selfUid: String): Boolean = isLikeFor(selfUid) && !seenByRecipient
+    fun isUnseenLikeFor(selfUid: String): Boolean = isLikeFor(selfUid) && selfUid !in seenBy
+
+    /** The other participant, when they're the one who liked [selfUid]. */
+    fun likerFor(selfUid: String): String? = likedUsers.firstOrNull { it != selfUid }
 
     companion object {
         const val COLLECTION = "matches"
@@ -151,8 +205,15 @@ data class Match(
 
         const val FIELD_USERS = "users"
         const val FIELD_CREATED_AT = "createdAt"
-        const val FIELD_LIKED_BY = "likedBy"
-        const val FIELD_SEEN_BY_RECIPIENT = "seenByRecipient"
+        const val FIELD_LIKED_USERS = "likedUsers"
+        const val FIELD_SEEN_BY = "seenBy"
+
+        /**
+         * Superseded by [FIELD_LIKED_USERS] and [FIELD_SEEN_BY]. Still read so
+         * matches created before this change keep working; never written.
+         */
+        const val LEGACY_FIELD_LIKED_BY = "likedBy"
+        const val LEGACY_FIELD_SEEN_BY_RECIPIENT = "seenByRecipient"
 
         const val FIELD_LAST_MESSAGE = "lastMessage"
         const val LM_TEXT = "text"
@@ -186,14 +247,51 @@ data class Match(
             @Suppress("UNCHECKED_CAST")
             val users = snapshot.get(FIELD_USERS) as? List<String> ?: return null
             if (users.size != 2) return null
+
+            val likedUsers = parseLikedUsers(snapshot)
             return Match(
                 id = snapshot.id,
                 users = users,
                 createdAt = snapshot.getTimestamp(FIELD_CREATED_AT),
-                likedBy = snapshot.getString(FIELD_LIKED_BY),
-                seenByRecipient = snapshot.getBoolean(FIELD_SEEN_BY_RECIPIENT) ?: false,
+                likedUsers = likedUsers,
+                seenBy = parseSeenBy(snapshot, users, likedUsers),
                 lastMessage = parseLastMessage(snapshot)
             )
+        }
+
+        /**
+         * Reads the likers as the UNION of `likedUsers` and the single-UID
+         * `likedBy` it replaced. That union is what lets existing matches keep
+         * working without a data migration.
+         *
+         * It has to be a union rather than a preference: liking back on a
+         * legacy document writes likedUsers = [the second liker] while the
+         * original liker still sits in likedBy alone, so reading only
+         * likedUsers would drop them and un-match the pair.
+         */
+        @Suppress("UNCHECKED_CAST")
+        private fun parseLikedUsers(snapshot: DocumentSnapshot): List<String> {
+            val current = snapshot.get(FIELD_LIKED_USERS) as? List<String> ?: emptyList()
+            val legacy = snapshot.getString(LEGACY_FIELD_LIKED_BY)
+            return if (legacy == null) current else (current + legacy).distinct()
+        }
+
+        /**
+         * Reads who has seen their like. On a legacy document the boolean says
+         * only *that* the recipient looked, so it's attributed to the
+         * participant who didn't send the like — the one it was a notification
+         * for. Missing reads as unseen, so old likes still surface.
+         */
+        @Suppress("UNCHECKED_CAST")
+        private fun parseSeenBy(
+            snapshot: DocumentSnapshot,
+            users: List<String>,
+            likedUsers: List<String>
+        ): List<String> {
+            (snapshot.get(FIELD_SEEN_BY) as? List<String>)
+                ?.let { return it }
+            if (snapshot.getBoolean(LEGACY_FIELD_SEEN_BY_RECIPIENT) != true) return emptyList()
+            return users.filterNot { it in likedUsers }
         }
 
         /** Null for matches with no messages yet, or a malformed field. */

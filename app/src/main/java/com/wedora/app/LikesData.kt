@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 
@@ -29,9 +30,13 @@ data class ReceivedLike(
  * Loads the likes [selfUid] has received — matches someone else initiated —
  * each paired with the liker's profile, newest first.
  *
- * `likedBy != me` is filtered in code rather than in the query: pairing an
- * inequality with the array-contains would need a composite index, and matches
- * predating the likedBy field have no value to compare against.
+ * "someone other than me liked" is filtered in code rather than in the query:
+ * pairing that with the array-contains would need a composite index, and
+ * matches predating like attribution have no value to compare against.
+ *
+ * A mutual match legitimately appears here for both people — each has received
+ * a like from the other — which is how the person who liked first finds out
+ * they were liked back.
  *
  * [onResult] delivers the display list plus the ids of every still-unseen
  * received like. A like whose liker profile is missing is dropped from the
@@ -60,7 +65,7 @@ fun loadReceivedLikes(
                 return@addOnSuccessListener
             }
 
-            val likerUids = received.mapNotNull { it.likedBy }.distinct()
+            val likerUids = received.mapNotNull { it.likerFor(selfUid) }.distinct()
             val profileTasks = likerUids.chunked(WHERE_IN_CHUNK).map { chunk ->
                 firestore.collection(UserProfile.COLLECTION)
                     .whereIn(FieldPath.documentId(), chunk)
@@ -80,7 +85,7 @@ fun loadReceivedLikes(
                         .toMap()
 
                     val likes = received.mapNotNull { match ->
-                        val likerUid = match.likedBy ?: return@mapNotNull null
+                        val likerUid = match.likerFor(selfUid) ?: return@mapNotNull null
                         val profile = profilesByUid[likerUid] ?: return@mapNotNull null
                         val name = profile.displayName?.takeIf { it.isNotBlank() }
                             ?: return@mapNotNull null
@@ -106,20 +111,24 @@ fun loadReceivedLikes(
 }
 
 /**
- * Flips seenByRecipient to true on the given matches in one batched write,
- * clearing the Home badge. Non-fatal on failure — the list is on screen either
- * way, the badge just clears on a later visit.
+ * Records that [selfUid] has seen these likes, in one batched write, clearing
+ * the Home badge. Non-fatal on failure — the list is on screen either way, the
+ * badge just clears on a later visit.
+ *
+ * Adds the viewer to `seenBy` rather than setting a shared boolean, so marking
+ * a mutual match seen clears only this user's notification and leaves the other
+ * side's intact.
  *
  * Firestore caps a batch at 500 writes; a user with that many unseen likes in
  * one sitting is well beyond this stage.
  */
-fun markLikesSeen(firestore: FirebaseFirestore, matchIds: List<String>) {
+fun markLikesSeen(firestore: FirebaseFirestore, selfUid: String, matchIds: List<String>) {
     if (matchIds.isEmpty()) return
 
     val batch = firestore.batch()
     matchIds.forEach { id ->
         val ref = firestore.collection(Match.COLLECTION).document(id)
-        batch.update(ref, Match.FIELD_SEEN_BY_RECIPIENT, true)
+        batch.update(ref, Match.FIELD_SEEN_BY, FieldValue.arrayUnion(selfUid))
     }
     batch.commit().addOnFailureListener { e ->
         Log.w(TAG, "Failed to mark likes seen", e)

@@ -58,7 +58,7 @@ class NotificationsActivity : AppCompatActivity() {
                         )
                     }
                 )
-                markLikesSeen(firestore, unseenMatchIds)
+                markLikesSeen(firestore, selfUid, unseenMatchIds)
             },
             onError = { showNotifications(emptyList()) }
         )

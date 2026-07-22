@@ -67,57 +67,79 @@ service cloud.firestore {
       // For a create there is no stored document yet, so validate the
       // incoming payload instead: exactly two distinct users, one of whom is
       // the caller. This stops a user fabricating matches between other
-      // people, or matching themselves. likedBy must be the caller, so a like
-      // can't be attributed to someone who didn't make it.
+      // people, or matching themselves. likedUsers must be exactly the caller,
+      // so a like can't be attributed to someone who didn't make it, and
+      // nobody can create a match that arrives already mutual.
       function isValidNewMatch() {
         return request.auth != null
             && request.resource.data.users is list
             && request.resource.data.users.size() == 2
             && request.resource.data.users[0] != request.resource.data.users[1]
             && request.auth.uid in request.resource.data.users
-            && request.resource.data.likedBy == request.auth.uid;
+            && request.resource.data.likedUsers == [request.auth.uid];
       }
 
-      // The participant who did NOT send the like — the one it notifies.
-      function isRecipient() {
-        return request.auth != null
-            && request.auth.uid in resource.data.users
-            && resource.data.likedBy != request.auth.uid;
+      // Participants are compared as a SET, not as an ordered list.
+      //
+      // This is the bug that broke every like-back. The document ID is the two
+      // UIDs sorted, so the second person to like updates the document the
+      // first one created — but the client wrote `users` in caller order, so
+      // the array arrived reversed. `==` on a list is order-sensitive, so the
+      // check failed and the like-back was denied.
+      //
+      // The client now writes `users` sorted, which fixes it going forward.
+      // Comparing as a set fixes it for the matches already stored in caller
+      // order too, so no data migration is needed — and it still rejects any
+      // update that actually changes who is in the match.
+      function participantsUnchanged() {
+        return request.resource.data.users.hasAll(resource.data.users)
+            && resource.data.users.hasAll(request.resource.data.users)
+            && request.resource.data.users.size() == 2;
       }
 
-      function onlyChangesSeenFlag() {
-        return request.resource.data.diff(resource.data)
-                 .affectedKeys().hasOnly(['seenByRecipient']);
+      // A caller may only add or remove THEMSELVES from a set field. Keeps
+      // liking and marking-seen honest now that both are arrays: a member
+      // can't like on the other person's behalf, un-like their like, or mark
+      // their notification as read for them.
+      function onlySelfIn(field) {
+        return request.resource.data.get(field, []).hasAll(
+                 resource.data.get(field, []).removeAll([request.auth.uid]))
+            && resource.data.get(field, []).concat([request.auth.uid]).hasAll(
+                 request.resource.data.get(field, []));
       }
 
       allow read: if isMember();
       allow create: if isValidNewMatch();
 
       // Updates stay open to members because liking is idempotent: tapping
-      // like again re-runs set(merge), which rewrites createdAt. A rule
-      // restricting updates to seenByRecipient alone would reject that and
-      // break re-liking.
+      // like again re-runs set(merge), which rewrites createdAt. Liking back
+      // is the same write, which is why it lands here rather than on create.
       //
-      // Two things are still enforced. Participants can never change, so a
-      // member can't rewrite a match onto someone else. And an update that
-      // touches *only* seenByRecipient must come from the recipient — that is
-      // the notification-clearing write, and the sender of a like has no
-      // business marking it read on the other person's behalf.
+      // Three things are enforced. Participants can never change, so a member
+      // can't rewrite a match onto someone else. And likedUsers / seenBy may
+      // only ever gain or lose the caller — nobody likes, un-likes or dismisses
+      // a notification on the other person's behalf.
       //
       // This also covers the lastMessage summary (text/sentAt/senderId/
       // unreadCount) that the chat thread maintains: sending a message writes
       // it, and opening a thread zeroes unreadCount. Both are member updates
-      // that leave `users` alone and touch more than seenByRecipient, so they
-      // pass here without a separate rule.
+      // that leave users/likedUsers/seenBy alone, so they pass here without a
+      // separate rule.
       allow update: if isMember()
-          && request.resource.data.users == resource.data.users
-          && (!onlyChangesSeenFlag() || isRecipient());
+          && participantsUnchanged()
+          && onlySelfIn('likedUsers')
+          && onlySelfIn('seenBy');
 
-      // Only the user who created the like can delete it (an unlike). The
-      // recipient can dismiss it from their view via seenByRecipient, but
-      // can't erase a like made for them.
+      // Only someone who actually liked can delete the match (an unlike). The
+      // recipient can dismiss it from their view via seenBy, but can't erase a
+      // like made for them.
+      //
+      // Legacy fallback for documents predating likedUsers, which recorded the
+      // single liker in likedBy. Drop the second clause once no such documents
+      // remain.
       allow delete: if request.auth != null
-          && resource.data.likedBy == request.auth.uid;
+          && (request.auth.uid in resource.data.get('likedUsers', [])
+              || resource.data.get('likedBy', '') == request.auth.uid);
 
       match /messages/{messageId} {
 
