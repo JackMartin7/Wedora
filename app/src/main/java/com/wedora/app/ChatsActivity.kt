@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -44,7 +45,7 @@ class ChatsActivity : AppCompatActivity() {
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_chats)
 
-        binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        binding.btnBack.setOnClickListener { goToHome() }
         binding.btnSearch.setOnClickListener { toast(getString(R.string.cd_search)) }
         binding.btnMore.setOnClickListener { toast(getString(R.string.cd_more)) }
     }
@@ -188,6 +189,21 @@ class ChatsActivity : AppCompatActivity() {
         binding.tvChatsEmpty.visibility = View.GONE
         binding.rvChats.visibility = View.VISIBLE
         adapter.submitList(previews)
+    }
+
+    /**
+     * The back arrow returns to Home rather than finishing. The bottom-nav
+     * helper finishes each tab as it switches, so by the time Chats is open the
+     * back stack is just this screen — a plain finish() would exit the app.
+     * CLEAR_TOP reuses the existing Home if one is still around instead of
+     * stacking a second; finish() drops Chats so it isn't left underneath.
+     */
+    private fun goToHome() {
+        startActivity(
+            Intent(this, HomeActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        )
+        finish()
     }
 
     private fun toast(message: String) {
