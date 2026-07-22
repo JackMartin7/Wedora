@@ -63,6 +63,23 @@ fun createMatchDocument(
 }
 
 /**
+ * Deletes the match between these two users — an unlike. The rules only permit
+ * this when the caller is the one who created the like (likedBy), so a user can
+ * withdraw their own like but not erase one made for them.
+ *
+ * Deleting the document is what removes the person from the other user's Likes
+ * and Notifications, since both read straight off the matches collection.
+ */
+fun deleteMatchDocument(
+    firestore: FirebaseFirestore,
+    selfUid: String,
+    otherUid: String
+): Task<Void> =
+    firestore.collection(Match.COLLECTION)
+        .document(Match.idFor(selfUid, otherUid))
+        .delete()
+
+/**
  * A match between two users — `matches/{matchId}`.
  *
  * As with [UserProfile], the Firestore field names live here as constants

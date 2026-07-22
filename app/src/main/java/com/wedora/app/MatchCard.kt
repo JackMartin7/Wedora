@@ -13,8 +13,8 @@ import androidx.annotation.DrawableRes
  * simply omits the line rather than inventing one.
  *
  * `role`, `bio` and `distanceKm` have no backing Firestore field at all yet —
- * real cards leave `role` blank and `distanceKm` null (both hidden by
- * MatchCardAdapter). Nothing here invents data the backend doesn't have.
+ * real cards leave `role` blank and `distanceKm` null (both hidden when the
+ * card is bound). Nothing here invents data the backend doesn't have.
  */
 data class MatchCard(
     val id: String,

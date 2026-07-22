@@ -154,7 +154,13 @@
     <string name="home_empty_guest">Sign up to see who\'s out there.</string>
     <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>
     <string name="home_empty_error">Couldn\'t load matches right now. Check your connection and try again.</string>
+    <string name="home_empty_all_swiped">You\'ve seen everyone nearby — check back later.</string>
     <string name="match_card_no_bio">No bio yet</string>
+    <string name="error_unlike_failed">Couldn\'t undo that like. Please try again.</string>
+
+    <!-- Swipe overlay stamps -->
+    <string name="swipe_label_like">LIKE</string>
+    <string name="swipe_label_pass">PASS</string>
 
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>

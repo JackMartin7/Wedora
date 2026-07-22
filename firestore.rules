@@ -96,7 +96,11 @@ service cloud.firestore {
           && request.resource.data.users == resource.data.users
           && (!onlyChangesSeenFlag() || isRecipient());
 
-      allow delete: if isMember();
+      // Only the user who created the like can delete it (an unlike). The
+      // recipient can dismiss it from their view via seenByRecipient, but
+      // can't erase a like made for them.
+      allow delete: if request.auth != null
+          && resource.data.likedBy == request.auth.uid;
 
       match /messages/{messageId} {
 

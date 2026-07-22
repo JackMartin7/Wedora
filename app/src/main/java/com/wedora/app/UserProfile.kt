@@ -9,8 +9,8 @@ import com.google.firebase.firestore.DocumentSnapshot
  * missing so the caller can hide the view entirely rather than render a
  * half-empty string like "18 years old • , ".
  *
- * Shared by ProfileActivity (own profile) and MatchCardAdapter (other users'
- * cards), which use different format strings but identical null handling.
+ * Shared by ProfileActivity (own profile) and the Home feed cards (other
+ * users), which use different format strings but identical null handling.
  */
 fun formatAgeLocation(
     context: Context,

@@ -77,14 +77,56 @@
 
     </RelativeLayout>
 
-    <!-- ===== Photo ===== -->
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/ivCardPhoto"
+    <!-- ===== Photo + swipe stamps ===== -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="330dp"
-        android:scaleType="centerCrop"
-        android:contentDescription="@null"
-        app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+        android:layout_height="330dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivCardPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:contentDescription="@null"
+            app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+
+        <!-- Alpha driven by SwipeCardStackView during a drag. LIKE top-start
+             on a right swipe, PASS top-end on a left swipe. -->
+        <TextView
+            android:id="@+id/overlayLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_label_like"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:rotation="-18"
+            android:text="@string/swipe_label_like"
+            android:textColor="@color/wedora_success"
+            android:textSize="26sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:alpha="0" />
+
+        <TextView
+            android:id="@+id/overlayPass"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginEnd="18dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_label_pass"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:rotation="18"
+            android:text="@string/swipe_label_pass"
+            android:textColor="@color/wedora_error"
+            android:textSize="26sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:alpha="0" />
+
+    </FrameLayout>
 
     <!-- ===== Action row ===== -->
     <LinearLayout
@@ -95,7 +137,7 @@
         android:paddingTop="12dp">
 
         <!-- No app:tint here on purpose: the liked/unliked colour lives in the
-             two drawables, so MatchCardAdapter only has to swap src. -->
+             two drawables, so binding only has to swap src. -->
         <ImageButton
             android:id="@+id/btnLike"
             android:layout_width="40dp"

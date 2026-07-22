@@ -4,14 +4,15 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.wedora.app.databinding.ActivityHomeBinding
+import com.wedora.app.databinding.ItemMatchCardBinding
 import java.util.Calendar
 
 class HomeActivity : AppCompatActivity() {
@@ -26,18 +27,32 @@ class HomeActivity : AppCompatActivity() {
     /** Live view of the user's matches; drives the badge and the liked hearts. */
     private var matchesListener: ListenerRegistration? = null
 
-    private val adapter by lazy {
-        MatchCardAdapter(
-            onCardClick = { startActivity(ProfileDetailActivity.intent(this, it.id)) },
-            // Liking is a guest-gated action; passing/dismissing only affect the
-            // local feed, so they stay available.
-            onLike = { requireAccount { createMatchWith(it) } },
-            onSuperlike = { requireAccount { createMatchWith(it) } },
-            onPass = { toast("Passed on ${it.name}") },
-            onChat = { requireAccount { openChatWith(it) } },
-            onDismiss = { toast("Dismissed ${it.name}") },
-            onMore = { toast("More options for ${it.name}") }
-        )
+    /** The feed, in swipe order. Bound into the card stack by position. */
+    private var cards: List<MatchCard> = emptyList()
+
+    /**
+     * UIDs the user has liked. Seeded from Firestore (so already-liked people
+     * show a filled heart on a fresh launch) and updated as they like/unlike.
+     * Additive from the listener, per the reasoning in [observeMatches].
+     */
+    private val likedUserIds = mutableSetOf<String>()
+
+    private val stackListener = object : SwipeCardStackView.Listener {
+        override fun onBindCard(cardView: View, position: Int) {
+            cards.getOrNull(position)?.let { bindCard(cardView, it) }
+        }
+
+        override fun onSwipedRight(position: Int) {
+            cards.getOrNull(position)?.let { likeUser(it) }
+        }
+
+        override fun onSwipedLeft(position: Int) {
+            // Pass: no Firestore write, the card is simply gone.
+        }
+
+        override fun onEmptied() {
+            showEmptyState(getString(R.string.home_empty_all_swiped))
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +62,6 @@ class HomeActivity : AppCompatActivity() {
 
         showGreeting()
         showSignedInUser()
-        setUpFeed()
         loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
 
@@ -74,6 +88,11 @@ class HomeActivity : AppCompatActivity() {
      * they're two readings of the same set of match documents, so a second
      * query would be redundant. Being live means a like arriving while the
      * screen is open updates the badge without a refresh.
+     *
+     * The liked set is added to, never replaced, so a heart filled
+     * optimistically on tap isn't cleared by a snapshot that hasn't caught up.
+     * (Multi-device staleness — an unlike on another device — isn't handled
+     * here; it corrects on the next full load.)
      *
      * Scoped to onStart/onStop so it isn't running while backgrounded.
      */
@@ -104,11 +123,11 @@ class HomeActivity : AppCompatActivity() {
 
                 showNotificationBadge(matches.count { it.isUnseenLikeFor(selfUid) })
 
-                // Hearts for people already liked, including on a fresh launch.
-                adapter.markLiked(
+                likedUserIds.addAll(
                     matches.filter { it.isLikeBy(selfUid) }
                         .mapNotNull { it.otherUserId(selfUid) }
                 )
+                binding.cardStack.rebindVisibleCards()
             }
     }
 
@@ -137,11 +156,6 @@ class HomeActivity : AppCompatActivity() {
         binding.tvGreeting.setText(greeting)
     }
 
-    /**
-     * Greet the signed-in user by name and load their device-local avatar, if
-     * any (see [LocalProfilePrefs] — there is no Firebase photoUrl to fall
-     * back on, since profile photos are never uploaded).
-     */
     private fun showSignedInUser() {
         if (GuestPrefs.isGuest(this)) {
             binding.tvUserName.text = getString(R.string.guest_label)
@@ -154,17 +168,8 @@ class HomeActivity : AppCompatActivity() {
         user?.uid?.let { binding.ivMyAvatar.loadLocalProfilePhoto(this, it) }
     }
 
-    private fun setUpFeed() {
-        binding.rvMatches.layoutManager = LinearLayoutManager(this)
-        binding.rvMatches.adapter = adapter
-    }
+    // ----- Feed loading -----------------------------------------------------
 
-    /**
-     * Real matching feed: users whose `gender` matches the current user's own
-     * `interestedIn`, excluding the current user. Self is filtered out
-     * client-side rather than in the query, which avoids needing a composite
-     * Firestore index for an early-stage, likely-low-volume collection.
-     */
     private fun loadMatches() {
         if (GuestPrefs.isGuest(this)) {
             showEmptyState(getString(R.string.home_empty_guest))
@@ -198,14 +203,14 @@ class HomeActivity : AppCompatActivity() {
             .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
-                val cards = snapshot.documents
+                val loaded = snapshot.documents
                     .filter { it.id != selfUid }
                     .mapNotNull { it.toMatchCard() }
 
-                if (cards.isEmpty()) {
+                if (loaded.isEmpty()) {
                     showEmptyState(getString(R.string.home_empty_no_matches))
                 } else {
-                    showCards(cards)
+                    showCards(loaded)
                 }
             }
             .addOnFailureListener { e ->
@@ -214,13 +219,6 @@ class HomeActivity : AppCompatActivity() {
             }
     }
 
-    /**
-     * Age/city/country are real, supplied by the other user's Complete Profile
-     * step. Role/bio/distance still have no backend field, so they stay
-     * blank/null (MatchCardAdapter hides or honestly labels them) rather than
-     * inventing plausible-looking data, and the photo slots use a neutral
-     * placeholder since there is no photo backend either.
-     */
     private fun DocumentSnapshot.toMatchCard(): MatchCard? {
         val profile = UserProfile.from(this)
         val name = profile.displayName?.takeIf { it.isNotBlank() } ?: return null
@@ -238,51 +236,102 @@ class HomeActivity : AppCompatActivity() {
         )
     }
 
-    private fun showLoading() {
-        binding.progressLoading.visibility = View.VISIBLE
-        binding.tvEmptyState.visibility = View.GONE
-        binding.rvMatches.visibility = View.GONE
-    }
+    // ----- Card stack -------------------------------------------------------
 
-    private fun showEmptyState(message: String) {
-        binding.progressLoading.visibility = View.GONE
-        binding.rvMatches.visibility = View.GONE
-        binding.tvEmptyState.visibility = View.VISIBLE
-        binding.tvEmptyState.text = message
-    }
+    /**
+     * Binds a card view for the stack. Reuses the feed-card layout; the action
+     * buttons drive the same swipes as gestures (see the reconciliation in the
+     * commit message):
+     *  - heart: like/unlike toggle — unlike stays in place, a fresh like flings
+     *    the card right
+     *  - pass / dismiss: fling left
+     *  - superlike: fling right (a like; no distinct superlike model yet)
+     *  - chat: open the conversation, matching first if needed
+     *  - card body: open the full profile
+     */
+    private fun bindCard(cardView: View, card: MatchCard) {
+        val b = ItemMatchCardBinding.bind(cardView)
 
-    private fun showCards(cards: List<MatchCard>) {
-        binding.progressLoading.visibility = View.GONE
-        binding.tvEmptyState.visibility = View.GONE
-        binding.rvMatches.visibility = View.VISIBLE
-        adapter.submitList(cards)
+        b.ivCardAvatar.setImageResource(card.avatarRes)
+        b.ivCardPhoto.setImageResource(card.photoRes)
+        b.tvCardName.text = card.name
+
+        if (card.role.isBlank()) {
+            b.tvCardRole.visibility = View.GONE
+        } else {
+            b.tvCardRole.visibility = View.VISIBLE
+            b.tvCardRole.text = card.role
+        }
+
+        b.tvCardBio.text = card.ageLocationLine(this)
+            ?: card.bio.ifBlank { getString(R.string.match_card_no_bio) }
+
+        if (card.distanceKm == null) {
+            b.tvDistance.visibility = View.GONE
+        } else {
+            b.tvDistance.visibility = View.VISIBLE
+            b.tvDistance.text = getString(R.string.home_distance_format, card.distanceKm.toString())
+        }
+
+        b.btnLike.setImageResource(
+            if (likedUserIds.contains(card.id)) R.drawable.ic_like_filled
+            else R.drawable.ic_like_outline
+        )
+
+        b.root.setOnClickListener { startActivity(ProfileDetailActivity.intent(this, card.id)) }
+        b.btnLike.setOnClickListener { onHeartTapped(card, b.btnLike) }
+        b.btnSuperlike.setOnClickListener { binding.cardStack.swipeRight() }
+        b.btnPass.setOnClickListener { binding.cardStack.swipeLeft() }
+        b.btnDismiss.setOnClickListener { binding.cardStack.swipeLeft() }
+        b.btnChat.setOnClickListener { openChatWith(card) }
+        b.btnMore.setOnClickListener { toast("More options for ${card.name}") }
     }
 
     /**
-     * Instant match: liking someone writes the match document straight away,
-     * so there is no pending/one-sided like state. See [createMatchDocument].
+     * Grey heart -> like and advance (fling right). Red heart -> unlike in
+     * place, so the heart is the one spot an already-liked person can be
+     * un-liked without leaving the feed.
      */
-    private fun createMatchWith(card: MatchCard) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
-        if (selfUid == null) {
-            toast(getString(R.string.error_match_failed))
-            return
+    private fun onHeartTapped(card: MatchCard, heartButton: ImageButton) {
+        if (likedUserIds.contains(card.id)) {
+            unlikeInPlace(card, heartButton)
+        } else {
+            binding.cardStack.swipeRight()
         }
+    }
 
+    /** Called when a card is liked, by swipe or by the heart on a grey card. */
+    private fun likeUser(card: MatchCard) {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        // Optimistic: the card has already swiped away, so there's no heart to
+        // update — just record the like and write it. No success toast: the
+        // card leaving is the feedback.
+        likedUserIds.add(card.id)
         createMatchDocument(firestore, selfUid, card.id)
-            .addOnSuccessListener { toast(getString(R.string.match_created)) }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to create match with ${card.id}", e)
+                likedUserIds.remove(card.id)
                 toast(getString(R.string.error_match_failed))
             }
     }
 
-    /**
-     * Opens the conversation with this user, creating the match first if there
-     * isn't one. Checking first rather than always writing avoids a redundant
-     * write — and avoids bumping an existing match's createdAt, which would
-     * reshuffle the Chats list every time someone opened a chat.
-     */
+    private fun unlikeInPlace(card: MatchCard, heartButton: ImageButton) {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        // Optimistic grey; revert if the delete fails (e.g. offline).
+        likedUserIds.remove(card.id)
+        heartButton.setImageResource(R.drawable.ic_like_outline)
+
+        deleteMatchDocument(firestore, selfUid, card.id)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to unlike ${card.id}", e)
+                likedUserIds.add(card.id)
+                heartButton.setImageResource(R.drawable.ic_like_filled)
+                toast(getString(R.string.error_unlike_failed))
+            }
+    }
+
     private fun openChatWith(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
@@ -297,7 +346,7 @@ class HomeActivity : AppCompatActivity() {
                 } else {
                     createMatchDocument(firestore, selfUid, card.id)
                         .addOnSuccessListener {
-                            toast(getString(R.string.match_created))
+                            likedUserIds.add(card.id)
                             openChatThread(card)
                         }
                         .addOnFailureListener { e ->
@@ -316,17 +365,27 @@ class HomeActivity : AppCompatActivity() {
         startActivity(ChatThreadActivity.intent(this, card.id, card.name))
     }
 
-    /**
-     * Runs [action] for signed-in users. Guests are redirected to sign-up instead,
-     * which is the single gate for every account-only feature on this screen.
-     */
-    private fun requireAccount(action: () -> Unit) {
-        if (GuestPrefs.isGuest(this)) {
-            Toast.makeText(this, R.string.guest_action_blocked, Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, SignUpActivity::class.java))
-        } else {
-            action()
-        }
+    // ----- Feed view state --------------------------------------------------
+
+    private fun showLoading() {
+        binding.progressLoading.visibility = View.VISIBLE
+        binding.tvEmptyState.visibility = View.GONE
+        binding.cardStack.visibility = View.GONE
+    }
+
+    private fun showEmptyState(message: String) {
+        binding.progressLoading.visibility = View.GONE
+        binding.cardStack.visibility = View.GONE
+        binding.tvEmptyState.visibility = View.VISIBLE
+        binding.tvEmptyState.text = message
+    }
+
+    private fun showCards(loaded: List<MatchCard>) {
+        cards = loaded
+        binding.progressLoading.visibility = View.GONE
+        binding.tvEmptyState.visibility = View.GONE
+        binding.cardStack.visibility = View.VISIBLE
+        binding.cardStack.setup(R.layout.item_match_card, loaded.size, stackListener)
     }
 
     private fun toggleDarkMode() {
