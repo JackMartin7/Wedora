@@ -70,6 +70,28 @@ class HomeActivity : AppCompatActivity() {
         binding.btnNotifications.setOnClickListener {
             startActivity(Intent(this, NotificationsActivity::class.java))
         }
+
+        // Tapping your own avatar/name opens your profile — the same
+        // destination as the Profile tab, so it navigates the same way the tab
+        // does: start it and finish this one.
+        //
+        // Leaving Home on the stack instead would mean that switching back via
+        // the bottom nav (which itself starts-and-finishes) launches a *second*
+        // Home on top of the first, leaving a duplicate underneath running its
+        // own listeners. Profile carries the bottom nav, so it's still one tap
+        // back to the feed.
+        // Guests are gated the same way the Profile tab gates them. Profile is
+        // account-only however you reach it, so a second route to it can't be
+        // the one that skips the check.
+        binding.greetingContainer.setOnClickListener {
+            if (GuestPrefs.isGuest(this)) {
+                toast(getString(R.string.guest_action_blocked))
+                startActivity(Intent(this, SignUpActivity::class.java))
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, ProfileActivity::class.java))
+            finish()
+        }
     }
 
     override fun onStart() {
