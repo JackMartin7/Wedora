@@ -337,4 +337,31 @@
     <string name="notif_app_updates_caption">New features and important changes.</string>
     <string name="notif_promotions">Promotions</string>
     <string name="notif_promotions_caption">Offers and news from Wedora.</string>
+
+    <!-- Help Center -->
+    <string name="help_center_title">Help Center</string>
+    <string name="help_search_hint">Search for help</string>
+    <string name="help_frequently_asked">Frequently Asked</string>
+    <string name="help_chat_support">Chat with Support</string>
+    <string name="help_no_results">No results for “%1$s”</string>
+    <string name="support_email">support@wedora.app</string>
+    <string name="support_subject">Support Request</string>
+    <string name="error_no_email_app">No email app found on this device.</string>
+
+    <string name="faq_q_matching">How does matching work?</string>
+    <string name="faq_a_matching">Wedora matches you with people based on your gender preferences. Swipe right or tap the heart to like someone — it\'s an instant match! You can then start chatting right away.</string>
+    <string name="faq_q_verify">How do I verify my profile?</string>
+    <string name="faq_a_verify">After signing up, we send a verification email to your address. Click the link in that email to verify your account before logging in. Check your spam folder if you don\'t see it.</string>
+    <string name="faq_q_subscription">How do I cancel my subscription?</string>
+    <string name="faq_a_subscription">You can manage your subscription through your device\'s app store settings. Go to Google Play Store → Account → Subscriptions → Wedora → Cancel.</string>
+    <string name="faq_q_report">How do I report a user?</string>
+    <string name="faq_a_report">Tap the three-dot menu (⋮) on any profile card on the Home screen, then select \'Report\'. Choose a reason and submit — our team reviews all reports within 24 hours.</string>
+    <string name="faq_q_block">How do I block someone?</string>
+    <string name="faq_a_block">Tap the three-dot menu (⋮) on any profile card and select \'Block\'. Blocked users won\'t be able to see your profile or contact you. You can manage your block list in Profile → Privacy &amp; Safety.</string>
+    <string name="faq_q_delete">How do I delete my account?</string>
+    <string name="faq_a_delete">Go to Profile → Account Settings → Delete Account. This permanently deletes your profile, matches, and messages. This action cannot be undone.</string>
+    <string name="faq_q_no_matches">Why can\'t I see my matches?</string>
+    <string name="faq_a_no_matches">Make sure your gender and \'Interested In\' preferences are set correctly in your profile. Also check your internet connection — the feed needs a live connection to load profiles.</string>
+    <string name="faq_q_location">How do I change my location?</string>
+    <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
 </resources>

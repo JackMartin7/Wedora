@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Accordion indicator. Rotated 180° in code when a row expands. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M6.1,8.6 L12,14.5 L17.9,8.6 L19.3,10 L12,17.3 L4.7,10 Z" />
+</vector>

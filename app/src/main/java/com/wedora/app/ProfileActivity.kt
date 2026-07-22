@@ -204,7 +204,7 @@ class ProfileActivity : AppCompatActivity() {
                 toast(getString(R.string.settings_payment))
             },
             SettingsRow(R.drawable.ic_help, R.string.settings_help) {
-                toast(getString(R.string.settings_help))
+                startActivity(Intent(this, HelpCenterActivity::class.java))
             },
             SettingsRow(R.drawable.ic_logout, R.string.settings_logout) {
                 logOut()

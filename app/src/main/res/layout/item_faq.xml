@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One accordion row: question + chevron, with the answer hidden until the
+    header is tapped. Inflated per FAQ by HelpCenterActivity.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/faqHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="?attr/selectableItemBackground"
+        android:paddingVertical="16dp">
+
+        <TextView
+            android:id="@+id/tvQuestion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2sp"
+            android:fontFamily="@font/poppins_medium"
+            tools:text="How does matching work?" />
+
+        <ImageView
+            android:id="@+id/ivChevron"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_chevron_down"
+            android:contentDescription="@null" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvAnswer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp"
+        android:paddingEnd="32dp"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13sp"
+        android:lineSpacingExtra="4sp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="Wedora matches you with people based on your gender preferences." />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/wedora_border" />
+
+</LinearLayout>

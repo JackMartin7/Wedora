@@ -71,6 +71,11 @@
             android:exported="false" />
 
         <activity
+            android:name=".HelpCenterActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 
