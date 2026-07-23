@@ -28,17 +28,16 @@ fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, acti
             return@setOnItemSelectedListener false
         }
 
+        // Every tab now has a screen, so there's no null case and no
+        // hardcoded "coming soon" toast — Explore says that itself, in a real
+        // screen with the nav still under it.
         val destination = when (item.itemId) {
             R.id.nav_home -> HomeActivity::class.java
+            R.id.nav_maps -> ExploreActivity::class.java
             R.id.nav_match -> LikesActivity::class.java
             R.id.nav_chats -> ChatsActivity::class.java
             R.id.nav_profile -> ProfileActivity::class.java
-            else -> null // Maps isn't built yet.
-        }
-
-        if (destination == null) {
-            Toast.makeText(this, "${item.title} coming soon", Toast.LENGTH_SHORT).show()
-            return@setOnItemSelectedListener false
+            else -> return@setOnItemSelectedListener false
         }
 
         startActivity(Intent(this, destination))

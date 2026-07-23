@@ -84,6 +84,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ExploreActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

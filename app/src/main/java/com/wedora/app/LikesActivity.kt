@@ -75,11 +75,7 @@ class LikesActivity : AppCompatActivity() {
 
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
-            showEmpty(
-                R.drawable.ic_sparkle_heart,
-                R.string.empty_likes_title,
-                R.string.empty_likes_subtitle
-            )
+            showNoLikes()
             return
         }
 
@@ -88,25 +84,13 @@ class LikesActivity : AppCompatActivity() {
             firestore,
             selfUid,
             onResult = { likes, unseenMatchIds ->
-                if (likes.isEmpty()) {
-                    showEmpty(
-                R.drawable.ic_sparkle_heart,
-                R.string.empty_likes_title,
-                R.string.empty_likes_subtitle
-            )
-                } else {
-                    showLikes(likes)
-                }
+                if (likes.isEmpty()) showNoLikes() else showLikes(likes)
                 // Marks seen even when the display list is empty but unseen ids
                 // exist (all likers' profiles were missing), so the badge still
                 // clears.
                 markLikesSeen(firestore, selfUid, unseenMatchIds)
             },
-            onError = { showEmpty(
-                R.drawable.ic_sparkle_heart,
-                R.string.empty_likes_title,
-                R.string.empty_likes_subtitle
-            ) }
+            onError = { showNoLikes() }
         )
     }
 
@@ -124,6 +108,13 @@ class LikesActivity : AppCompatActivity() {
         binding.rvLikes.visibility = View.GONE
         binding.skeletonLikes.showSkeleton(R.layout.item_skeleton_like_row, SKELETON_ROWS)
     }
+
+    /** The three paths that end with no likes share one message. */
+    private fun showNoLikes() = showEmpty(
+        R.drawable.ic_sparkle_heart,
+        R.string.empty_likes_title,
+        R.string.empty_likes_subtitle
+    )
 
     private fun showEmpty(
         @DrawableRes icon: Int,

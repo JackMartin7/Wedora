@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- ids stay nav_home/nav_maps: they are the active-tab argument passed by
+         every screen, and renaming them would ripple through all of them for
+         no behavioural gain. Only the icon and label changed. -->
     <item
         android:id="@+id/nav_home"
-        android:icon="@drawable/ic_nav_home"
+        android:icon="@drawable/ic_discover"
         android:title="@string/nav_home" />
 
     <item
         android:id="@+id/nav_maps"
-        android:icon="@drawable/ic_nav_maps"
+        android:icon="@drawable/ic_explore"
         android:title="@string/nav_maps" />
 
     <!-- id stays nav_match to avoid rippling the rename through every tab

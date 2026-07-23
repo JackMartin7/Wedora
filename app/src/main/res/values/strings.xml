@@ -173,11 +173,16 @@
     <!-- Swipe overlay stamps -->
 
     <!-- Bottom navigation -->
-    <string name="nav_home">Home</string>
-    <string name="nav_maps">Maps</string>
+    <string name="nav_home">Discover</string>
+    <string name="nav_maps">Explore</string>
     <string name="nav_match">Likes</string>
     <string name="nav_chats">Chats</string>
     <string name="nav_profile">Profile</string>
+
+    <!-- Explore (placeholder until Maps is wired up) -->
+    <string name="explore_title">Explore</string>
+    <string name="explore_subtitle">Discover people and places near you — coming soon</string>
+    <string name="explore_find_people">Find People Near You</string>
 
     <!-- Chats -->
     <string name="chats_title">Chats</string>

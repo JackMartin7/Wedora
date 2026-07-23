@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Explore tab: a compass rose — outer ring with the classic two-triangle
+    needle. White fill so the nav's ColorStateList tints it per state.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Ring, drawn as an outline so the needle reads inside it. -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 Z M12,4 A8,8 0 1 1 12,20 A8,8 0 1 1 12,4 Z" />
+    <!-- Needle: north-east half. -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M16.5,7.5 L10.6,10.6 L13.4,13.4 Z" />
+    <!-- Needle: south-west half, lighter so the pointer has direction. -->
+    <path
+        android:fillColor="@color/white"
+        android:fillAlpha="0.5"
+        android:pathData="M7.5,16.5 L13.4,13.4 L10.6,10.6 Z" />
+</vector>

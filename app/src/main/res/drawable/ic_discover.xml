@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Discover tab: two offset rounded cards, reading as a deck to swipe.
+    White fill so the nav's ColorStateList tints it per state.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Back card, rotated slightly and drawn first so it sits behind. -->
+    <path
+        android:fillColor="@color/white"
+        android:fillAlpha="0.45"
+        android:pathData="M8.4,3.1 L15.6,4.9 A2,2 0 0 1 17.1,7.3 L14.6,17.5 A2,2 0 0 1 12.2,19 L11.4,18.8 L14.2,7.4 A2,2 0 0 0 12.7,5 L7.6,3.7 A2,2 0 0 1 8.4,3.1 Z" />
+    <!-- Front card. -->
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M6,4 L12,4 A2,2 0 0 1 14,6 L14,18 A2,2 0 0 1 12,20 L6,20 A2,2 0 0 1 4,18 L4,6 A2,2 0 0 1 6,4 Z" />
+</vector>
