@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -66,7 +65,6 @@ class ChatsActivity : AppCompatActivity() {
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_chats)
 
         binding.btnBack.setOnClickListener { goToHome() }
-        binding.btnMore.setOnClickListener { toast(getString(R.string.cd_more)) }
 
         binding.btnSearch.setOnClickListener { expandSearch() }
         binding.btnSearchClose.setOnClickListener { collapseSearch() }
@@ -117,7 +115,6 @@ class ChatsActivity : AppCompatActivity() {
         binding.btnBack.visibility = if (visible) View.VISIBLE else View.INVISIBLE
         binding.tvChatsTitle.visibility = v
         binding.btnSearch.visibility = v
-        binding.btnMore.visibility = v
     }
 
     /**
@@ -377,9 +374,5 @@ class ChatsActivity : AppCompatActivity() {
         )
         finish()
         applyBackTransition()
-    }
-
-    private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
