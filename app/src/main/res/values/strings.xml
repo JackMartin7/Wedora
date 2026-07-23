@@ -105,9 +105,7 @@
     <string name="step5_title">Add your best photo</string>
     <string name="step5_subtitle">Profiles with photos get 3x more matches</string>
 
-    <!-- Complete Profile (one-time step after first verified login) -->
-    <string name="complete_profile_title">Complete Your Profile</string>
-    <string name="complete_profile_subtitle">Just a couple more details before you get started.</string>
+    <!-- Shared by the setup steps and the profile editor -->
     <string name="label_age">Age</string>
     <string name="hint_age">Enter Your Age</string>
     <string name="label_location">Location</string>
@@ -125,7 +123,6 @@
     <!-- %1$d is MIN_AGE, so the copy and the constant can't drift apart -->
     <string name="error_age_minimum">You must be %1$d or older to use Wedora</string>
     <string name="error_city_required">Please enter your city</string>
-    <string name="error_country_required">Please enter your country</string>
     <string name="error_profile_update_failed">Couldn\'t save your details. Check your connection and try again.</string>
 
     <!-- Age/location line, shown on Profile and on other users' feed cards -->

@@ -40,10 +40,6 @@
             android:name=".ForgotPasswordActivity"
             android:exported="false" />
 
-        <activity
-            android:name=".CompleteProfileActivity"
-            android:exported="false" />
-
         <!-- Progressive profile setup. adjustResize so the keyboard doesn't
              cover the Continue button on the text-entry steps. -->
         <activity

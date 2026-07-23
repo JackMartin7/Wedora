@@ -38,7 +38,7 @@ class EditProfileActivity : AppCompatActivity() {
     private companion object {
         const val TAG = "WedoraProfile"
 
-        /** Same age policy as CompleteProfileActivity. */
+        /** Same age policy as the profile-setup steps. */
         const val MIN_AGE = 18
         const val MAX_AGE = 120
 
@@ -255,7 +255,7 @@ class EditProfileActivity : AppCompatActivity() {
     private fun enteredBio() = binding.etBio.text.toString().trim()
 
     /**
-     * Syntactically plausible age. As in CompleteProfileActivity this does NOT
+     * Syntactically plausible age. As in the setup steps this does NOT
      * apply the 18+ policy — that is checked on Save so an under-age entry
      * gets an explicit message rather than a silently dead button.
      */

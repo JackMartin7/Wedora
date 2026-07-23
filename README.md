@@ -4,23 +4,53 @@ Native Android auth flow for the Wedora app, matching the Figma design pixel-for
 (colors, spacing, typography) using traditional XML layouts + Kotlin + ViewBinding.
 
 ## What's included
-- **SplashActivity** — gradient splash screen; after 1.8s routes to Onboarding on first launch, or straight to Login once onboarding is complete
+- **SplashActivity** — gradient splash screen; after 1.8s routes to Onboarding on first launch, or restores a persisted session
 - **OnboardingActivity** — 3-slide swipeable intro (ViewPager2) with animated pill page-indicators, Skip, and a Next → Get Started button; marks onboarding complete and continues to Login
-- **LoginActivity** — email/password, remember me, forgot password, social login row, sign-up link
-- **SignUpActivity** — username/email/password, social sign-up row, login link
+- **LoginActivity** — email/password, remember me, forgot password, sign-up link, Continue as Guest
+- **SignUpActivity** — email and password only; creates the account, sends the verification email, and hands back to Login
+
+## Sign-up and profile setup
+
+Signing up asks for two things: email and password. It writes **no** Firestore
+document. Everything a profile needs is collected afterwards, one question per
+screen, on the first verified login:
+
+| Step | Screen | Collects | Written to `users/{uid}` |
+|---|---|---|---|
+| 1 | `ProfileStep1NameActivity` | Full name | `displayName`, `email` |
+| 2 | `ProfileStep2GenderActivity` | Gender, Interested In | `gender`, `interestedIn` |
+| 3 | `ProfileStep3StatusActivity` | Status, Looking For | `myStatus`, `lookingFor` |
+| 4 | `ProfileStep4DetailsActivity` | Age (18+), location | `age`, `city`, `country`, `createdAt` |
+| 5 | `ProfileStep5PhotoActivity` | Photo *(skippable)* | nothing — the photo is device-local |
+
+Each step merges its own answer as it's given, so the flow is resumable.
+`AuthRouting.resolveSignedInDestination` reads the document and sends the user
+to the **first step they haven't answered**, which is also how accounts created
+before these fields existed are brought up to date — no migration needed.
+
+Step 5 is not gated on: the photo is optional and stored only on the device
+(`LocalProfilePrefs`), so there is nothing server-side to check.
+
+Because the document is built up in stages, the `users` security rule allows a
+write with no `age` yet — but still rejects any write that sets an age below
+18, so the 18+ policy holds throughout.
 
 ## Design tokens (from Figma)
-| Token | Value |
-|---|---|
-| Primary / CTA | `#FF445C` |
-| Splash gradient | `#FF8292 → #FF5066 → #FF3953` |
-| Input background | `#FFF9FA` |
-| Input border | `#FF5167` |
-| Body text | `#330E12` |
-| Muted text | `#83686B` |
-| Social button border | `#FFDADE` |
+| Token | Name | Light | Dark |
+|---|---|---|---|
+| Primary / CTA | `wedora_accent` | `#FA4659` | `#FA4659` |
+| Brand gradient | `wedora_gradient_start` → `_end` | `#FF93A8 → #FE4667` | same |
+| Background | `wedora_bg` | `#FAF7F7` | `#1C1417` |
+| Surface | `wedora_surface` | `#FFFFFF` | `#2A2124` |
+| Input background | `wedora_input_bg` | `#FDEFF1` | `#241A1D` |
+| Input border | `wedora_input_border` | `#FBD3DA` | `#3A2E32` |
+| Body text | `wedora_text` | `#241A1D` | `#F5EEEF` |
+| Muted text | `wedora_text_secondary` | `#8C8589` | `#B8ABAE` |
 
-All defined in `app/src/main/res/values/colors.xml` — reuse these for every screen you add next.
+Defined in `res/values/colors.xml` with dark-mode counterparts in
+`res/values-night/colors.xml` — the two files use the same names, so the system
+swaps them and there is no separate dark theme to maintain. Reuse these names
+rather than raw hex on any screen you add.
 
 ## How to open
 1. Open **Android Studio** → File → Open → select the `WedoraApp` folder.
@@ -107,26 +137,30 @@ app/src/main/
 │   ├── OnboardingPage.kt      ← data model for a single slide (illustration + title + description)
 │   ├── OnboardingPrefs.kt     ← SharedPreferences flag tracking whether onboarding is complete
 │   ├── LoginActivity.kt
-│   └── SignUpActivity.kt
+│   ├── SignUpActivity.kt
+│   ├── AuthRouting.kt          ← shared gate: which setup step (if any) a user still needs
+│   ├── ProfileStepActivity.kt  ← shared chrome for the 5 setup steps
+│   └── ProfileStep1..5*.kt     ← name / gender / status / details / photo
 ├── res/layout/
 │   ├── activity_splash.xml
 │   ├── activity_onboarding.xml   ← ViewPager2 + indicator dots + Next/Get Started
 │   ├── item_onboarding_page.xml  ← single slide: illustration, title, description
 │   ├── activity_login.xml
-│   └── activity_signup.xml
+│   ├── activity_signup.xml
+│   ├── activity_profile_step.xml ← progress + title + content slot + Continue/Skip
+│   └── view_step_*.xml           ← each step's own fields, inflated into that slot
 ├── res/values/
 │   ├── colors.xml
 │   ├── dimens.xml      ← onboarding page-indicator dot sizes/spacing
 │   ├── strings.xml
-│   └── styles.xml      ← reusable styles: WedoraInputField, WedoraPrimaryButton, WedoraSocialButton
+│   └── styles.xml      ← reusable styles: WedoraInputField, WedoraPrimaryButton, WedoraChip, WedoraSwitch
 └── res/drawable/
     ├── bg_splash_gradient.xml
     ├── bg_input_field.xml
     ├── bg_button_primary.xml
-    ├── bg_social_button.xml
     ├── ic_onboarding_venue / ic_onboarding_plan / ic_onboarding_celebrate   ← slide illustrations
     ├── indicator_dot_active.xml / indicator_dot_inactive.xml                 ← page-indicator dots
-    └── ic_back / ic_hide / ic_google / ic_facebook / ic_apple
+    └── ic_back / ic_hide
 ```
 
 ## Notes / next steps
@@ -134,9 +168,11 @@ app/src/main/
 - `Sign Up` / `Login` links use `SpannableString` to color just the linked word, matching the design.
 - `btnLogin` / `btnSignUp` are wired to **Firebase Auth** email/password (see **Firebase Setup**
   above), with inline validation and mapped error messages (wrong password, email-already-in-use,
-  weak password, network). On success they currently show a `Toast` — point them at your home
-  screen once it exists (`// TODO` markers are in place in `LoginActivity.kt` / `SignUpActivity.kt`).
-- Social login buttons (Google/Facebook/Apple) are stubbed — hook up the respective SDKs.
-- Reuse `WedoraInputField`, `WedoraPrimaryButton`, `WedoraSocialButton`, and the color palette
-  in `colors.xml` when building out the remaining ~50 screens (profile setup, discover, chat, etc.)
-  so the whole app stays visually consistent.
+  weak password, network). Login routes through `AuthRouting.resolveSignedInDestination`, which
+  is shared with `SplashActivity` so both entry points apply the same gate.
+- Google / Facebook sign-in were removed — they were never implemented, and the buttons advertised
+  methods the app doesn't have. `Continue as Guest` remains.
+- Reuse `WedoraInputField`, `WedoraPrimaryButton`, `WedoraChip`, `WedoraSwitch` and the color
+  palette in `colors.xml` when adding screens, so the whole app stays visually consistent.
+- This README covers the launch and auth flow. The rest of the app — discover feed, likes, chat,
+  profile, settings, filters — has grown well past what's listed here and isn't documented yet.

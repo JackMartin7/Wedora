@@ -27,12 +27,12 @@ fun formatAgeLocation(
  * A user's Firestore `users/{uid}` document.
  *
  * Field names live here as constants rather than as string literals scattered
- * across SignUpActivity / LoginActivity / HomeActivity / CompleteProfileActivity
- * / ProfileActivity, so a rename can't silently desync one call site.
+ * across SignUpActivity / LoginActivity / HomeActivity / the ProfileStep
+ * screens / ProfileActivity, so a rename can't silently desync one call site.
  *
- * [age], [city] and [country] are filled in by CompleteProfileActivity after
- * first verified login — they are absent for accounts created before that step
- * existed, which is exactly what the completion gate keys off.
+ * The document is built up field by field: sign-up writes none of it, and each
+ * setup step merges its own answer. Any of these can therefore be absent, and
+ * which ones are missing is exactly what routes a user to the step that asks.
  */
 data class UserProfile(
     val displayName: String?,
@@ -45,7 +45,7 @@ data class UserProfile(
     /**
      * Free text the user writes about themselves, capped at 150 characters by
      * the editor. Null for anyone who hasn't written one — it is optional, so
-     * it deliberately plays no part in [isComplete].
+     * it is optional and no setup step asks for it.
      */
     val bio: String?,
     /**
@@ -56,9 +56,8 @@ data class UserProfile(
      */
     val onlyMatchesCanMessage: Boolean,
     /**
-     * Marital status — one of [MarriageIntent.statusOptions]. Null on accounts
-     * created before these fields existed; the Complete Profile gate collects
-     * it on their next login.
+     * Marital status — one of [MarriageIntent.statusOptions]. Null until step 3
+     * has been answered, which is what sends a user there.
      */
     val myStatus: String?,
     /**
@@ -68,20 +67,6 @@ data class UserProfile(
      */
     val lookingFor: String?
 ) {
-
-    /**
-     * True once the Complete Profile step has been satisfied.
-     *
-     * Includes the marriage-intent fields, which is what routes accounts
-     * created before they existed back through the gate on their next login —
-     * the same mechanism that caught accounts predating age and location.
-     */
-    val isComplete: Boolean
-        get() = age != null &&
-            !city.isNullOrBlank() &&
-            !country.isNullOrBlank() &&
-            !myStatus.isNullOrBlank() &&
-            !lookingFor.isNullOrBlank()
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
     fun ageLocationLine(context: Context): String? =
@@ -108,8 +93,8 @@ data class UserProfile(
 
         /**
          * Reads a profile out of a snapshot. Safe on a snapshot for a document
-         * that doesn't exist — every field simply comes back null, which
-         * [isComplete] correctly reports as incomplete.
+         * that doesn't exist — every field simply comes back null, which the
+         * routing gate correctly reads as "no steps answered yet".
          */
         fun from(snapshot: DocumentSnapshot): UserProfile = UserProfile(
             displayName = snapshot.getString(FIELD_DISPLAY_NAME),
