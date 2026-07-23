@@ -69,6 +69,7 @@ class SignUpActivity : AppCompatActivity() {
         binding.rowAddPhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
 
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
+        binding.btnSignUp.addPressScale()
     }
 
     /**

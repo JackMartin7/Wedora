@@ -413,6 +413,9 @@ class HomeActivity : AppCompatActivity() {
         )
 
         b.root.setOnClickListener { startActivity(ProfileDetailActivity.intent(this, card.id)) }
+        // Shallower than a button: the card is large, so the same 5% dip would
+        // read as the whole screen moving.
+        b.root.addPressScale(pressedScale = 0.97f)
         b.btnLike.setOnClickListener { onHeartTapped(card, b.btnLike) }
         b.btnPass.setOnClickListener { binding.cardStack.swipeLeft() }
         b.btnDismiss.setOnClickListener { binding.cardStack.swipeLeft() }

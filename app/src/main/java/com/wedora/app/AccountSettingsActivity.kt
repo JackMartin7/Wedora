@@ -60,6 +60,8 @@ class AccountSettingsActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { finish() }
         binding.btnUpdatePassword.setOnClickListener { updatePassword() }
         binding.btnUpdateEmail.setOnClickListener { updateEmail() }
+        binding.btnUpdatePassword.addPressScale()
+        binding.btnUpdateEmail.addPressScale()
         binding.btnDeleteAccount.setOnClickListener { confirmDeleteAccount() }
     }
 

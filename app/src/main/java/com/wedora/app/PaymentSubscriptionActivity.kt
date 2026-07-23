@@ -42,6 +42,7 @@ class PaymentSubscriptionActivity : AppCompatActivity() {
         binding.cardYearly.setOnClickListener { selectPlan(yearly = true) }
 
         binding.btnSubscribe.setOnClickListener { showComingSoon() }
+        binding.btnSubscribe.addPressScale()
         binding.tvRestorePurchase.setOnClickListener { showComingSoon() }
 
         buildFeatureList()

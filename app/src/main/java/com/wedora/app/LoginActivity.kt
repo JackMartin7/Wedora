@@ -47,6 +47,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
         binding.btnLogin.setOnClickListener { attemptLogin() }
+        binding.btnLogin.addPressScale()
 
         binding.tvContinueAsGuest.setOnClickListener { continueAsGuest() }
     }
@@ -130,10 +131,15 @@ class LoginActivity : AppCompatActivity() {
         resolveSignedInDestination(firestore, uid) { goTo(it) }
     }
 
+    /**
+     * Signing in hands the app over rather than pushing a screen, so it fades
+     * instead of sliding — the user can't come back through Login.
+     */
     private fun goTo(destination: Class<*>) {
         setLoading(false)
         startActivity(Intent(this, destination))
         finish()
+        applyHandoffTransition()
     }
 
     /**

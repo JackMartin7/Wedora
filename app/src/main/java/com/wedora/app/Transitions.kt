@@ -31,3 +31,18 @@ fun Activity.applyLateralTransition() {
     @Suppress("DEPRECATION")
     overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
 }
+
+/**
+ * Cross-fade for the launch and authentication path — splash to onboarding,
+ * onboarding to login, login to home.
+ *
+ * These aren't navigation in the usual sense: nothing is being pushed onto a
+ * stack the user can come back through, the app is handing off from one phase
+ * to the next. A slide would suggest they could swipe back to the splash
+ * screen. Shares the fade with [applyLateralTransition] and stays a separate
+ * name so the two reasons don't get merged by a later edit.
+ */
+fun Activity.applyHandoffTransition() {
+    @Suppress("DEPRECATION")
+    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+}

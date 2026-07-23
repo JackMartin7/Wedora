@@ -93,6 +93,7 @@ class SplashActivity : AppCompatActivity() {
         navigated = true
         startActivity(Intent(this, next))
         finish()
+        applyHandoffTransition()
     }
 
     override fun onDestroy() {

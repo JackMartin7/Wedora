@@ -34,6 +34,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         binding.btnSendResetLink.setOnClickListener { attemptSendResetLink() }
+        binding.btnSendResetLink.addPressScale()
     }
 
     private fun attemptSendResetLink() {

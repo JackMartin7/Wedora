@@ -67,6 +67,7 @@ class OnboardingActivity : AppCompatActivity() {
                 binding.viewPager.currentItem = current + 1
             }
         }
+        binding.btnNext.addPressScale()
     }
 
     private fun buildIndicators() {
@@ -107,5 +108,6 @@ class OnboardingActivity : AppCompatActivity() {
         OnboardingPrefs.setOnboardingComplete(this)
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
+        applyHandoffTransition()
     }
 }

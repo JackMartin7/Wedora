@@ -64,6 +64,7 @@ class CompleteProfileActivity : AppCompatActivity() {
 
         binding.tvRefreshLocation.setOnClickListener { detectLocation() }
         binding.btnContinue.setOnClickListener { saveAndContinue() }
+        binding.btnContinue.addPressScale()
 
         updateContinueEnabled()
         requestLocationOrFallBack()

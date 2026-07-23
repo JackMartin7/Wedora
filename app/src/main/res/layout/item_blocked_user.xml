@@ -40,6 +40,7 @@
         android:layout_height="34dp"
         android:layout_marginStart="12dp"
         android:background="@drawable/bg_pill_outline"
+        android:foreground="?attr/selectableItemBackground"
         android:gravity="center"
         android:paddingHorizontal="18dp"
         android:text="@string/action_unblock"

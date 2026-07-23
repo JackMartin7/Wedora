@@ -100,6 +100,7 @@ class EditProfileActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
         binding.btnSave.setOnClickListener { save() }
+        binding.btnSave.addPressScale()
         binding.ivEditPhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
         binding.tvChangePhoto.setOnClickListener { pickImageLauncher.launch("image/*") }
 

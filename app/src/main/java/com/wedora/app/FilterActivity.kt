@@ -48,6 +48,7 @@ class FilterActivity : AppCompatActivity() {
         binding.btnClose.setOnClickListener { finish() }
         binding.btnReset.setOnClickListener { resetToDefaults() }
         binding.btnApply.setOnClickListener { applyAndFinish() }
+        binding.btnApply.addPressScale()
 
         binding.sliderAge.addOnChangeListener { _, _, _ -> showAgeLabel() }
         binding.sliderDistance.addOnChangeListener { _, _, _ -> showDistanceLabel() }
