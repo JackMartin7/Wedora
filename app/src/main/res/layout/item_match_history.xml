@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One row in Match History: circular avatar, name over the match date, and an
+    accent "Message" pill on the right. The row opens the profile; the pill
+    opens the conversation, so they're separate tap targets.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="12dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAvatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_avatar"
+        app:strokeColor="@color/wedora_accent"
+        app:strokeWidth="2dp"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <TextView
+        android:id="@+id/tvName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toEndOf="@id/ivAvatar"
+        app:layout_constraintEnd_toStartOf="@id/btnMessage"
+        app:layout_constraintTop_toTopOf="@id/ivAvatar"
+        app:layout_constraintBottom_toTopOf="@id/tvMatchedOn"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Amelia Hart" />
+
+    <TextView
+        android:id="@+id/tvMatchedOn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="2dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13sp"
+        app:layout_constraintStart_toEndOf="@id/ivAvatar"
+        app:layout_constraintEnd_toStartOf="@id/btnMessage"
+        app:layout_constraintTop_toBottomOf="@id/tvName"
+        app:layout_constraintBottom_toBottomOf="@id/ivAvatar"
+        tools:text="Matched on 24 Jul 2026" />
+
+    <TextView
+        android:id="@+id/btnMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_distance_pill"
+        android:foreground="?attr/selectableItemBackground"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="7dp"
+        android:text="@string/match_history_message"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:fontFamily="@font/poppins_medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -120,6 +120,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".MatchHistoryActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

@@ -206,6 +206,13 @@
     <string name="empty_nearby_title">No one nearby</string>
     <string name="empty_nearby_subtitle">Try increasing your distance filter to see more people.</string>
 
+    <!-- Match History -->
+    <string name="match_history_title">Match History</string>
+    <string name="match_history_matched_on">Matched on %1$s</string>
+    <string name="match_history_message">Message</string>
+    <string name="empty_match_history_title">No matches yet</string>
+    <string name="empty_match_history_subtitle">Start swiping to find your match!</string>
+
     <!-- Chats -->
     <string name="chats_title">Chats</string>
     <string name="chats_new_matches">New Matches</string>

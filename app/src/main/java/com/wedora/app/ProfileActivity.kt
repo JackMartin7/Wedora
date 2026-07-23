@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
@@ -31,7 +30,9 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         setUpSettingsRows()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_profile)
 
-        binding.btnHistory.setOnClickListener { toast(getString(R.string.cd_history)) }
+        binding.btnHistory.setOnClickListener {
+            startActivity(Intent(this, MatchHistoryActivity::class.java))
+        }
         binding.btnEditProfile.setOnClickListener {
             startActivity(Intent(this, EditProfileActivity::class.java))
         }
@@ -274,9 +275,5 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         )
         finish()
-    }
-
-    private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }
