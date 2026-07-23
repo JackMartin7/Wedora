@@ -56,6 +56,8 @@
     <string name="verify_resent_toast">Email resent!</string>
     <string name="verify_back_to_login">Back to Login</string>
     <string name="verify_no_email_app">No email app found on this device.</string>
+    <string name="verify_waiting">Waiting for verification…</string>
+    <string name="verify_success">Email verified! Taking you to login…</string>
 
     <!-- Email Not Verified sheet (Login) -->
     <string name="verify_sheet_title">Email Not Verified</string>

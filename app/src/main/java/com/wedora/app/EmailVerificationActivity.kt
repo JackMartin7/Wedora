@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -33,6 +37,12 @@ class EmailVerificationActivity : AppCompatActivity() {
         /** How long the Resend link stays disabled after a send, in seconds. */
         private const val RESEND_COOLDOWN_SECONDS = 60L
 
+        /** How often to re-check verification while the screen is in front. */
+        private const val POLL_INTERVAL_MS = 3000L
+
+        /** Beat on the success tick before navigating, so it's actually seen. */
+        private const val SUCCESS_DELAY_MS = 1500L
+
         fun intent(context: Context, email: String): Intent =
             Intent(context, EmailVerificationActivity::class.java)
                 .putExtra(EXTRA_EMAIL, email)
@@ -42,6 +52,16 @@ class EmailVerificationActivity : AppCompatActivity() {
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     private var resendTimer: CountDownTimer? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    /** True only while the screen is resumed and should keep polling. */
+    private var polling = false
+
+    /** Latches once verification is detected, so the handoff runs exactly once. */
+    private var verified = false
+
+    private val checkVerificationRunnable = Runnable { checkVerification() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,6 +79,81 @@ class EmailVerificationActivity : AppCompatActivity() {
         // Back should go to Login (and sign out) rather than dropping onto
         // whatever is under this screen while still signed in.
         onBackPressedDispatcher.addCallback(this) { backToLogin() }
+    }
+
+    // ----- Automatic verification polling ----------------------------------
+
+    /**
+     * Polls only while the screen is in front — started here rather than in
+     * onCreate so it also picks up straight away when the user returns from
+     * their email app having just clicked the link.
+     */
+    override fun onResume() {
+        super.onResume()
+        if (verified) return
+        polling = true
+        handler.postDelayed(checkVerificationRunnable, POLL_INTERVAL_MS)
+    }
+
+    /** No point burning battery reloading the token while backgrounded. */
+    override fun onPause() {
+        polling = false
+        handler.removeCallbacks(checkVerificationRunnable)
+        super.onPause()
+    }
+
+    /**
+     * One poll: reload the user so the local token reflects a verification that
+     * happened server-side, then either hand off or schedule the next check.
+     * The completion can land after onPause (or after success), so it re-checks
+     * [polling]/[verified] before doing anything.
+     */
+    private fun checkVerification() {
+        val user = auth.currentUser ?: return
+        user.reload().addOnCompleteListener {
+            if (verified || !polling) return@addOnCompleteListener
+            if (auth.currentUser?.isEmailVerified == true) {
+                onEmailVerified()
+            } else {
+                handler.postDelayed(checkVerificationRunnable, POLL_INTERVAL_MS)
+            }
+        }
+    }
+
+    /**
+     * Detected verification: stop polling, swap the spinner for the tick, say
+     * so, and hand off to Login after a short beat. No sign-out here — the
+     * account is now verified, and Login re-checks on sign-in regardless.
+     */
+    private fun onEmailVerified() {
+        verified = true
+        polling = false
+        handler.removeCallbacks(checkVerificationRunnable)
+
+        binding.progressWaiting.visibility = View.GONE
+        binding.tvWaiting.setText(R.string.verify_success)
+        binding.ivVerified.apply {
+            visibility = View.VISIBLE
+            scaleX = 0f
+            scaleY = 0f
+            animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setInterpolator(OvershootInterpolator())
+                .setDuration(300)
+                .start()
+        }
+
+        Toast.makeText(this, R.string.verify_success, Toast.LENGTH_SHORT).show()
+        handler.postDelayed({ goToLoginVerified() }, SUCCESS_DELAY_MS)
+    }
+
+    private fun goToLoginVerified() {
+        startActivity(
+            Intent(this, LoginActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        finish()
     }
 
     /**
@@ -119,6 +214,9 @@ class EmailVerificationActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // removeCallbacksAndMessages(null) also clears the pending success
+        // handoff posted as a lambda, which isn't the named runnable.
+        handler.removeCallbacksAndMessages(null)
         resendTimer?.cancel()
         super.onDestroy()
     }

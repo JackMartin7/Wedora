@@ -83,6 +83,46 @@
             android:layout_marginTop="32dp"
             android:text="@string/verify_open_email" />
 
+        <!--
+            Live status: a spinner + "Waiting for verification…" while the screen
+            polls, swapped for a green tick the moment it's verified. Tells the
+            user the app is actively watching so they don't wonder whether to
+            come back and refresh.
+        -->
+        <LinearLayout
+            android:id="@+id/waitingRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ProgressBar
+                android:id="@+id/progressWaiting"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:indeterminateTint="@color/wedora_accent" />
+
+            <ImageView
+                android:id="@+id/ivVerified"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_verified_check"
+                android:contentDescription="@null"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tvWaiting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/verify_waiting"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
         <TextView
             android:id="@+id/tvResend"
             android:layout_width="wrap_content"
