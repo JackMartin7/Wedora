@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One tile in the Explore "Discover" grid — the same square-photo-with-overlay
+    style as the Likes grid: a 1:1 avatar placeholder with the name and, when we
+    have it, age/location laid over a darkening scrim at the bottom.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:background="?attr/selectableItemBackground">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivDiscoverPhoto"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_profile_photo"
+        app:shapeAppearanceOverlay="@style/WedoraCardImage"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <View
+        android:id="@+id/scrim"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_photo_scrim"
+        app:layout_constraintStart_toStartOf="@id/ivDiscoverPhoto"
+        app:layout_constraintEnd_toEndOf="@id/ivDiscoverPhoto"
+        app:layout_constraintBottom_toBottomOf="@id/ivDiscoverPhoto"
+        app:layout_constraintTop_toTopOf="@id/ivDiscoverPhoto"
+        app:layout_constraintVertical_bias="1"
+        app:layout_constraintHeight_percent="0.45" />
+
+    <TextView
+        android:id="@+id/tvDiscoverName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="2dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/white"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_semibold"
+        app:layout_constraintStart_toStartOf="@id/ivDiscoverPhoto"
+        app:layout_constraintEnd_toEndOf="@id/ivDiscoverPhoto"
+        app:layout_constraintBottom_toTopOf="@id/tvDiscoverMeta"
+        tools:text="Amelia Hart" />
+
+    <TextView
+        android:id="@+id/tvDiscoverMeta"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="10dp"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="#D9FFFFFF"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="@id/ivDiscoverPhoto"
+        app:layout_constraintEnd_toEndOf="@id/ivDiscoverPhoto"
+        app:layout_constraintBottom_toBottomOf="@id/ivDiscoverPhoto"
+        tools:text="24 • Islamabad, Pakistan" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

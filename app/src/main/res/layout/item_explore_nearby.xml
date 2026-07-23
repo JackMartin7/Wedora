@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One person in the Explore "People Nearby" strip: a circular avatar ringed in
+    accent (the same treatment as the Chats matches strip) with the name below,
+    truncated so long names don't stretch the cell.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="72dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="14dp"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivNearbyAvatar"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_avatar"
+        app:strokeColor="@color/wedora_accent"
+        app:strokeWidth="2dp"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+    <TextView
+        android:id="@+id/tvNearbyName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="12sp"
+        tools:text="Amelia" />
+
+</LinearLayout>

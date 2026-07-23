@@ -11,7 +11,6 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.wedora.app.databinding.ActivityHomeBinding
@@ -301,7 +300,7 @@ class HomeActivity : AppCompatActivity() {
                     .filter { it.id != selfUid && it.id !in excludedUids }
                     .mapNotNull { it.toMatchCard() }
 
-                val loaded = candidates.filter { matchesFilters(it) }
+                val loaded = candidates.filter { matchesActiveFilters(this, it) }
 
                 when {
                     // Distinguishes "nobody at all" from "nobody once your
@@ -335,68 +334,10 @@ class HomeActivity : AppCompatActivity() {
             }
     }
 
-    /**
-     * Client-side filtering, consistent with the existing self and block
-     * filters — pairing more conditions onto the gender query would need
-     * composite indexes, and an inequality on age would silently drop every
-     * document that has no age rather than letting us decide.
-     *
-     * A card with no age is excluded, deliberately: an age filter that keeps
-     * unknown ages isn't filtering by age. That's the one case where "handle
-     * missing gracefully" and "respect what the user asked for" disagree, and
-     * the user's request wins.
-     *
-     * Relationship type and distance are not applied — there is no
-     * relationshipType field to compare and no coordinates to measure between.
-     * They're stored in FilterPrefs, and the filter screen says so.
-     */
-    private fun matchesFilters(card: MatchCard): Boolean {
-        val age = card.age ?: return false
-        if (age < FilterPrefs.getAgeMin(this) || age > FilterPrefs.getAgeMax(this)) return false
-
-        // Empty means "don't narrow" — there is no UI setting this yet, so it
-        // stays empty and the gender query alone decides.
-        val genders = FilterPrefs.getInterestedIn(this)
-        if (genders.isNotEmpty() && card.gender !in genders) return false
-
-        // Null means every option is ticked, i.e. no narrowing — so a profile
-        // missing the field is kept. Once a filter IS active it's excluded,
-        // because there's no way to know whether it would have qualified and
-        // showing it anyway would ignore what the user asked for.
-        FilterPrefs.getMyStatusFilter(this)?.let { allowed ->
-            if (card.myStatus !in allowed) return false
-        }
-        FilterPrefs.getLookingForFilter(this, MarriageIntent.ALL_LOOKING_FOR)?.let { allowed ->
-            if (card.lookingFor !in allowed) return false
-        }
-
-        return true
-    }
-
     /** Accent dot over the filter icon whenever anything differs from default. */
     private fun showFilterIndicator() {
         binding.filterDot.visibility =
             if (FilterPrefs.hasActiveFilters(this)) View.VISIBLE else View.GONE
-    }
-
-    private fun DocumentSnapshot.toMatchCard(): MatchCard? {
-        val profile = UserProfile.from(this)
-        val name = profile.displayName?.takeIf { it.isNotBlank() } ?: return null
-        return MatchCard(
-            id = id,
-            name = name,
-            role = "",
-            avatarRes = R.drawable.ic_avatar_placeholder,
-            photoRes = R.drawable.ic_avatar_placeholder,
-            distanceKm = null,
-            bio = profile.bio.orEmpty(),
-            age = profile.age,
-            city = profile.city,
-            country = profile.country,
-            gender = profile.gender,
-            myStatus = profile.myStatus,
-            lookingFor = profile.lookingFor
-        )
     }
 
     // ----- Card stack -------------------------------------------------------

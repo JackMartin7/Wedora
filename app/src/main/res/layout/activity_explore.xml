@@ -1,81 +1,198 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Explore — a placeholder for the map experience, which needs a Maps API key
-    and real coordinates on both sides of a match. Says so plainly rather than
-    showing a broken map, and offers the swipe feed as the thing that does work
-    today.
+    Explore: a "People Nearby" strip over a "Discover" grid, matching the layout
+    language of the other tabs (plain theme background, bold title top-left, tab
+    bar below). Both sections read data that already exists in Firestore — the
+    user's matches for the strip, the same feed query as Home for the grid.
 -->
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_explore_gradient">
+    android:background="@color/wedora_bg">
 
-    <ImageView
-        android:id="@+id/ivExplore"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:src="@drawable/ic_explore"
-        android:contentDescription="@null"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/tvExploreTitle"
-        app:layout_constraintVertical_chainStyle="packed" />
+    <!-- ===== Top bar ===== -->
 
     <TextView
         android:id="@+id/tvExploreTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="18dp"
         android:text="@string/explore_title"
-        android:textColor="@color/white"
-        android:textSize="26sp"
+        android:textColor="@color/wedora_text"
+        android:textSize="20sp"
         android:fontFamily="@font/poppins_semibold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivExplore"
-        app:layout_constraintBottom_toTopOf="@id/tvExploreSubtitle" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/btnFilter" />
 
-    <!--
-        Deliberately white at reduced opacity rather than the grey text token:
-        on the accent gradient a mid grey has almost no contrast, so the
-        secondary tone comes from alpha instead of hue.
-    -->
-    <TextView
-        android:id="@+id/tvExploreSubtitle"
+    <ImageButton
+        android:id="@+id/btnFilter"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_filter"
+        android:tint="@color/wedora_text"
+        android:contentDescription="@string/cd_filter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Marks non-default filters. Overlays the icon's top-end corner. -->
+    <View
+        android:id="@+id/filterDot"
+        android:layout_width="9dp"
+        android:layout_height="9dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_filter_dot"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintEnd_toEndOf="@id/btnFilter"
+        app:layout_constraintTop_toTopOf="@id/btnFilter" />
+
+    <ImageButton
+        android:id="@+id/btnSearch"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="4dp"
+        android:padding="8dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_search"
+        android:tint="@color/wedora_text"
+        android:contentDescription="@string/cd_search"
+        app:layout_constraintEnd_toStartOf="@id/btnFilter"
+        app:layout_constraintTop_toTopOf="@id/btnFilter"
+        app:layout_constraintBottom_toBottomOf="@id/btnFilter" />
+
+    <!-- ===== Scrolling content ===== -->
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/exploreScroll"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginHorizontal="44dp"
-        android:gravity="center"
-        android:lineSpacingExtra="4sp"
-        android:text="@string/explore_subtitle"
-        android:textColor="#CCFFFFFF"
-        android:textSize="14sp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toBottomOf="@id/btnFilter"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvExploreTitle"
-        app:layout_constraintBottom_toTopOf="@id/btnFindPeople" />
+        app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
-    <TextView
-        android:id="@+id/btnFindPeople"
-        android:layout_width="wrap_content"
-        android:layout_height="52dp"
-        android:layout_marginTop="28dp"
-        android:background="@drawable/bg_badge_on_accent"
-        android:foreground="?attr/selectableItemBackground"
-        android:gravity="center"
-        android:paddingHorizontal="28dp"
-        android:text="@string/explore_find_people"
-        android:textColor="@color/wedora_accent"
-        android:textSize="15sp"
-        android:fontFamily="@font/poppins_semibold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvExploreSubtitle"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Section 1: People Nearby -->
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/explore_nearby_label"
+                    android:textColor="@color/wedora_text"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:id="@+id/tvNearbySeeAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="4dp"
+                    android:text="@string/explore_see_all"
+                    android:textColor="@color/wedora_accent"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvNearby"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:clipToPadding="false"
+                android:paddingStart="20dp"
+                android:paddingEnd="8dp"
+                android:orientation="horizontal"
+                android:scrollbars="none"
+                tools:listitem="@layout/item_explore_nearby" />
+
+            <TextView
+                android:id="@+id/tvNearbyEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="4dp"
+                android:text="@string/explore_nearby_empty"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Section 2: Discover -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="28dp"
+                android:text="@string/explore_discover_label"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvDiscover"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:paddingHorizontal="14dp"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_discover_grid" />
+
+            <ProgressBar
+                android:id="@+id/progressDiscover"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="40dp"
+                android:layout_gravity="center_horizontal"
+                android:indeterminateTint="@color/wedora_accent"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <!-- Discover empty state: message + a shortcut to the filters. -->
+            <include
+                android:id="@+id/discoverEmpty"
+                layout="@layout/view_empty_state"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- ===== Bottom navigation ===== -->
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"

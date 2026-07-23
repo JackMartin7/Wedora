@@ -193,10 +193,16 @@
     <string name="nav_chats">Chats</string>
     <string name="nav_profile">Profile</string>
 
-    <!-- Explore (placeholder until Maps is wired up) -->
+    <!-- Explore -->
     <string name="explore_title">Explore</string>
-    <string name="explore_subtitle">Discover people and places near you — coming soon</string>
-    <string name="explore_find_people">Find People Near You</string>
+    <string name="explore_nearby_label">People Nearby</string>
+    <string name="explore_see_all">See All</string>
+    <string name="explore_nearby_empty">No one nearby yet</string>
+    <string name="explore_discover_label">Discover</string>
+    <string name="explore_coming_soon">Coming soon</string>
+    <string name="search_coming_soon">Search coming soon</string>
+    <string name="empty_discover_title">No profiles to show</string>
+    <string name="empty_discover_subtitle">Try adjusting your filters to see more people.</string>
 
     <!-- Chats -->
     <string name="chats_title">Chats</string>
