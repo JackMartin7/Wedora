@@ -142,7 +142,10 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
                 }
 
                 showCompletion(calculateProfileCompletion(this, uid, profile))
-                binding.skeletonProfile.root.crossfadeToContent(binding.statsCard, clearChildren = false)
+                // Stop skeleton shimmer and show stats card with no animation.
+                binding.skeletonProfile.root.stopShimmer()
+                binding.skeletonProfile.root.visibility = View.GONE
+                binding.statsCard.visibility = View.VISIBLE
             }
             .addOnFailureListener { e ->
                 // The placeholder stays rather than showing a figure: a wrong
@@ -151,9 +154,10 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
                 Log.w(TAG, "Couldn't load the profile document", e)
                 binding.tvProfileAgeLocation.visibility = View.GONE
                 // Reveal the card even on failure — its "—" placeholders say
-                // "unknown", where a shimmer left running would say "still
-                // loading" forever.
-                binding.skeletonProfile.root.crossfadeToContent(binding.statsCard, clearChildren = false)
+                // "unknown". Stop the skeleton shimmer and show the stats card.
+                binding.skeletonProfile.root.stopShimmer()
+                binding.skeletonProfile.root.visibility = View.GONE
+                binding.statsCard.visibility = View.VISIBLE
             }
     }
 
