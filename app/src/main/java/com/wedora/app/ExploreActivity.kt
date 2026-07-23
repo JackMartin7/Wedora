@@ -3,7 +3,7 @@ package com.wedora.app
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
@@ -39,6 +39,13 @@ class ExploreActivity : AppCompatActivity() {
     }
 
     /**
+     * The full loaded feed, kept so search can filter it in memory rather than
+     * re-querying. Search matches name/city/country, which is why the source is
+     * the [MatchCard]s and not the display-only [DiscoverProfile]s.
+     */
+    private var discoverCards: List<MatchCard> = emptyList()
+
+    /**
      * Only reloads on RESULT_OK — i.e. Apply — matching Home. Backing out of the
      * filter screen changes nothing, so there's no need to re-query.
      */
@@ -70,15 +77,89 @@ class ExploreActivity : AppCompatActivity() {
         }
         showFilterIndicator()
 
-        // Search has no backend yet; say so rather than open a dead screen.
-        binding.btnSearch.setOnClickListener {
-            toast(getString(R.string.search_coming_soon))
-        }
+        binding.btnSearch.setOnClickListener { expandSearch() }
+        binding.btnSearchClose.setOnClickListener { collapseSearch() }
+        binding.etSearch.addTextChangedListener(SimpleTextWatcher {
+            applyDiscoverFilter(currentQuery())
+        })
+
         binding.tvNearbySeeAll.setOnClickListener {
             startActivity(Intent(this, NearbyListActivity::class.java))
         }
 
+        // While the search bar is open, back collapses it rather than leaving
+        // the tab.
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.searchBar.visibility == View.VISIBLE) {
+                collapseSearch()
+            } else {
+                isEnabled = false
+                onBackPressedDispatcher.onBackPressed()
+            }
+        }
+
         loadFeed()
+    }
+
+    // ----- Search -----------------------------------------------------------
+
+    private fun currentQuery(): String = binding.etSearch.text?.toString().orEmpty()
+
+    private fun expandSearch() {
+        setTopBarButtonsVisible(false)
+        binding.searchBar.visibility = View.VISIBLE
+        binding.searchBar.alpha = 0f
+        binding.searchBar.translationX = 16 * resources.displayMetrics.density
+        binding.searchBar.animate().alpha(1f).translationX(0f).setDuration(200).start()
+        binding.etSearch.showKeyboard()
+    }
+
+    private fun collapseSearch() {
+        binding.etSearch.hideKeyboard()
+        // Clearing the field restores the full grid through the text watcher.
+        binding.etSearch.setText("")
+        binding.searchBar.animate().alpha(0f).setDuration(150).withEndAction {
+            binding.searchBar.visibility = View.GONE
+            binding.searchBar.translationX = 0f
+        }.start()
+        setTopBarButtonsVisible(true)
+    }
+
+    private fun setTopBarButtonsVisible(visible: Boolean) {
+        val v = if (visible) View.VISIBLE else View.GONE
+        binding.tvExploreTitle.visibility = v
+        binding.btnSearch.visibility = v
+        binding.btnFilter.visibility = v
+        // The dot follows the filter state, not a blanket toggle.
+        if (visible) showFilterIndicator() else binding.filterDot.visibility = View.GONE
+    }
+
+    /**
+     * Filters the loaded feed by [query] against name/city/country, in memory —
+     * no Firestore round trip. Blank query restores the full grid.
+     */
+    private fun applyDiscoverFilter(query: String) {
+        // Nothing loaded (empty feed / guest): render already showed the right
+        // empty state, so don't overwrite it with an empty grid.
+        if (discoverCards.isEmpty()) return
+
+        val q = query.trim()
+        val filtered =
+            if (q.isEmpty()) discoverCards
+            else discoverCards.filter { it.matchesSearch(q) }
+
+        if (filtered.isEmpty()) {
+            showDiscoverSearchEmpty(q)
+        } else {
+            showDiscover(filtered.map { DiscoverProfile(it.id, it.name, it.ageLocationLine(this)) })
+        }
+    }
+
+    private fun MatchCard.matchesSearch(query: String): Boolean {
+        val q = query.lowercase()
+        return name.lowercase().contains(q) ||
+            city?.lowercase()?.contains(q) == true ||
+            country?.lowercase()?.contains(q) == true
     }
 
     /** Accent dot over the filter icon whenever anything differs from default. */
@@ -96,6 +177,7 @@ class ExploreActivity : AppCompatActivity() {
 
     private fun render(cards: List<MatchCard>) {
         binding.progressDiscover.visibility = View.GONE
+        discoverCards = cards
 
         if (cards.isEmpty()) {
             showNearbyEmpty()
@@ -108,8 +190,9 @@ class ExploreActivity : AppCompatActivity() {
         }
         showNearby(nearby)
 
-        val discover = cards.map { DiscoverProfile(it.id, it.name, it.ageLocationLine(this)) }
-        showDiscover(discover)
+        // Re-apply any active search rather than always showing the full grid,
+        // so a reload (e.g. after Apply Filters) doesn't drop the user's query.
+        applyDiscoverFilter(currentQuery())
     }
 
     private fun showLoading() {
@@ -151,11 +234,18 @@ class ExploreActivity : AppCompatActivity() {
         )
     }
 
-    private fun openFilters() {
-        filterLauncher.launch(Intent(this, FilterActivity::class.java))
+    /** No feed matched the search query (as opposed to no feed at all). */
+    private fun showDiscoverSearchEmpty(query: String) {
+        binding.rvDiscover.visibility = View.GONE
+        discoverAdapter.submitList(emptyList())
+        binding.discoverEmpty.show(
+            R.drawable.ic_search,
+            R.string.empty_search_title,
+            getString(R.string.empty_search_no_results, query)
+        )
     }
 
-    private fun toast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun openFilters() {
+        filterLauncher.launch(Intent(this, FilterActivity::class.java))
     }
 }

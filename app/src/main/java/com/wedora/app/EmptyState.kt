@@ -41,6 +41,25 @@ fun ViewEmptyStateBinding.show(
 }
 
 /**
+ * Same as [show] but with a runtime subtitle string rather than a resource —
+ * for messages that embed a value, like a search query ("No results for …").
+ * Always actionless, since these are transient states the user clears by
+ * editing their query.
+ */
+fun ViewEmptyStateBinding.show(
+    @DrawableRes icon: Int,
+    @StringRes title: Int,
+    subtitleText: CharSequence
+) {
+    ivEmptyIcon.setImageResource(icon)
+    tvEmptyTitle.setText(title)
+    tvEmptySubtitle.text = subtitleText
+    btnEmptyAction.visibility = View.GONE
+    btnEmptyAction.setOnClickListener(null)
+    root.visibility = View.VISIBLE
+}
+
+/**
  * Fades the empty state in rather than snapping it on.
  *
  * Used where it replaces content the user was just looking at — the last card

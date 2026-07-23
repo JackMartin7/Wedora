@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
@@ -46,6 +47,9 @@ class ChatsActivity : AppCompatActivity() {
      */
     private val nameCache = mutableMapOf<String, String>()
 
+    /** The full conversation list, kept so search can filter it in memory. */
+    private var allPreviews: List<ChatPreview> = emptyList()
+
     private val adapter = ChatListAdapter { chat ->
         startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
     }
@@ -61,8 +65,84 @@ class ChatsActivity : AppCompatActivity() {
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_chats)
 
         binding.btnBack.setOnClickListener { goToHome() }
-        binding.btnSearch.setOnClickListener { toast(getString(R.string.cd_search)) }
         binding.btnMore.setOnClickListener { toast(getString(R.string.cd_more)) }
+
+        binding.btnSearch.setOnClickListener { expandSearch() }
+        binding.btnSearchClose.setOnClickListener { collapseSearch() }
+        binding.etSearch.addTextChangedListener(SimpleTextWatcher {
+            applyChatFilter(currentQuery())
+        })
+
+        // Back closes the search bar first; otherwise it behaves like the back
+        // arrow and returns to Home.
+        onBackPressedDispatcher.addCallback(this) {
+            if (binding.searchBar.visibility == View.VISIBLE) collapseSearch() else goToHome()
+        }
+    }
+
+    // ----- Search -----------------------------------------------------------
+
+    private fun currentQuery(): String = binding.etSearch.text?.toString().orEmpty()
+
+    private fun expandSearch() {
+        setTopBarVisible(false)
+        binding.searchBar.visibility = View.VISIBLE
+        binding.searchBar.alpha = 0f
+        binding.searchBar.translationX = 16 * resources.displayMetrics.density
+        binding.searchBar.animate().alpha(1f).translationX(0f).setDuration(200).start()
+        binding.etSearch.showKeyboard()
+    }
+
+    private fun collapseSearch() {
+        binding.etSearch.hideKeyboard()
+        // Clearing the field restores the full list through the text watcher.
+        binding.etSearch.setText("")
+        binding.searchBar.animate().alpha(0f).setDuration(150).withEndAction {
+            binding.searchBar.visibility = View.GONE
+            binding.searchBar.translationX = 0f
+        }.start()
+        setTopBarVisible(true)
+    }
+
+    private fun setTopBarVisible(visible: Boolean) {
+        val v = if (visible) View.VISIBLE else View.GONE
+        binding.tvChatsTitle.visibility = v
+        binding.btnSearch.visibility = v
+        binding.btnMore.visibility = v
+    }
+
+    /**
+     * Filters the loaded conversations by [query] against the other person's
+     * name and the last-message preview, in memory. Blank restores the list.
+     */
+    private fun applyChatFilter(query: String) {
+        // Nothing loaded (empty inbox / guest / error): the load path already
+        // shows the right empty state, so don't stomp it with a blank list.
+        if (allPreviews.isEmpty()) return
+
+        val q = query.trim()
+        val filtered =
+            if (q.isEmpty()) allPreviews
+            else allPreviews.filter { it.matchesSearch(q) }
+
+        if (filtered.isEmpty()) {
+            binding.rvChats.visibility = View.GONE
+            binding.emptyState.show(
+                R.drawable.ic_search,
+                R.string.empty_search_title,
+                getString(R.string.empty_chats_no_results, q)
+            )
+        } else {
+            binding.emptyState.hide()
+            binding.rvChats.visibility = View.VISIBLE
+            adapter.submitList(filtered)
+        }
+    }
+
+    private fun ChatPreview.matchesSearch(query: String): Boolean {
+        val q = query.lowercase()
+        return name.lowercase().contains(q) ||
+            lastMessage?.lowercase()?.contains(q) == true
     }
 
     override fun onStart() {
@@ -219,17 +299,17 @@ class ChatsActivity : AppCompatActivity() {
     }
 
     private fun showConversations(previews: List<ChatPreview>) {
+        allPreviews = previews
         binding.progressLoading.visibility = View.GONE
-        binding.emptyState.hide()
-        adapter.submitList(previews)
 
         // The listener re-fires on every message, so only the first pass has a
         // skeleton to clear; afterwards this is a no-op on an already-hidden view.
+        // What ends up visible (list vs. search-empty) is decided by the filter.
         if (binding.skeletonChats.visibility == View.VISIBLE) {
             binding.skeletonChats.crossfadeToContent(binding.rvChats)
-        } else {
-            binding.rvChats.visibility = View.VISIBLE
         }
+        // Re-apply any active search so a live update doesn't drop the query.
+        applyChatFilter(currentQuery())
     }
 
     /**

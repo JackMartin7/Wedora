@@ -69,6 +69,63 @@
         app:layout_constraintTop_toTopOf="@id/btnFilter"
         app:layout_constraintBottom_toBottomOf="@id/btnFilter" />
 
+    <!-- Search bar, overlaid on the top bar. Hidden until the search icon is
+         tapped, then it takes over the row and filters the Discover grid. -->
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_input_field"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnFilter"
+        app:layout_constraintBottom_toBottomOf="@id/btnFilter">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/wedora_text_secondary"
+            android:contentDescription="@null" />
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@null"
+            android:hint="@string/explore_search_hint"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/wedora_text"
+            android:textColorHint="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins"
+            android:autofillHints="" />
+
+        <ImageButton
+            android:id="@+id/btnSearchClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:tint="@color/wedora_text_secondary"
+            android:contentDescription="@string/cd_close_search" />
+
+    </LinearLayout>
+
     <!-- ===== Scrolling content ===== -->
 
     <androidx.core.widget.NestedScrollView

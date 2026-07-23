@@ -214,8 +214,10 @@
     <string name="explore_see_all">See All</string>
     <string name="explore_nearby_empty">No one nearby yet</string>
     <string name="explore_discover_label">Discover</string>
-    <string name="explore_coming_soon">Coming soon</string>
-    <string name="search_coming_soon">Search coming soon</string>
+    <string name="explore_search_hint">Search people</string>
+    <string name="cd_close_search">Close search</string>
+    <string name="empty_search_title">No results</string>
+    <string name="empty_search_no_results">No results for \"%1$s\"</string>
     <string name="empty_discover_title">No profiles to show</string>
     <string name="empty_discover_subtitle">Try adjusting your filters to see more people.</string>
     <string name="nearby_list_title">People Nearby</string>
@@ -233,6 +235,8 @@
     <string name="chats_title">Chats</string>
     <string name="chats_new_matches">New Matches</string>
     <string name="cd_search">Search</string>
+    <string name="chats_search_hint">Search chats</string>
+    <string name="empty_chats_no_results">No conversations matching \"%1$s\"</string>
 
     <!-- Profile -->
     <string name="profile_title">Profile</string>

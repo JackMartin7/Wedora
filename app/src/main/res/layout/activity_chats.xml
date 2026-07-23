@@ -60,6 +60,63 @@
         app:layout_constraintTop_toTopOf="@id/btnBack"
         app:layout_constraintBottom_toBottomOf="@id/btnBack" />
 
+    <!-- Search bar, overlaid on the top bar. Hidden until the search icon is
+         tapped; the back arrow stays put so it's still one tap out. -->
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/bg_input_field"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="4dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/wedora_text_secondary"
+            android:contentDescription="@null" />
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@null"
+            android:hint="@string/chats_search_hint"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="@color/wedora_text"
+            android:textColorHint="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins"
+            android:autofillHints="" />
+
+        <ImageButton
+            android:id="@+id/btnSearchClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:tint="@color/wedora_text_secondary"
+            android:contentDescription="@string/cd_close_search" />
+
+    </LinearLayout>
+
     <!-- ===== New matches strip =====
          Hidden for now. It only ever held placeholder avatars, and leaving
          those on screen beside real conversations would show invented people.
