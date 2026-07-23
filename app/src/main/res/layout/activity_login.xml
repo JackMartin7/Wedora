@@ -55,7 +55,7 @@
             android:layout_height="200dp"
             android:layout_marginTop="16dp"
             android:adjustViewBounds="true"
-            android:src="@drawable/login_illustration"
+            android:src="@drawable/ic_login_illustration"
             android:contentDescription="@null"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

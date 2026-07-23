@@ -1,0 +1,60 @@
+<!--
+    Login screen illustration: two silhouettes with a heart above them.
+
+    Deliberately theme-agnostic — only the accent (#FA4659) and a soft pink
+    (#FFDADE) are used, both of which read on the light and the dark background.
+    No white or near-black fills, and the background stays transparent so it
+    inherits whatever the screen is sitting on.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="220dp"
+    android:viewportWidth="280"
+    android:viewportHeight="220">
+
+    <!-- Soft ring behind the pair (soft pink, dialled back to 40%). -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFDADE"
+        android:strokeAlpha="0.4"
+        android:strokeWidth="6"
+        android:pathData="M55,118 A85,85 0 1 1 225,118 A85,85 0 1 1 55,118 Z" />
+
+    <!-- Left silhouette: head + shoulders. -->
+    <path
+        android:fillColor="#FA4659"
+        android:pathData="M105,122 m-17,0 a17,17 0 1 0 34,0 a17,17 0 1 0 -34,0 Z" />
+    <path
+        android:fillColor="#FA4659"
+        android:pathData="M77,170 a28,23 0 0 1 56,0 Z" />
+
+    <!-- Right silhouette: head + shoulders. -->
+    <path
+        android:fillColor="#FA4659"
+        android:pathData="M175,122 m-17,0 a17,17 0 1 0 34,0 a17,17 0 1 0 -34,0 Z" />
+    <path
+        android:fillColor="#FA4659"
+        android:pathData="M147,170 a28,23 0 0 1 56,0 Z" />
+
+    <!-- Heart between and above the two. -->
+    <path
+        android:fillColor="#FA4659"
+        android:pathData="M140,88 C140,88 115,69 115,52 C115,44 121,39 128,41 C134,43 140,51 140,51 C140,51 146,43 152,41 C159,39 165,44 165,52 C165,69 140,88 140,88 Z" />
+
+    <!-- Scattered decorative dots (soft pink). -->
+    <path android:fillColor="#FFDADE" android:pathData="M45,62 m-4,0 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M236,56 m-5,0 a5,5 0 1 0 10,0 a5,5 0 1 0 -10,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M60,182 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M220,181 m-4,0 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M140,18 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M28,122 m-3.5,0 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z" />
+    <path android:fillColor="#FFDADE" android:pathData="M252,126 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0 Z" />
+
+    <!-- A couple of 4-point sparkles (soft pink). -->
+    <path
+        android:fillColor="#FFDADE"
+        android:pathData="M214,92 L216,99 L223,101 L216,103 L214,110 L212,103 L205,101 L212,99 Z" />
+    <path
+        android:fillColor="#FFDADE"
+        android:pathData="M62,96 L63.6,101 L69,102.5 L63.6,104 L62,109 L60.4,104 L55,102.5 L60.4,101 Z" />
+</vector>
