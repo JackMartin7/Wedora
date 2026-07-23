@@ -135,9 +135,14 @@
             android:name=".LikesActivity"
             android:exported="false" />
 
+        <!-- singleTop: goToChats() below reuses this instance via CLEAR_TOP +
+             SINGLE_TOP rather than recreating it, so the already-rendered list
+             stays on screen through the return transition instead of a blank
+             window rebuilding from scratch. -->
         <activity
             android:name=".ChatsActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
 
         <activity
             android:name=".ChatThreadActivity"

@@ -293,14 +293,22 @@ class ChatThreadActivity : AppCompatActivity() {
 
     /**
      * Back always returns to the Chats list — the conversation's natural parent
-     * — rather than to whatever launched the thread. CLEAR_TOP reuses an
-     * existing Chats instance instead of stacking a second; finish() drops this
-     * thread so it isn't left underneath.
+     * — rather than to whatever launched the thread. finish() drops this thread
+     * so it isn't left underneath.
+     *
+     * CLEAR_TOP alone does NOT reuse an existing Chats instance — with the
+     * default "standard" launch mode, CLEAR_TOP still finishes and recreates
+     * the target. SINGLE_TOP (paired here with ChatsActivity's own
+     * launchMode="singleTop") is what actually reuses it via onNewIntent, which
+     * matters beyond avoiding a wasted rebuild: without it, the already-loaded
+     * list is torn down and Chats reopens empty while its Firestore listener
+     * reattaches, and that blank frame is what showed through as a flash during
+     * the slide transition, most visibly in dark mode.
      */
     private fun goToChats() {
         startActivity(
             Intent(this, ChatsActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         )
         finish()
         // Starting the parent is an "open" as far as Android is concerned, so

@@ -192,7 +192,14 @@ class ChatsActivity : AppCompatActivity() {
             return
         }
 
-        showLoading()
+        // Only blank the list for a genuine first load. onStart reattaches this
+        // listener every time the screen comes back to the foreground —
+        // including a reused ChatsActivity returning from a closed chat thread
+        // — and unconditionally swapping already-rendered rows for the skeleton
+        // there produced a visible blank/reloading frame during that return
+        // transition. With rows already on screen, the fresh snapshot below
+        // updates them in place via DiffUtil instead.
+        if (allPreviews.isEmpty()) showLoading()
         matchesListener = firestore.collection(Match.COLLECTION)
             .whereArrayContains(Match.FIELD_USERS, selfUid)
             .addSnapshotListener { snapshot, error ->
