@@ -38,16 +38,22 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null;
 
-      // Sign-up creates this document before an age has been collected — age
-      // is gathered later, by the Complete Profile step on first verified
-      // login — so create tolerates a missing age, but never an invalid one.
-      // (A doc created here without an age can only ever gain one via an
-      // update, which is subject to the 18+ check below.)
+      // The document is built up across the profile-setup steps, so both
+      // create and update tolerate a missing age — step 1 creates it with a
+      // name, steps 2 and 3 add gender and intent, and age only arrives at
+      // step 4.
+      //
+      // The guarantee that matters is unchanged: an under-18 age can never be
+      // STORED, because any write that carries an age must have it as an int
+      // of 18 or more. What's no longer required is that every document has
+      // one at all times, which was never a safety property — it was a side
+      // effect of collecting age in a single screen.
+      //
+      // Requiring it on update would reject steps 2 and 3 outright: their
+      // merged document has no age yet, so hasValidAge() is false and the
+      // write is denied.
       allow create: if isOwner(userId) && ageAbsentOrValid();
-
-      // Every update must leave the document carrying an 18+ age. Combined
-      // with the create rule above, an under-18 age can never be stored.
-      allow update: if isOwner(userId) && hasValidAge();
+      allow update: if isOwner(userId) && ageAbsentOrValid();
 
       allow delete: if isOwner(userId);
     }

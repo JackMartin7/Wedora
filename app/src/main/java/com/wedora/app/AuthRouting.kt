@@ -10,15 +10,21 @@ private const val TAG = "WedoraAuth"
 
 /**
  * Decides where a signed-in, email-verified user belongs: Home if their
- * profile is complete, CompleteProfile if age/city/country are still missing.
+ * profile is finished, otherwise the first setup step they haven't answered.
+ *
+ * Resuming at the missing step is what makes the progressive flow work in both
+ * directions. A new user walks it front to back; someone who quit halfway
+ * returns to exactly where they stopped; and an account created before these
+ * fields existed is routed to whichever one it lacks, without a migration.
  *
  * Shared by [SplashActivity], which restores a persisted session on launch,
- * and [LoginActivity], which handles a fresh sign-in — so the completeness
- * gate can't drift between the two ways into the app.
+ * and [LoginActivity], which handles a fresh sign-in — so the gate can't drift
+ * between the two ways into the app. Neither calls it until the email is
+ * verified.
  *
  * A failed read fails *open* to Home rather than stranding an authenticated
- * user. The gate runs again on the next launch (via Splash), so a transient
- * failure self-corrects.
+ * user behind a step they can't get past. The gate runs again on the next
+ * launch, so a transient failure self-corrects.
  */
 fun resolveSignedInDestination(
     firestore: FirebaseFirestore,
@@ -29,15 +35,32 @@ fun resolveSignedInDestination(
         .addOnSuccessListener { snapshot ->
             val profile = UserProfile.from(snapshot)
             syncEmailIfChanged(firestore, uid, snapshot, profile)
-            onResolved(
-                if (profile.isComplete) HomeActivity::class.java
-                else CompleteProfileActivity::class.java
-            )
+            onResolved(nextSetupStepFor(profile))
         }
         .addOnFailureListener { e ->
-            Log.w(TAG, "Couldn't read profile for completeness gate; continuing to Home", e)
+            Log.w(TAG, "Couldn't read profile for the setup gate; continuing to Home", e)
             onResolved(HomeActivity::class.java)
         }
+}
+
+/**
+ * The first setup step [profile] hasn't answered, or Home if it has answered
+ * them all.
+ *
+ * Checked in step order so a partially-filled profile lands on its earliest
+ * gap rather than its latest — a user missing both gender and age should be
+ * asked for gender first, the same order a new account sees.
+ *
+ * Step 5 is deliberately absent. The photo is optional and device-local, so
+ * gating on it would send anyone who skipped it back to the same screen on
+ * every launch, with no way to satisfy a check that has nothing to read.
+ */
+private fun nextSetupStepFor(profile: UserProfile): Class<*> = when {
+    profile.displayName.isNullOrBlank() -> ProfileStep1NameActivity::class.java
+    profile.gender.isNullOrBlank() -> ProfileStep2GenderActivity::class.java
+    profile.myStatus.isNullOrBlank() -> ProfileStep3StatusActivity::class.java
+    profile.age == null -> ProfileStep4DetailsActivity::class.java
+    else -> HomeActivity::class.java
 }
 
 /**

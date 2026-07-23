@@ -115,12 +115,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     /**
-     * Sends the user to Complete Profile if their Firestore doc is missing
-     * age/city/country, otherwise straight to Home.
+     * Sends the user to the first profile step they haven't answered, or
+     * straight to Home once they've answered them all.
      *
-     * Accounts predating the Firestore user-doc feature have no document at
-     * all; [UserProfile.from] reports those as incomplete, which correctly
-     * routes them through the completion step.
+     * An account with no Firestore document at all — one created by Sign Up,
+     * which writes none — reads as missing every field, so it lands on step 1.
+     * The same is true of accounts predating these fields, which is what lets
+     * them through the new flow without a migration.
      *
      * Shares [resolveSignedInDestination] with SplashActivity, which applies
      * the same gate when it restores a persisted session — since sessions
