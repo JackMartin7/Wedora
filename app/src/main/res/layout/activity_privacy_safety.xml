@@ -87,16 +87,13 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
-            <TextView
-                android:id="@+id/tvBlockedEmpty"
+            <include
+                android:id="@+id/emptyState"
+                layout="@layout/view_empty_state"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="@string/privacy_blocked_empty"
-                android:textColor="@color/wedora_text_secondary"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:visibility="visible" />
+                android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvBlockedUsers"

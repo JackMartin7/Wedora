@@ -6,6 +6,8 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import kotlin.math.abs
 
@@ -43,13 +45,29 @@ class SwipeCardStackView @JvmOverloads constructor(
     }
 
     private companion object {
-        const val MAX_ROTATION = 15f
-        const val PEEK_SCALE = 0.94f
+        const val MAX_ROTATION = 20f
+        const val PEEK_SCALE = 0.95f
         const val PEEK_TRANSLATION_DP = 22f
         /** Fling threshold as a fraction of the view's width. */
         const val SWIPE_THRESHOLD = 0.32f
         const val FLING_OFFSCREEN_FACTOR = 1.6f
         const val ANIM_MS = 220L
+
+        /**
+         * Drag distance, as a fraction of the threshold, before the overlay
+         * starts appearing. Without it the heart flickers on during the small
+         * wobble that precedes a tap.
+         */
+        const val OVERLAY_DEAD_ZONE = 0.15f
+
+        /** Overshoot on the promoted card, for a spring rather than a glide. */
+        const val PROMOTE_TENSION = 1.6f
+        const val PROMOTE_MS = 260L
+
+        /** First-load cascade: how far below each card starts, and its stagger. */
+        const val CASCADE_OFFSET_DP = 28f
+        const val CASCADE_MS = 300L
+        const val CASCADE_STAGGER_MS = 70L
     }
 
     private var itemLayoutRes = 0
@@ -132,6 +150,32 @@ class SwipeCardStackView @JvmOverloads constructor(
             addView(top)
             resetCardTransforms(top)
         }
+
+        cascadeIn()
+    }
+
+    /**
+     * First-load flourish: the cards rise into place from slightly below,
+     * staggered back to front, so the stack assembles rather than appearing.
+     *
+     * Only on a fresh [setup] — a promotion after a swipe has its own spring,
+     * and running both would animate the same card twice.
+     */
+    private fun cascadeIn() {
+        val offset = CASCADE_OFFSET_DP * resources.displayMetrics.density
+        // Back to front, so the top card is the last to settle.
+        listOfNotNull(peekCard, topCard).forEachIndexed { index, card ->
+            val restingY = card.translationY
+            card.translationY = restingY + offset
+            card.alpha = 0f
+            card.animate()
+                .translationY(restingY)
+                .alpha(1f)
+                .setStartDelay(index * CASCADE_STAGGER_MS)
+                .setDuration(CASCADE_MS)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+        }
     }
 
     /** After the top card flings off: promote the peek, add a fresh peek behind. */
@@ -139,10 +183,15 @@ class SwipeCardStackView @JvmOverloads constructor(
         topCard = peekCard
         peekCard = null
         topCard?.let { promoted ->
-            promoted.scaleX = 1f
-            promoted.scaleY = 1f
-            promoted.translationY = 0f
             resetCardTransforms(promoted)
+            // Springs up to full size rather than snapping. The peek already
+            // grew part of the way during the drag, so this finishes the
+            // movement it started instead of restating it.
+            promoted.animate()
+                .scaleX(1f).scaleY(1f).translationY(0f)
+                .setInterpolator(OvershootInterpolator(PROMOTE_TENSION))
+                .setDuration(PROMOTE_MS)
+                .start()
         }
 
         val nextPeekPosition = topPosition + 1
@@ -224,8 +273,8 @@ class SwipeCardStackView @JvmOverloads constructor(
         top.rotation = (dx / width) * MAX_ROTATION
 
         val ratio = (dx / (width * SWIPE_THRESHOLD)).coerceIn(-1f, 1f)
-        top.findViewById<View?>(R.id.overlayLike)?.alpha = ratio.coerceAtLeast(0f)
-        top.findViewById<View?>(R.id.overlayPass)?.alpha = (-ratio).coerceAtLeast(0f)
+        top.findViewById<View?>(R.id.overlayLike)?.alpha = overlayAlpha(ratio)
+        top.findViewById<View?>(R.id.overlayPass)?.alpha = overlayAlpha(-ratio)
 
         // The peek grows toward full size as the top card is dragged away.
         peekCard?.let { peek ->
@@ -234,6 +283,22 @@ class SwipeCardStackView @JvmOverloads constructor(
             peek.scaleY = PEEK_SCALE + (1f - PEEK_SCALE) * progress
             peek.translationY = peekTranslationPx * (1f - progress)
         }
+    }
+
+    /**
+     * Opacity for a directional overlay at drag [ratio] (1 = at the threshold).
+     *
+     * Held at zero through a short dead zone, then eased so the icon arrives
+     * gently and is fully opaque exactly when the card would commit. A linear
+     * ramp made it appear the instant a finger moved and reach full strength
+     * well before the swipe was decided, which read as the card promising
+     * something it hadn't done yet.
+     */
+    private fun overlayAlpha(ratio: Float): Float {
+        val magnitude = ratio.coerceAtLeast(0f)
+        if (magnitude <= OVERLAY_DEAD_ZONE) return 0f
+        val progress = (magnitude - OVERLAY_DEAD_ZONE) / (1f - OVERLAY_DEAD_ZONE)
+        return progress * progress
     }
 
     private fun settleDrag(top: View) {
@@ -265,10 +330,11 @@ class SwipeCardStackView @JvmOverloads constructor(
         val swipedPosition = topPosition
         val targetX = if (right) width * FLING_OFFSCREEN_FACTOR else -width * FLING_OFFSCREEN_FACTOR
 
-        // Reveal the peek fully as the top leaves.
-        peekCard?.animate()
-            ?.scaleX(1f)?.scaleY(1f)?.translationY(0f)
-            ?.setDuration(ANIM_MS)?.start()
+        // The peek is deliberately left where it is. Growing it here would put
+        // it at full size before promoteAfterSwipe runs, and that spring would
+        // then animate 1f to 1f — invisible. Letting the promotion do the whole
+        // remaining growth is what makes the next card actually spring up,
+        // whether the drag left it partway or a button swipe left it untouched.
 
         top.animate()
             .translationX(targetX)

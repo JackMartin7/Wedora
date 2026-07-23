@@ -73,12 +73,9 @@
 
     <!-- Likes tab (who liked you, as a photo grid) -->
     <string name="likes_title">Likes</string>
-    <string name="likes_empty">No likes yet — keep swiping!</string>
-    <string name="likes_guest">Sign up to see who liked you</string>
 
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
-    <string name="notifications_empty">No notifications yet</string>
     <string name="notification_liked_your_profile">liked your profile</string>
     <string name="notification_time_now">now</string>
     <string name="notification_time_minutes">%1$dm ago</string>
@@ -123,9 +120,6 @@
     <string name="error_match_failed">Couldn\'t create the match. Please try again.</string>
 
     <!-- Chats list states -->
-    <string name="chats_empty">No matches yet — like someone to start chatting.</string>
-    <string name="chats_empty_guest">Sign up to start chatting.</string>
-    <string name="chats_load_error">Couldn\'t load your chats. Check your connection and try again.</string>
     <string name="chat_say_hi">Say hi 👋</string>
     <string name="timestamp_yesterday">Yesterday</string>
 
@@ -174,15 +168,9 @@
     <string name="cd_profile_photo">Profile photo</string>
 
     <!-- Matching feed states -->
-    <string name="home_empty_guest">Sign up to see who\'s out there.</string>
-    <string name="home_empty_no_matches">No matches yet — check back soon as more people join.</string>
-    <string name="home_empty_error">Couldn\'t load matches right now. Check your connection and try again.</string>
-    <string name="home_empty_all_swiped">You\'ve seen everyone nearby — check back later.</string>
     <string name="error_unlike_failed">Couldn\'t undo that like. Please try again.</string>
 
     <!-- Swipe overlay stamps -->
-    <string name="swipe_label_like">LIKE</string>
-    <string name="swipe_label_pass">PASS</string>
 
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>
@@ -308,8 +296,6 @@
 
     <!-- Privacy &amp; Safety -->
     <string name="privacy_blocked_users">Blocked Users</string>
-    <string name="privacy_blocked_empty">You haven\'t blocked anyone</string>
-    <string name="privacy_blocked_load_error">Couldn\'t load your blocked users. Check your connection and try again.</string>
     <string name="blocked_user_unknown">Blocked user</string>
     <string name="action_unblock">Unblock</string>
     <string name="unblock_confirm_title">Unblock this user?</string>
@@ -364,6 +350,37 @@
     <string name="faq_a_location">Go to Profile → Edit Profile and update your City and Country fields manually, or allow location access when prompted to auto-detect your location.</string>
 
     <!-- Payment &amp; Subscription -->
+    <!-- Empty states: title + subtitle per screen -->
+    <string name="empty_home_title">No more profiles nearby</string>
+    <string name="empty_home_subtitle">Check back later or adjust your filters</string>
+    <string name="empty_home_filtered_title">No one matches these filters</string>
+    <string name="empty_home_filtered_subtitle">Try widening your age range or clearing a filter.</string>
+    <string name="empty_home_guest_title">Sign up to start matching</string>
+    <string name="empty_home_guest_subtitle">Create an account to see people near you.</string>
+    <string name="empty_home_error_title">Couldn\'t load profiles</string>
+    <string name="empty_home_error_subtitle">Check your connection and try again.</string>
+    <string name="empty_action_adjust_filters">Adjust Filters</string>
+
+    <string name="empty_chats_title">No conversations yet</string>
+    <string name="empty_chats_subtitle">Start by liking someone on the Home screen</string>
+    <string name="empty_chats_guest_title">Sign up to start chatting</string>
+    <string name="empty_chats_guest_subtitle">Create an account to message your matches.</string>
+    <string name="empty_chats_error_title">Couldn\'t load your chats</string>
+    <string name="empty_chats_error_subtitle">Check your connection and try again.</string>
+
+    <string name="empty_likes_title">No likes yet</string>
+    <string name="empty_likes_subtitle">Keep swiping to get noticed!</string>
+    <string name="empty_likes_guest_title">Sign up to see who liked you</string>
+    <string name="empty_likes_guest_subtitle">Create an account to find out who\'s interested.</string>
+
+    <string name="empty_notifications_title">No notifications yet</string>
+    <string name="empty_notifications_subtitle">You\'ll be notified when someone likes your profile</string>
+
+    <string name="empty_blocked_title">You haven\'t blocked anyone</string>
+    <string name="empty_blocked_subtitle">Anyone you block will appear here.</string>
+    <string name="empty_blocked_error_title">Couldn\'t load your blocked users</string>
+    <string name="empty_blocked_error_subtitle">Check your connection and try again.</string>
+
     <!-- Marriage intent -->
     <string name="label_my_status">My Status</string>
     <string name="label_looking_for">Looking For</string>
@@ -384,7 +401,6 @@
     <string name="filter_distance_value">Within %1$d km</string>
     <string name="filter_apply">Apply Filters</string>
     <string name="cd_filter">Filter</string>
-    <string name="home_empty_filtered">No one matches these filters. Try widening your age range.</string>
 
     <string name="premium_upgrade_title">Upgrade to Premium</string>
     <string name="premium_banner_likes">Upgrade to Premium to see who liked you</string>

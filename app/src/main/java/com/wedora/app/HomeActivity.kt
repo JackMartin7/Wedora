@@ -7,6 +7,8 @@ import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -55,7 +57,15 @@ class HomeActivity : AppCompatActivity() {
         }
 
         override fun onEmptied() {
-            showEmptyState(getString(R.string.home_empty_all_swiped))
+            showEmptyState(
+                icon = R.drawable.ic_sparkle_heart,
+                title = R.string.empty_home_title,
+                subtitle = R.string.empty_home_subtitle,
+                actionLabel = R.string.empty_action_adjust_filters,
+                onAction = ::openFilters,
+                // The stack was full a moment ago, so fade rather than blink.
+                fade = true
+            )
         }
     }
 
@@ -227,13 +237,21 @@ class HomeActivity : AppCompatActivity() {
 
     private fun loadMatches() {
         if (GuestPrefs.isGuest(this)) {
-            showEmptyState(getString(R.string.home_empty_guest))
+            showEmptyState(
+                icon = R.drawable.ic_sparkle_heart,
+                title = R.string.empty_home_guest_title,
+                subtitle = R.string.empty_home_guest_subtitle
+            )
             return
         }
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid == null) {
-            showEmptyState(getString(R.string.home_empty_error))
+            showEmptyState(
+                    icon = R.drawable.ic_sparkle_heart,
+                    title = R.string.empty_home_error_title,
+                    subtitle = R.string.empty_home_error_subtitle
+                )
             return
         }
 
@@ -242,7 +260,13 @@ class HomeActivity : AppCompatActivity() {
             .addOnSuccessListener { selfDoc ->
                 val interestedIn = UserProfile.from(selfDoc).interestedIn
                 if (interestedIn.isNullOrBlank()) {
-                    showEmptyState(getString(R.string.home_empty_no_matches))
+                    showEmptyState(
+                        icon = R.drawable.ic_sparkle_heart,
+                        title = R.string.empty_home_title,
+                        subtitle = R.string.empty_home_subtitle,
+                        actionLabel = R.string.empty_action_adjust_filters,
+                        onAction = ::openFilters
+                    )
                 } else {
                     // Block list is read before the feed query so blocked users
                     // are filtered out (client-side, same reasoning as the self
@@ -254,7 +278,11 @@ class HomeActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load own profile for matching", e)
-                showEmptyState(getString(R.string.home_empty_error))
+                showEmptyState(
+                    icon = R.drawable.ic_sparkle_heart,
+                    title = R.string.empty_home_error_title,
+                    subtitle = R.string.empty_home_error_subtitle
+                )
             }
     }
 
@@ -275,13 +303,29 @@ class HomeActivity : AppCompatActivity() {
                     // pointing at the filters is the useful thing to say.
                     loaded.isNotEmpty() -> showCards(loaded)
                     candidates.isNotEmpty() ->
-                        showEmptyState(getString(R.string.home_empty_filtered))
-                    else -> showEmptyState(getString(R.string.home_empty_no_matches))
+                        showEmptyState(
+                            icon = R.drawable.ic_sparkle_heart,
+                            title = R.string.empty_home_filtered_title,
+                            subtitle = R.string.empty_home_filtered_subtitle,
+                            actionLabel = R.string.empty_action_adjust_filters,
+                            onAction = ::openFilters
+                        )
+                    else -> showEmptyState(
+                        icon = R.drawable.ic_sparkle_heart,
+                        title = R.string.empty_home_title,
+                        subtitle = R.string.empty_home_subtitle,
+                        actionLabel = R.string.empty_action_adjust_filters,
+                        onAction = ::openFilters
+                    )
                 }
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to query matches", e)
-                showEmptyState(getString(R.string.home_empty_error))
+                showEmptyState(
+                    icon = R.drawable.ic_sparkle_heart,
+                    title = R.string.empty_home_error_title,
+                    subtitle = R.string.empty_home_error_subtitle
+                )
             }
     }
 
@@ -516,23 +560,40 @@ class HomeActivity : AppCompatActivity() {
      */
     private fun showLoading() {
         binding.progressLoading.visibility = View.GONE
-        binding.tvEmptyState.visibility = View.GONE
+        binding.emptyState.hide()
         binding.cardStack.visibility = View.GONE
         binding.skeletonFeed.showSkeleton(R.layout.item_skeleton_card, SKELETON_CARDS)
     }
 
-    private fun showEmptyState(message: String) {
+    /**
+     * [fade] is used when the empty state replaces something the user was just
+     * looking at — the last card leaving the stack — so the screen doesn't
+     * appear to blink. A first load has nothing to fade from.
+     */
+    private fun showEmptyState(
+        @DrawableRes icon: Int,
+        @StringRes title: Int,
+        @StringRes subtitle: Int,
+        @StringRes actionLabel: Int? = null,
+        onAction: (() -> Unit)? = null,
+        fade: Boolean = false
+    ) {
         binding.skeletonFeed.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
         binding.cardStack.visibility = View.GONE
-        binding.tvEmptyState.visibility = View.VISIBLE
-        binding.tvEmptyState.text = message
+        binding.emptyState.show(icon, title, subtitle, actionLabel, onAction)
+        if (fade) binding.emptyState.fadeIn()
+    }
+
+    /** Opens the filter screen from the empty state's call to action. */
+    private fun openFilters() {
+        filterLauncher.launch(Intent(this, FilterActivity::class.java))
     }
 
     private fun showCards(loaded: List<MatchCard>) {
         cards = loaded
         binding.progressLoading.visibility = View.GONE
-        binding.tvEmptyState.visibility = View.GONE
+        binding.emptyState.hide()
 
         // Set up before the crossfade so the first card is bound and drawn as
         // it fades in, rather than appearing a frame later.

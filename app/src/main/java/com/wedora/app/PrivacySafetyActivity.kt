@@ -213,7 +213,7 @@ class PrivacySafetyActivity : AppCompatActivity() {
     private fun showLoading() {
         binding.progressLoading.visibility = View.VISIBLE
         binding.rvBlockedUsers.visibility = View.GONE
-        binding.tvBlockedEmpty.visibility = View.GONE
+        binding.emptyState.hide()
     }
 
     private fun showBlocked(users: List<BlockedUser>) {
@@ -222,7 +222,7 @@ class PrivacySafetyActivity : AppCompatActivity() {
             return
         }
         binding.progressLoading.visibility = View.GONE
-        binding.tvBlockedEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         binding.rvBlockedUsers.visibility = View.VISIBLE
         adapter.submitList(users)
     }
@@ -230,14 +230,25 @@ class PrivacySafetyActivity : AppCompatActivity() {
     private fun showEmpty() {
         binding.progressLoading.visibility = View.GONE
         binding.rvBlockedUsers.visibility = View.GONE
-        binding.tvBlockedEmpty.visibility = View.VISIBLE
-        binding.tvBlockedEmpty.setText(R.string.privacy_blocked_empty)
+        binding.emptyState.show(
+            R.drawable.ic_check_accent,
+            R.string.empty_blocked_title,
+            R.string.empty_blocked_subtitle
+        )
     }
 
+    /**
+     * Fails closed, as before: an error is stated rather than shown as "you
+     * haven't blocked anyone", which would be a claim about a safety setting
+     * that isn't known to be true.
+     */
     private fun showError() {
         binding.progressLoading.visibility = View.GONE
         binding.rvBlockedUsers.visibility = View.GONE
-        binding.tvBlockedEmpty.visibility = View.VISIBLE
-        binding.tvBlockedEmpty.setText(R.string.privacy_blocked_load_error)
+        binding.emptyState.show(
+            R.drawable.ic_check_accent,
+            R.string.empty_blocked_error_title,
+            R.string.empty_blocked_error_subtitle
+        )
     }
 }

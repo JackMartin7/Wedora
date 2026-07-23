@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.tasks.Tasks
@@ -84,13 +86,21 @@ class ChatsActivity : AppCompatActivity() {
      */
     private fun observeConversations() {
         if (GuestPrefs.isGuest(this)) {
-            showEmpty(getString(R.string.chats_empty_guest))
+            showEmpty(
+                R.drawable.ic_support_chat,
+                R.string.empty_chats_guest_title,
+                R.string.empty_chats_guest_subtitle
+            )
             return
         }
 
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
-            showEmpty(getString(R.string.chats_load_error))
+            showEmpty(
+                    R.drawable.ic_support_chat,
+                    R.string.empty_chats_error_title,
+                    R.string.empty_chats_error_subtitle
+                )
             return
         }
 
@@ -100,13 +110,21 @@ class ChatsActivity : AppCompatActivity() {
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.w(TAG, "Match listener failed", error)
-                    showEmpty(getString(R.string.chats_load_error))
+                    showEmpty(
+                    R.drawable.ic_support_chat,
+                    R.string.empty_chats_error_title,
+                    R.string.empty_chats_error_subtitle
+                )
                     return@addSnapshotListener
                 }
 
                 val matches = snapshot?.documents?.mapNotNull { Match.from(it) }.orEmpty()
                 if (matches.isEmpty()) {
-                    showEmpty(getString(R.string.chats_empty))
+                    showEmpty(
+                        R.drawable.ic_support_chat,
+                        R.string.empty_chats_title,
+                        R.string.empty_chats_subtitle
+                    )
                 } else {
                     resolveNamesThenRender(matches, selfUid)
                 }
@@ -142,7 +160,11 @@ class ChatsActivity : AppCompatActivity() {
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load matched profiles", e)
-                showEmpty(getString(R.string.chats_load_error))
+                showEmpty(
+                    R.drawable.ic_support_chat,
+                    R.string.empty_chats_error_title,
+                    R.string.empty_chats_error_subtitle
+                )
             }
     }
 
@@ -168,7 +190,11 @@ class ChatsActivity : AppCompatActivity() {
         }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
 
         if (previews.isEmpty()) {
-            showEmpty(getString(R.string.chats_empty))
+            showEmpty(
+                        R.drawable.ic_support_chat,
+                        R.string.empty_chats_title,
+                        R.string.empty_chats_subtitle
+                    )
         } else {
             showConversations(previews)
         }
@@ -176,22 +202,25 @@ class ChatsActivity : AppCompatActivity() {
 
     private fun showLoading() {
         binding.progressLoading.visibility = View.GONE
-        binding.tvChatsEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         binding.rvChats.visibility = View.GONE
         binding.skeletonChats.showSkeleton(R.layout.item_skeleton_chat_row, SKELETON_ROWS)
     }
 
-    private fun showEmpty(message: String) {
+    private fun showEmpty(
+        @DrawableRes icon: Int,
+        @StringRes title: Int,
+        @StringRes subtitle: Int
+    ) {
         binding.skeletonChats.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
         binding.rvChats.visibility = View.GONE
-        binding.tvChatsEmpty.visibility = View.VISIBLE
-        binding.tvChatsEmpty.text = message
+        binding.emptyState.show(icon, title, subtitle)
     }
 
     private fun showConversations(previews: List<ChatPreview>) {
         binding.progressLoading.visibility = View.GONE
-        binding.tvChatsEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         adapter.submitList(previews)
 
         // The listener re-fires on every message, so only the first pass has a

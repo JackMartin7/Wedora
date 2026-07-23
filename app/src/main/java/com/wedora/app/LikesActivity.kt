@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.firebase.auth.FirebaseAuth
@@ -62,14 +64,22 @@ class LikesActivity : AppCompatActivity() {
         if (GuestPrefs.isGuest(this)) {
             // A guest has no likes to show, but is exactly who the sign-up
             // prompt is for — so the banner shows even though the list can't.
-            showEmpty(getString(R.string.likes_guest))
+            showEmpty(
+                R.drawable.ic_sparkle_heart,
+                R.string.empty_likes_guest_title,
+                R.string.empty_likes_guest_subtitle
+            )
             showBanner(guest = true)
             return
         }
 
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
-            showEmpty(getString(R.string.likes_empty))
+            showEmpty(
+                R.drawable.ic_sparkle_heart,
+                R.string.empty_likes_title,
+                R.string.empty_likes_subtitle
+            )
             return
         }
 
@@ -79,7 +89,11 @@ class LikesActivity : AppCompatActivity() {
             selfUid,
             onResult = { likes, unseenMatchIds ->
                 if (likes.isEmpty()) {
-                    showEmpty(getString(R.string.likes_empty))
+                    showEmpty(
+                R.drawable.ic_sparkle_heart,
+                R.string.empty_likes_title,
+                R.string.empty_likes_subtitle
+            )
                 } else {
                     showLikes(likes)
                 }
@@ -88,7 +102,11 @@ class LikesActivity : AppCompatActivity() {
                 // clears.
                 markLikesSeen(firestore, selfUid, unseenMatchIds)
             },
-            onError = { showEmpty(getString(R.string.likes_empty)) }
+            onError = { showEmpty(
+                R.drawable.ic_sparkle_heart,
+                R.string.empty_likes_title,
+                R.string.empty_likes_subtitle
+            ) }
         )
     }
 
@@ -97,7 +115,7 @@ class LikesActivity : AppCompatActivity() {
     /** Two rows of two tiles — the 2-column grid the real list uses. */
     private fun showLoading() {
         binding.progressLoading.visibility = View.GONE
-        binding.tvLikesEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         binding.likesScroll.visibility = View.VISIBLE
 
         binding.tvLikeCount.visibility = View.GONE
@@ -107,11 +125,14 @@ class LikesActivity : AppCompatActivity() {
         binding.skeletonLikes.showSkeleton(R.layout.item_skeleton_like_row, SKELETON_ROWS)
     }
 
-    private fun showEmpty(message: String) {
+    private fun showEmpty(
+        @DrawableRes icon: Int,
+        @StringRes title: Int,
+        @StringRes subtitle: Int
+    ) {
         binding.skeletonLikes.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
-        binding.tvLikesEmpty.visibility = View.VISIBLE
-        binding.tvLikesEmpty.text = message
+        binding.emptyState.show(icon, title, subtitle)
 
         // The scroll container still hosts the banner, so it stays visible for
         // guests; its inner sections are hidden individually.
@@ -129,7 +150,7 @@ class LikesActivity : AppCompatActivity() {
      */
     private fun showLikes(likes: List<ReceivedLike>) {
         binding.progressLoading.visibility = View.GONE
-        binding.tvLikesEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         binding.likesScroll.visibility = View.VISIBLE
         binding.skeletonLikes.hideSkeleton()
 

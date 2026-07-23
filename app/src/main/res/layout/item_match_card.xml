@@ -91,40 +91,30 @@
             android:contentDescription="@null"
             app:shapeAppearanceOverlay="@style/WedoraCardImage" />
 
-        <!-- Alpha driven by SwipeCardStackView during a drag. LIKE top-start
-             on a right swipe, PASS top-end on a left swipe. -->
-        <TextView
+        <!--
+            Alpha driven by SwipeCardStackView during a drag: heart on a right
+            swipe, cross on a left one. Centred and large so the signal reads
+            from the corner of the eye while the card is moving, and tinted
+            rather than shipping coloured assets.
+        -->
+        <ImageView
             android:id="@+id/overlayLike"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|start"
-            android:layout_marginStart="18dp"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/bg_label_like"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
-            android:rotation="-18"
-            android:text="@string/swipe_label_like"
-            android:textColor="@color/wedora_success"
-            android:textSize="26sp"
-            android:fontFamily="@font/poppins_semibold"
+            android:layout_width="132dp"
+            android:layout_height="132dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_sparkle_heart"
+            android:tint="@color/wedora_success"
+            android:contentDescription="@null"
             android:alpha="0" />
 
-        <TextView
+        <ImageView
             android:id="@+id/overlayPass"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_marginEnd="18dp"
-            android:layout_marginTop="18dp"
-            android:background="@drawable/bg_label_pass"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
-            android:rotation="18"
-            android:text="@string/swipe_label_pass"
-            android:textColor="@color/wedora_error"
-            android:textSize="26sp"
-            android:fontFamily="@font/poppins_semibold"
+            android:layout_width="132dp"
+            android:layout_height="132dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_close"
+            android:tint="@color/wedora_error"
+            android:contentDescription="@null"
             android:alpha="0" />
 
     </FrameLayout>

@@ -71,7 +71,7 @@ class NotificationsActivity : AppCompatActivity() {
 
     private fun showLoading() {
         binding.progressLoading.visibility = View.GONE
-        binding.tvNotificationsEmpty.visibility = View.GONE
+        binding.emptyState.hide()
         binding.rvNotifications.visibility = View.GONE
         binding.skeletonNotifications.showSkeleton(
             R.layout.item_skeleton_notification_row, SKELETON_ROWS
@@ -83,12 +83,16 @@ class NotificationsActivity : AppCompatActivity() {
         adapter.submitList(items)
 
         val isEmpty = items.isEmpty()
-        binding.tvNotificationsEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
-
         if (isEmpty) {
             binding.skeletonNotifications.hideSkeleton()
             binding.rvNotifications.visibility = View.GONE
+            binding.emptyState.show(
+                R.drawable.ic_notification_bell,
+                R.string.empty_notifications_title,
+                R.string.empty_notifications_subtitle
+            )
         } else {
+            binding.emptyState.hide()
             binding.skeletonNotifications.crossfadeToContent(binding.rvNotifications)
         }
     }
