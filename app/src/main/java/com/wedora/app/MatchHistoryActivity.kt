@@ -91,22 +91,21 @@ class MatchHistoryActivity : AppCompatActivity() {
 
         Tasks.whenAllSuccess<QuerySnapshot>(tasks)
             .addOnSuccessListener { snapshots ->
-                val namesByUid = snapshots.flatMap { it.documents }.mapNotNull { doc ->
-                    UserProfile.from(doc).displayName
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { doc.id to it }
-                }.toMap()
+                val profilesByUid = snapshots.flatMap { it.documents }
+                    .associate { it.id to UserProfile.from(it) }
 
                 // A match whose profile is missing or unnamed is dropped rather
                 // than rendered as a blank row.
                 val items = matches.mapNotNull { match ->
                     val otherUid = match.otherUserId(selfUid) ?: return@mapNotNull null
-                    val name = namesByUid[otherUid] ?: return@mapNotNull null
+                    val profile = profilesByUid[otherUid] ?: return@mapNotNull null
+                    val name = profile.displayName?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
                     MatchHistoryItem(
                         matchId = match.id,
                         otherUserId = otherUid,
                         name = name,
-                        matchedOn = match.createdAt?.toDate()
+                        matchedOn = match.createdAt?.toDate(),
+                        lastSeen = profile.lastSeen
                     )
                 }
 

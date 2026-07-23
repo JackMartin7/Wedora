@@ -17,6 +17,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.QuerySnapshot
 import com.wedora.app.databinding.ActivityChatsBinding
+import java.util.Date
 
 /**
  * The conversation list: one row per match, showing the last message or a
@@ -251,7 +252,7 @@ class ChatsActivity : AppCompatActivity() {
                         ?.takeIf { it.isNotBlank() }
                         ?.let { nameCache[doc.id] = it }
                 }
-                render(matches, selfUid)
+                loadLastSeenThenRender(matches, selfUid)
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load matched profiles", e)
@@ -263,7 +264,41 @@ class ChatsActivity : AppCompatActivity() {
             }
     }
 
-    private fun render(matches: List<Match>, selfUid: String) {
+    /**
+     * Batched, one-time presence read for everyone currently in the list —
+     * unlike [nameCache], not skipped for already-known users, since presence
+     * (unlike a name) goes stale. A single get() per render rather than a
+     * listener per row: the online dot is "close enough", not real-time, so
+     * this matches how the list already refreshes on every message event.
+     */
+    private fun loadLastSeenThenRender(matches: List<Match>, selfUid: String) {
+        val otherUids = matches.mapNotNull { it.otherUserId(selfUid) }.distinct()
+        if (otherUids.isEmpty()) {
+            render(matches, selfUid, emptyMap())
+            return
+        }
+
+        val tasks = otherUids.chunked(WHERE_IN_CHUNK).map { chunk ->
+            firestore.collection(UserProfile.COLLECTION)
+                .whereIn(FieldPath.documentId(), chunk)
+                .get()
+        }
+
+        Tasks.whenAllSuccess<QuerySnapshot>(tasks)
+            .addOnSuccessListener { snapshots ->
+                val lastSeenByUid = snapshots.flatMap { it.documents }
+                    .associate { it.id to UserProfile.from(it).lastSeen }
+                render(matches, selfUid, lastSeenByUid)
+            }
+            .addOnFailureListener { e ->
+                // Presence is a nicety — render without dots rather than
+                // blocking the list on a second read failing.
+                Log.w(TAG, "Failed to load presence for chat list", e)
+                render(matches, selfUid, emptyMap())
+            }
+    }
+
+    private fun render(matches: List<Match>, selfUid: String, lastSeenByUid: Map<String, Date?>) {
         val previews = matches.mapNotNull { match ->
             val otherUid = match.otherUserId(selfUid) ?: return@mapNotNull null
             // A match whose user document is missing or unnamed is dropped
@@ -280,7 +315,8 @@ class ChatsActivity : AppCompatActivity() {
                 // still sorts sensibly among the rest.
                 lastMessageAt = lastMessage?.sentAt ?: match.createdAt,
                 isUnread = match.hasUnreadFor(selfUid),
-                unreadCount = lastMessage?.unreadCount ?: 0
+                unreadCount = lastMessage?.unreadCount ?: 0,
+                lastSeen = lastSeenByUid[otherUid]
             )
         }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
 

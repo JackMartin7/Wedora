@@ -28,6 +28,7 @@ class LikesAdapter(
             // No photo backend for other users, so the tile keeps the neutral
             // placeholder set in the layout.
             tvLikeName.text = like.likerName
+            onlineDot.root.bindOnlineDot(like.profile.lastSeen)
 
             val location = formatCityCountry(like.profile)
             if (location == null) {

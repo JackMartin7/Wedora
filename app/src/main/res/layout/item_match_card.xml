@@ -29,6 +29,12 @@
             android:contentDescription="@string/cd_avatar"
             app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
 
+        <include
+            android:id="@+id/onlineDot"
+            layout="@layout/view_online_status_dot"
+            android:layout_alignEnd="@id/ivCardAvatar"
+            android:layout_alignBottom="@id/ivCardAvatar" />
+
         <ImageButton
             android:id="@+id/btnMore"
             android:layout_width="32dp"

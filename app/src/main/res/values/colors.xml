@@ -41,6 +41,11 @@
     <!-- Presence: "online" green. Reads on both the light and the dark bar. -->
     <color name="wedora_online">#22C55E</color>
 
+    <!-- Online-status dot overlaid on avatars app-wide. A distinct green from
+         wedora_online (the chat header's presence text) — this is the exact
+         value specified for the avatar-corner indicator. -->
+    <color name="wedora_status_dot">#3FB56E</color>
+
     <!--
         Highlighted warning box (spam-folder tip). Deliberately a fixed light
         amber with dark amber text in both themes: it's meant to stand out as a

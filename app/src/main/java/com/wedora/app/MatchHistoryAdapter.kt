@@ -19,7 +19,9 @@ data class MatchHistoryItem(
     val matchId: String,
     val otherUserId: String,
     val name: String,
-    val matchedOn: Date?
+    val matchedOn: Date?,
+    /** For the online-status dot; batch-loaded alongside the match data. */
+    val lastSeen: Date?
 )
 
 /**
@@ -51,6 +53,7 @@ class MatchHistoryAdapter(
             // No photo backend for other users, so the avatar keeps the neutral
             // placeholder set in the layout.
             tvName.text = item.name
+            onlineDot.root.bindOnlineDot(item.lastSeen)
 
             if (item.matchedOn == null) {
                 tvMatchedOn.visibility = android.view.View.GONE

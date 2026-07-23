@@ -44,7 +44,8 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         longitude = profile.longitude,
         gender = profile.gender,
         myStatus = profile.myStatus,
-        lookingFor = profile.lookingFor
+        lookingFor = profile.lookingFor,
+        lastSeen = profile.lastSeen
     )
 }
 

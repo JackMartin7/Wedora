@@ -27,6 +27,12 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 
+    <include
+        android:id="@+id/onlineDot"
+        layout="@layout/view_online_status_dot"
+        app:layout_constraintEnd_toEndOf="@id/ivAvatar"
+        app:layout_constraintBottom_toBottomOf="@id/ivAvatar" />
+
     <TextView
         android:id="@+id/tvName"
         android:layout_width="0dp"

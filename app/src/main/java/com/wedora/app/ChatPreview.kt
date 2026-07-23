@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import com.google.firebase.Timestamp
+import java.util.Date
 
 /**
  * One row in the Chats list: a match, plus its most recent message if there is
@@ -20,5 +21,7 @@ data class ChatPreview(
     val lastMessage: String?,
     val lastMessageAt: Timestamp?,
     val isUnread: Boolean,
-    val unreadCount: Int
+    val unreadCount: Int,
+    /** For the online-status dot; batch-loaded alongside the match data. */
+    val lastSeen: Date?
 )

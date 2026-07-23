@@ -28,6 +28,7 @@ class NotificationsAdapter(
             // No photo backend for other users, so the row keeps the neutral
             // placeholder set in the layout.
             tvNotificationName.text = item.likerName
+            onlineDot.root.bindOnlineDot(item.lastSeen)
             tvNotificationTime.text = formatRelativeShort(root.context, item.createdAt)
 
             root.setOnClickListener { onClick(item) }

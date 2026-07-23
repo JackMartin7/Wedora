@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.wedora.app.databinding.ActivityProfileDetailBinding
 
 /**
@@ -46,6 +47,13 @@ class ProfileDetailActivity : AppCompatActivity() {
      */
     private var hasLiked: Boolean? = null
 
+    /**
+     * Live rather than the one-time get() used on list screens: this is the
+     * one screen where the viewer keeps looking at a single person, so it's
+     * worth staying current on their presence while it's open.
+     */
+    private var presenceListener: ListenerRegistration? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileDetailBinding.inflate(layoutInflater)
@@ -77,6 +85,27 @@ class ProfileDetailActivity : AppCompatActivity() {
 
         loadProfile()
         checkLikeState()
+        observePresence()
+    }
+
+    /**
+     * Fails open: a read error just leaves the dot hidden, same as an unknown
+     * lastSeen.
+     */
+    private fun observePresence() {
+        presenceListener = firestore.collection(UserProfile.COLLECTION).document(userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    if (error != null) Log.w(TAG, "Presence listener failed for $userId", error)
+                    return@addSnapshotListener
+                }
+                binding.onlineDot.root.bindOnlineDot(UserProfile.from(snapshot).lastSeen)
+            }
+    }
+
+    override fun onDestroy() {
+        presenceListener?.remove()
+        super.onDestroy()
     }
 
     private fun loadProfile() {

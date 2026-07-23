@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Reusable online-status indicator, included at the bottom-end corner of an
+    avatar wherever a screen shows a list of other users. Hidden by default;
+    the host screen shows it via View.bindOnlineDot(lastSeen) once it knows
+    whether that user is online.
+
+    12dp is the standard size used everywhere except ProfileDetailActivity,
+    which overrides layout_width/layout_height on its <include> for the larger
+    16dp version — the only attributes an <include> can override.
+-->
+<View xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="12dp"
+    android:layout_height="12dp"
+    android:background="@drawable/bg_online_status_dot"
+    android:visibility="gone"
+    tools:visibility="visible" />

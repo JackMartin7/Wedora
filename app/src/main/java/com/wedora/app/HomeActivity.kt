@@ -366,6 +366,7 @@ class HomeActivity : AppCompatActivity() {
         b.ivCardAvatar.setImageResource(card.avatarRes)
         b.ivCardPhoto.setImageResource(card.photoRes)
         b.tvCardName.text = card.name
+        b.onlineDot.root.bindOnlineDot(card.lastSeen)
 
         if (card.role.isBlank()) {
             b.tvCardRole.visibility = View.GONE

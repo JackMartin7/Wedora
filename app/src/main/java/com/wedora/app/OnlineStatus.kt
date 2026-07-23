@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.view.View
 import java.util.Date
 import kotlin.math.max
 
@@ -40,4 +41,13 @@ object OnlineStatus {
     }
 
     private fun now(): Long = System.currentTimeMillis()
+}
+
+/**
+ * Shows or hides an online-status dot (see view_online_status_dot.xml) based
+ * on [lastSeen]. Used on every avatar list — Home, Chats, Likes,
+ * Notifications, Match History, Profile Detail.
+ */
+fun View.bindOnlineDot(lastSeen: Date?) {
+    visibility = if (OnlineStatus.isOnline(lastSeen)) View.VISIBLE else View.GONE
 }

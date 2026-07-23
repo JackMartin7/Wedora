@@ -2,6 +2,7 @@ package com.wedora.app
 
 import android.content.Context
 import androidx.annotation.DrawableRes
+import java.util.Date
 
 /**
  * One card in the Home feed. `id` is the Firestore user document ID (the
@@ -42,7 +43,9 @@ data class MatchCard(
     val gender: String?,
     /** Null on accounts predating the field — the badge is hidden, not blank. */
     val myStatus: String?,
-    val lookingFor: String?
+    val lookingFor: String?,
+    /** For the online-status dot; null on accounts predating presence tracking. */
+    val lastSeen: Date?
 ) {
 
     /**

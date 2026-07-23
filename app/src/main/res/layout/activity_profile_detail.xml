@@ -60,14 +60,34 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivDetailPhoto"
+            <!-- FrameLayout so the dot can overlay the photo's corner — the
+                 enclosing LinearLayout has no constraint system of its own. -->
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="360dp"
-                android:src="@drawable/ic_avatar_placeholder"
-                android:scaleType="centerCrop"
-                android:contentDescription="@string/cd_profile_photo"
-                app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+                android:layout_height="360dp">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/ivDetailPhoto"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_avatar_placeholder"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="@string/cd_profile_photo"
+                    app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+
+                <!-- Larger (16dp) variant, and live rather than one-time: this
+                     is the one screen where the viewer is looking at a single
+                     person continuously, so it's worth a listener over a get(). -->
+                <include
+                    android:id="@+id/onlineDot"
+                    layout="@layout/view_online_status_dot"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="14dp"
+                    android:layout_marginBottom="14dp" />
+
+            </FrameLayout>
 
             <TextView
                 android:id="@+id/tvDetailName"

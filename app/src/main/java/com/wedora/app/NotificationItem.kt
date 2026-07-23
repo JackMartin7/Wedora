@@ -2,6 +2,7 @@ package com.wedora.app
 
 import android.content.Context
 import com.google.firebase.Timestamp
+import java.util.Date
 
 /**
  * One row on the Notifications screen: someone liked you.
@@ -12,7 +13,9 @@ data class NotificationItem(
     val matchId: String,
     val likerUserId: String,
     val likerName: String,
-    val createdAt: Timestamp?
+    val createdAt: Timestamp?,
+    /** For the online-status dot; comes free with the liker's profile. */
+    val lastSeen: Date?
 )
 
 /**

@@ -32,6 +32,7 @@ class ChatListAdapter(
             // placeholder rather than a stock face.
             ivChatAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
             tvChatName.text = chat.name
+            onlineDot.root.bindOnlineDot(chat.lastSeen)
 
             tvChatPreview.text = chat.lastMessage ?: context.getString(R.string.chat_say_hi)
             tvChatTimestamp.text = formatChatTimestamp(context, chat.lastMessageAt)
