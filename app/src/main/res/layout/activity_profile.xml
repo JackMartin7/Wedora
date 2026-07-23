@@ -48,10 +48,12 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
+        <!-- Scrollable content — allow shadow to bleed outside without clipping. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:clipChildren="false">
 
             <!-- Photo / name / location / edit button -->
             <com.google.android.material.imageview.ShapeableImageView
@@ -247,38 +249,39 @@
             </LinearLayout>
 
             <!--
-                Premium upgrade. Sits between the stats and the settings list,
-                and replaces the "Payment & Subscription" settings row, which
-                led to the same screen.
+                Premium upgrade gradient card. Sits between the stats and the
+                settings list. Tappable for opening payment/subscription flow.
 
-                Fixed height (52dp) keeps the card's position stable, so nothing
-                shifts during loading animations or when other elements transition.
-
-                Hidden for guests by ProfileActivity — there's no account to
-                upgrade — so its visibility is set in code, not here.
+                Fixed height (56dp) with proper padding so content fits perfectly
+                and the gradient background displays at full beauty. Hidden for
+                guests (no account to upgrade).
             -->
             <LinearLayout
                 android:id="@+id/cardPremium"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="18dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="20dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_gravity="center_vertical"
                 android:background="@drawable/bg_premium_card"
-                android:elevation="6dp"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="12dp"
+                android:elevation="4dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
 
+                <!-- Crown icon: white, 20dp -->
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:src="@drawable/ic_crown"
-                    android:contentDescription="@null" />
+                    android:contentDescription="@null"
+                    android:tint="@color/white" />
 
+                <!-- Title: "Upgrade to Premium" bold white, flex width -->
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -286,20 +289,19 @@
                     android:layout_marginStart="12dp"
                     android:text="@string/premium_upgrade_title"
                     android:textColor="@color/white"
-                    android:textSize="15sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    android:singleLine="true"
-                    android:ellipsize="end" />
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold" />
 
+                <!-- CTA: "Unlock all features →" white, right-aligned -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:text="@string/premium_upgrade_cta"
                     android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:singleLine="true"
-                    android:ellipsize="end" />
+                    android:textSize="13sp"
+                    android:fontFamily="@font/poppins"
+                    android:gravity="end" />
 
             </LinearLayout>
 
