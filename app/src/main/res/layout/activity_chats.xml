@@ -62,12 +62,15 @@
 
     <!-- Search bar, overlaid on the top bar. Hidden until the search icon is
          tapped; the back arrow stays put so it's still one tap out. -->
+    <!-- Anchored to the parent's start (not to btnBack) so that with the back
+         arrow hidden during search it fills the whole row. It still overlays
+         btnBack, which is fine — btnBack is made invisible while search is up. -->
     <LinearLayout
         android:id="@+id/searchBar"
         android:layout_width="0dp"
         android:layout_height="40dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:background="@drawable/bg_input_field"
         android:orientation="horizontal"
         android:gravity="center_vertical"
@@ -75,7 +78,7 @@
         android:paddingEnd="4dp"
         android:visibility="gone"
         tools:visibility="visible"
-        app:layout_constraintStart_toEndOf="@id/btnBack"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBack"
         app:layout_constraintBottom_toBottomOf="@id/btnBack">

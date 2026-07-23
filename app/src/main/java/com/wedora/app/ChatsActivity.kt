@@ -106,6 +106,14 @@ class ChatsActivity : AppCompatActivity() {
 
     private fun setTopBarVisible(visible: Boolean) {
         val v = if (visible) View.VISIBLE else View.GONE
+        // Hidden while searching so a stray tap can't leave Chats mid-type; the
+        // X on the search bar (and system back) is the only way out of search.
+        //
+        // INVISIBLE, not GONE: the whole top region — the list, skeleton and
+        // empty state — is positioned below btnBack, so removing it from layout
+        // would shift everything up. Invisible keeps its slot (and the search
+        // bar's vertical anchor) intact.
+        binding.btnBack.visibility = if (visible) View.VISIBLE else View.INVISIBLE
         binding.tvChatsTitle.visibility = v
         binding.btnSearch.visibility = v
         binding.btnMore.visibility = v
