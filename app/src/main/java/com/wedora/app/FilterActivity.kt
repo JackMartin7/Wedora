@@ -2,6 +2,7 @@ package com.wedora.app
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -72,27 +73,50 @@ class FilterActivity : AppCompatActivity() {
 
         showAgeLabel()
         showDistanceLabel()
-        showIntentChips()
     }
 
     /**
-     * Reads whose profiles this user sees, so the chips are worded for them.
-     * On failure the fallback list still contains every shared option, so the
-     * screen stays usable rather than empty.
+     * Reads the gender that decides the Looking For options, then builds the
+     * chips. The chips are hidden behind a spinner until it lands, so the wrong
+     * option set can't flash up and be tapped before the right one arrives.
+     *
+     * That gender is the user's `interestedIn`, NOT their own — see the class
+     * comment. On a failed read it falls back to null, which
+     * MarriageIntent.lookingForOptions resolves to the non-male "Marriage"
+     * list; that's the safer default because it still contains every option a
+     * non-male candidate can have, and "Any" is in every list regardless.
      */
     private fun loadCandidateGender() {
-        val uid = auth.currentUser?.uid ?: return
+        binding.progressLookingFor.visibility = View.VISIBLE
+        binding.chipsLookingForFilter.visibility = View.GONE
+
+        val uid = auth.currentUser?.uid
+        if (uid == null) {
+            showIntentChips()
+            return
+        }
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 candidateGender = UserProfile.from(snapshot).interestedIn
                 showIntentChips()
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Couldn't read interestedIn for the filter options", e)
+                Log.w(TAG, "Couldn't read interestedIn for the filter options; using the default list", e)
+                candidateGender = null
+                showIntentChips()
             }
     }
 
-    /** (Re)builds both filter groups, restoring whatever was saved. */
+    /**
+     * Builds both filter groups now that the gender is known, and reveals the
+     * Looking For chips.
+     *
+     * A stored Looking For filter that doesn't fit the current options — a
+     * male-worded value left over for what is now a female-candidate list — is
+     * dropped from FilterPrefs rather than silently ignored. Left in place it
+     * would keep narrowing the feed by values the user can no longer see or
+     * clear on this screen.
+     */
     private fun showIntentChips() {
         val statusOptions = MarriageIntent.statusOptions(candidateGender)
         binding.chipsStatusFilter.setOptions(
@@ -102,12 +126,19 @@ class FilterActivity : AppCompatActivity() {
         )
 
         val lookingForOptions = MarriageIntent.lookingForOptions(candidateGender)
+        val storedLookingFor = FilterPrefs.getRawLookingForFilter(this, lookingForOptions)
+        if (!lookingForOptions.containsAll(storedLookingFor)) {
+            FilterPrefs.clearLookingForFilter(this)
+        }
         binding.chipsLookingForFilter.setOptions(
             options = lookingForOptions,
             selected = FilterPrefs.getRawLookingForFilter(this, lookingForOptions)
                 .ifEmpty { lookingForOptions.toSet() },
             multiSelect = true
         )
+
+        binding.progressLookingFor.visibility = View.GONE
+        binding.chipsLookingForFilter.visibility = View.VISIBLE
     }
 
     /**

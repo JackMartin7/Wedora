@@ -147,6 +147,16 @@ object FilterPrefs {
             .apply()
     }
 
+    /**
+     * Drops only the Looking For filter. Used when the filter screen finds a
+     * stored value that doesn't fit the option list the current gender
+     * produces — a stale male-worded pick for what is now a female-candidate
+     * list — so it can't keep narrowing the feed by something invisible.
+     */
+    fun clearLookingForFilter(context: Context) {
+        prefs(context).edit().remove(KEY_LOOKING_FOR).apply()
+    }
+
     /** Restores every filter to its default. */
     fun reset(context: Context) {
         prefs(context).edit()

@@ -145,11 +145,25 @@
                 android:textSize="16sp"
                 android:fontFamily="@font/poppins_semibold" />
 
+            <!-- Shown while the gender that decides these options is loading, so
+                 the wrong chips can't flash up first. Swapped for the chips once
+                 the read lands. -->
+            <ProgressBar
+                android:id="@+id/progressLookingFor"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:indeterminateTint="@color/wedora_accent"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipsLookingForFilter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
+                android:visibility="gone"
+                tools:visibility="visible"
                 app:singleLine="false"
                 app:singleSelection="false"
                 app:chipSpacingHorizontal="8dp" />
