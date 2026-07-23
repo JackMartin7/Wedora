@@ -4,12 +4,17 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableString
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.StyleSpan
 import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
 import android.util.Patterns
+import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
@@ -35,19 +40,39 @@ class SignUpActivity : AppCompatActivity() {
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private var isPasswordVisible = false
 
+    /**
+     * Opening Terms from the agreement link shows its "I Agree" button; tapping
+     * it returns here and ticks the checkbox, so agreeing on that screen and
+     * agreeing via the box are the same action rather than two competing ones.
+     */
+    private val termsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) binding.cbAgreeTerms.isChecked = true
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setUpLoginPrompt()
+        setUpAgreementLinks()
 
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         binding.btnTogglePassword.setOnClickListener { togglePasswordVisibility() }
         binding.tvLoginPrompt.setOnClickListener { goToLogin() }
 
+        binding.cbAgreeTerms.setOnCheckedChangeListener { _, _ -> updateSignUpEnabled() }
+        updateSignUpEnabled()
+
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
         binding.btnSignUp.addPressScale()
+    }
+
+    /** Sign Up is gated on the agreement checkbox. */
+    private fun updateSignUpEnabled() {
+        binding.btnSignUp.isEnabled = binding.cbAgreeTerms.isChecked
     }
 
     /**
@@ -138,8 +163,54 @@ class SignUpActivity : AppCompatActivity() {
     }
 
     private fun setLoading(loading: Boolean) {
-        binding.btnSignUp.isEnabled = !loading
         binding.btnSignUp.setText(if (loading) R.string.btn_creating_account else R.string.btn_signup)
+        // Off the loading path, re-apply the checkbox gate rather than blanket
+        // re-enabling — otherwise a failed attempt would leave Sign Up tappable
+        // even if the box were somehow unticked.
+        if (loading) binding.btnSignUp.isEnabled = false else updateSignUpEnabled()
+    }
+
+    /**
+     * Builds the "…Terms of Service and Privacy Policy" line with the two
+     * document names as tappable, accent-coloured links, assembled from parts
+     * so the spans land on the right ranges without counting characters by
+     * hand.
+     */
+    private fun setUpAgreementLinks() {
+        val prefix = getString(R.string.signup_agreement_prefix)
+        val terms = getString(R.string.signup_agreement_terms)
+        val and = getString(R.string.signup_agreement_and)
+        val privacy = getString(R.string.signup_agreement_privacy)
+        val full = prefix + terms + and + privacy
+
+        val spannable = SpannableString(full)
+        val accent = ContextCompat.getColor(this, R.color.wedora_accent)
+
+        fun linkSpan(onClick: () -> Unit) = object : ClickableSpan() {
+            override fun onClick(widget: View) = onClick()
+            override fun updateDrawState(ds: TextPaint) {
+                ds.color = accent
+                ds.isUnderlineText = false
+            }
+        }
+
+        val termsStart = prefix.length
+        spannable.setSpan(
+            linkSpan { termsLauncher.launch(TermsOfServiceActivity.intent(this, fromSignup = true)) },
+            termsStart, termsStart + terms.length,
+            SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        val privacyStart = prefix.length + terms.length + and.length
+        spannable.setSpan(
+            linkSpan { startActivity(Intent(this, PrivacyPolicyActivity::class.java)) },
+            privacyStart, privacyStart + privacy.length,
+            SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+
+        binding.tvAgreementLinks.text = spannable
+        // Without this the ClickableSpans render but don't receive taps.
+        binding.tvAgreementLinks.movementMethod = LinkMovementMethod.getInstance()
     }
 
     private fun togglePasswordVisibility() {

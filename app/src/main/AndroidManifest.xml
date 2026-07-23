@@ -96,6 +96,14 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".TermsOfServiceActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PrivacyPolicyActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".PaymentSubscriptionActivity"
             android:exported="false" />
 

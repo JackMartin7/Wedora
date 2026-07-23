@@ -220,6 +220,8 @@
     <string name="settings_privacy">Privacy &amp; Safety</string>
     <string name="settings_payment">Payment &amp; Subscription</string>
     <string name="settings_help">Help Center</string>
+    <string name="settings_terms">Terms of Service</string>
+    <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_logout">Log Out</string>
 
     <!-- Onboarding -->

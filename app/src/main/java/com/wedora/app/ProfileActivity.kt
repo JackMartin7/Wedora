@@ -245,6 +245,12 @@ class ProfileActivity : AppCompatActivity() {
             SettingsRow(R.drawable.ic_help, R.string.settings_help) {
                 startActivity(Intent(this, HelpCenterActivity::class.java))
             },
+            SettingsRow(R.drawable.ic_terms, R.string.settings_terms) {
+                startActivity(TermsOfServiceActivity.intent(this, fromSignup = false))
+            },
+            SettingsRow(R.drawable.ic_policy, R.string.settings_privacy_policy) {
+                startActivity(Intent(this, PrivacyPolicyActivity::class.java))
+            },
             SettingsRow(R.drawable.ic_logout, R.string.settings_logout) {
                 logOut()
             }
