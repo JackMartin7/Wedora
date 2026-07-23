@@ -65,7 +65,6 @@
     <string name="home_greeting_evening">Good Evening 🌆</string>
     <string name="home_greeting_night">Good Night 🌙</string>
     <string name="home_sample_name">Sarah</string>
-    <string name="home_distance_format">%1$s km away</string>
     <string name="cd_dark_mode_toggle">Toggle dark mode</string>
     <string name="cd_notifications">Notifications</string>
 
@@ -203,6 +202,9 @@
     <string name="search_coming_soon">Search coming soon</string>
     <string name="empty_discover_title">No profiles to show</string>
     <string name="empty_discover_subtitle">Try adjusting your filters to see more people.</string>
+    <string name="nearby_list_title">People Nearby</string>
+    <string name="empty_nearby_title">No one nearby</string>
+    <string name="empty_nearby_subtitle">Try increasing your distance filter to see more people.</string>
 
     <!-- Chats -->
     <string name="chats_title">Chats</string>

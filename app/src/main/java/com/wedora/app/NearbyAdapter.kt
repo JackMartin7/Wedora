@@ -1,16 +1,22 @@
 package com.wedora.app
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.wedora.app.databinding.ItemExploreNearbyBinding
 
-/** One of the current user's matched people, shown in the Explore Nearby strip. */
+/**
+ * One discoverable person in the Explore Nearby strip. [distanceBadge] is the
+ * formatted distance ("2.4 km"), or null when this pair has no computable
+ * distance so the pill is hidden.
+ */
 data class NearbyPerson(
     val userId: String,
-    val name: String
+    val name: String,
+    val distanceBadge: String?
 )
 
 /** Horizontal strip of circular avatars for the Explore "People Nearby" row. */
@@ -33,6 +39,14 @@ class NearbyAdapter(
             // No photo backend for other users, so the avatar keeps the neutral
             // placeholder set in the layout.
             tvNearbyName.text = person.name
+
+            if (person.distanceBadge == null) {
+                tvNearbyDistance.visibility = View.GONE
+            } else {
+                tvNearbyDistance.visibility = View.VISIBLE
+                tvNearbyDistance.text = person.distanceBadge
+            }
+
             root.setOnClickListener { onClick(person) }
         }
     }

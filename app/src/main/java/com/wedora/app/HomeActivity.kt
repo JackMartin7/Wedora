@@ -262,7 +262,8 @@ class HomeActivity : AppCompatActivity() {
         showLoading()
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { selfDoc ->
-                val interestedIn = UserProfile.from(selfDoc).interestedIn
+                val self = UserProfile.from(selfDoc)
+                val interestedIn = self.interestedIn
                 if (interestedIn.isNullOrBlank()) {
                     showEmptyState(
                         icon = R.drawable.ic_sparkle_heart,
@@ -277,7 +278,7 @@ class HomeActivity : AppCompatActivity() {
                     // same reasoning as the self filter: no composite index,
                     // and the sets are small.
                     loadFeedExclusions(firestore, uid) { excluded ->
-                        queryMatches(interestedIn, uid, excluded)
+                        queryMatches(interestedIn, uid, excluded, self.latitude, self.longitude)
                     }
                 }
             }
@@ -291,16 +292,22 @@ class HomeActivity : AppCompatActivity() {
             }
     }
 
-    private fun queryMatches(interestedIn: String, selfUid: String, excludedUids: Set<String>) {
+    private fun queryMatches(
+        interestedIn: String,
+        selfUid: String,
+        excludedUids: Set<String>,
+        myLat: Double?,
+        myLon: Double?
+    ) {
         firestore.collection(UserProfile.COLLECTION)
             .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
                 val candidates = snapshot.documents
                     .filter { it.id != selfUid && it.id !in excludedUids }
-                    .mapNotNull { it.toMatchCard() }
+                    .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }
 
-                val loaded = candidates.filter { matchesActiveFilters(this, it) }
+                val loaded = candidates.filter { matchesActiveFilters(this, it, myLat, myLon) }
 
                 when {
                     // Distinguishes "nobody at all" from "nobody once your
@@ -394,11 +401,14 @@ class HomeActivity : AppCompatActivity() {
             b.tvCardIntent.text = intent
         }
 
-        if (card.distanceKm == null) {
+        // Real distance when both this user and the viewer have coordinates;
+        // the pill is hidden entirely otherwise rather than showing "0 km".
+        val distanceBadge = card.distanceBadge()
+        if (distanceBadge == null) {
             b.tvDistance.visibility = View.GONE
         } else {
             b.tvDistance.visibility = View.VISIBLE
-            b.tvDistance.text = getString(R.string.home_distance_format, card.distanceKm.toString())
+            b.tvDistance.text = distanceBadge
         }
 
         b.btnLike.setImageResource(

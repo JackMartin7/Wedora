@@ -116,6 +116,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".NearbyListActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".NotificationsActivity"
             android:exported="false" />
 

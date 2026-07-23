@@ -12,10 +12,13 @@ import androidx.annotation.DrawableRes
  * hasn't been through that step yet (or predates it) has none, and the card
  * simply omits the line rather than inventing one.
  *
- * [bio] is real data, written by the Edit Profile screen. `role` and
- * `distanceKm` still have no backing Firestore field — real cards leave `role`
- * blank and `distanceKm` null (both hidden when the card is bound). Nothing
- * here invents data the backend doesn't have.
+ * [bio] is real data, written by the Edit Profile screen. `role` has no backing
+ * Firestore field, so real cards leave it blank (hidden when bound).
+ *
+ * [distanceKm] is computed after loading from this user's [latitude]/[longitude]
+ * and the viewer's own, via [withDistanceFrom]. It's null whenever either side
+ * has no coordinates — a manually typed city, or an account predating them — and
+ * the distance pill is hidden rather than showing a placeholder.
  */
 data class MatchCard(
     val id: String,
@@ -23,12 +26,15 @@ data class MatchCard(
     val role: String,
     @DrawableRes val avatarRes: Int,
     @DrawableRes val photoRes: Int,
-    /** Distance in km, rendered into the accent pill. Null hides the pill entirely. */
-    val distanceKm: Int?,
+    /** Distance in km from the viewer, or null when it can't be computed. */
+    val distanceKm: Double?,
     val bio: String,
     val age: Int?,
     val city: String?,
     val country: String?,
+    /** This user's stored coordinates, for distance. Null for a typed city. */
+    val latitude: Double?,
+    val longitude: Double?,
     /**
      * This user's own gender, as stored in Firestore. Carried so the feed can
      * apply a gender filter client-side; null on a profile that never set one.
@@ -38,6 +44,24 @@ data class MatchCard(
     val myStatus: String?,
     val lookingFor: String?
 ) {
+
+    /**
+     * A copy carrying the distance from the viewer at ([myLat], [myLon]). Null
+     * distance when either side lacks coordinates — see [distanceKm].
+     */
+    fun withDistanceFrom(myLat: Double?, myLon: Double?): MatchCard {
+        val distance = if (myLat != null && myLon != null &&
+            latitude != null && longitude != null
+        ) {
+            DistanceUtils.distanceKm(myLat, myLon, latitude, longitude)
+        } else {
+            null
+        }
+        return copy(distanceKm = distance)
+    }
+
+    /** "2.4 km" for the distance pill, or null when there's no distance to show. */
+    fun distanceBadge(): String? = distanceKm?.let { DistanceUtils.formatDistance(it) }
 
     /** "Divorced • Looking for Second Wife", or null when neither is set. */
     fun marriageIntentLine(context: Context): String? =
