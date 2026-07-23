@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Onboarding avatar 4: a solid circle with a simple person silhouette.
+    Colours are fixed (not palette tokens) and chosen to read on both light
+    and dark themes. No photo, no white background.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Circle -->
+    <path
+        android:fillColor="#FAF7F7"
+        android:pathData="M50,0 A50,50 0 1,1 50,100 A50,50 0 1,1 50,0 Z" />
+
+    <!-- Head -->
+    <path
+        android:fillColor="#83686B"
+        android:pathData="M50,29 A13,13 0 1,1 50,55 A13,13 0 1,1 50,29 Z" />
+
+    <!-- Shoulders -->
+    <path
+        android:fillColor="#83686B"
+        android:pathData="M28,82 C28,64 40,58 50,58 C60,58 72,64 72,82 Z" />
+
+</vector>

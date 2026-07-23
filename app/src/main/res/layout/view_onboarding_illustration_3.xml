@@ -24,7 +24,7 @@
         android:layout_height="140dp"
         android:layout_marginStart="24dp"
         android:layout_marginTop="36dp"
-        android:src="@drawable/ob3_female"
+        android:src="@drawable/ic_avatar_2"
         android:scaleType="centerCrop"
         android:contentDescription="@null"
         app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
@@ -35,7 +35,7 @@
         android:layout_height="140dp"
         android:layout_marginStart="184dp"
         android:layout_marginTop="36dp"
-        android:src="@drawable/ob3_male"
+        android:src="@drawable/ic_avatar_1"
         android:scaleType="centerCrop"
         android:contentDescription="@null"
         app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
