@@ -64,15 +64,26 @@ class SignUpActivity : AppCompatActivity() {
         binding.tvLoginPrompt.setOnClickListener { goToLogin() }
 
         binding.cbAgreeTerms.setOnCheckedChangeListener { _, _ -> updateSignUpEnabled() }
+        val watcher = SimpleTextWatcher { updateSignUpEnabled() }
+        binding.etEmail.addTextChangedListener(watcher)
+        binding.etPassword.addTextChangedListener(watcher)
         updateSignUpEnabled()
 
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
         binding.btnSignUp.addPressScale()
     }
 
-    /** Sign Up is gated on the agreement checkbox. */
+    /**
+     * Sign Up is enabled only once the agreement is accepted and both fields
+     * have something in them. The full email/password validation still runs on
+     * tap — this gate is about the obviously-incomplete case, so the button
+     * doesn't invite a tap that can only fail.
+     */
     private fun updateSignUpEnabled() {
-        binding.btnSignUp.isEnabled = binding.cbAgreeTerms.isChecked
+        binding.btnSignUp.isEnabled =
+            binding.cbAgreeTerms.isChecked &&
+            binding.etEmail.text.isNotBlank() &&
+            binding.etPassword.text.isNotEmpty()
     }
 
     /**

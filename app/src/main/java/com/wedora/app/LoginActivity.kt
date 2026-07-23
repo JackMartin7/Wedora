@@ -49,7 +49,23 @@ class LoginActivity : AppCompatActivity() {
         binding.btnLogin.setOnClickListener { attemptLogin() }
         binding.btnLogin.addPressScale()
 
+        val watcher = SimpleTextWatcher { updateLoginEnabled() }
+        binding.etEmail.addTextChangedListener(watcher)
+        binding.etPassword.addTextChangedListener(watcher)
+        updateLoginEnabled()
+
         binding.tvContinueAsGuest.setOnClickListener { continueAsGuest() }
+    }
+
+    /**
+     * Login is enabled only once both fields have something in them. The full
+     * email/password validation still runs on tap — this gate just keeps the
+     * button from inviting a tap that can only fail on an empty form.
+     */
+    private fun updateLoginEnabled() {
+        binding.btnLogin.isEnabled =
+            binding.etEmail.text.isNotBlank() &&
+            binding.etPassword.text.isNotEmpty()
     }
 
     /** Enter the app without an account. Guests get a read-only feed. */
@@ -176,8 +192,11 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setLoading(loading: Boolean) {
-        binding.btnLogin.isEnabled = !loading
         binding.btnLogin.setText(if (loading) R.string.btn_logging_in else R.string.btn_login)
+        // Off the loading path, re-apply the empty-field gate rather than blanket
+        // re-enabling, so a failed attempt doesn't leave Login tappable on a
+        // form the user has since cleared.
+        if (loading) binding.btnLogin.isEnabled = false else updateLoginEnabled()
     }
 
     private fun togglePasswordVisibility() {

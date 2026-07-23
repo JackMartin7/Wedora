@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Primary CTA background with a disabled state.
+
+    Enabled keeps the accent fill and press ripple; disabled washes out to a
+    pale accent (#FBBCC4) so a gated button reads as clearly off rather than
+    just un-tappable. The coloured drop shadow still comes from
+    android:elevation + outlineSpotShadowColor in WedoraPrimaryButton.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="#FBBCC4" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+
+    <item>
+        <ripple android:color="#33FFFFFF">
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/wedora_accent" />
+                    <corners android:radius="14dp" />
+                </shape>
+            </item>
+        </ripple>
+    </item>
+
+</selector>

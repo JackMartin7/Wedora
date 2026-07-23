@@ -121,18 +121,33 @@
             android:id="@+id/btnSignUp"
             style="@style/WedoraPrimaryButton"
             android:layout_width="match_parent"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="24dp"
             android:text="@string/btn_signup"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms" />
+
+        <!-- The agreement, with the two documents as tappable links. Sits above
+             the checkbox, which restates it as the thing Sign Up is gated on. -->
+        <TextView
+            android:id="@+id/tvAgreementLinks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="12sp"
+            android:lineSpacingExtra="2sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/etPassword" />
 
-        <!-- Agreement checkbox — Sign Up stays disabled until it's ticked. -->
+        <!-- Agreement checkbox, directly above Sign Up which stays disabled
+             until it's ticked (and email + password are filled). -->
         <CheckBox
             android:id="@+id/cbAgreeTerms"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="10dp"
             android:text="@string/signup_agreement_checkbox"
             android:textColor="@color/wedora_text"
             android:textSize="13sp"
@@ -140,20 +155,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
-
-        <!-- The same agreement, with the two documents as tappable links. -->
-        <TextView
-            android:id="@+id/tvAgreementLinks"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/wedora_text_secondary"
-            android:textSize="12sp"
-            android:lineSpacingExtra="2sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms" />
+            app:layout_constraintTop_toBottomOf="@id/tvAgreementLinks" />
 
         <!-- Login prompt -->
         <TextView
@@ -164,7 +166,7 @@
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvAgreementLinks" />
+            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
