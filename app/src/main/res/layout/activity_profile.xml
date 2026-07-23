@@ -66,7 +66,7 @@
                 android:src="@drawable/profile_photo"
                 android:scaleType="centerCrop"
                 android:contentDescription="@string/cd_avatar"
-                app:strokeColor="@color/white"
+                app:strokeColor="@color/wedora_accent"
                 app:strokeWidth="4dp"
                 app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
 
