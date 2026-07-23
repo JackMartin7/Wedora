@@ -107,6 +107,55 @@
 
     </LinearLayout>
 
+    <!-- Selection-mode top bar: Cancel (X) — "X selected" — Delete (trash).
+         Hidden until a row is long-pressed; overlays the same row as the
+         normal title/search bar for the same reason the search bar does. -->
+    <LinearLayout
+        android:id="@+id/selectionBar"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack">
+
+        <ImageButton
+            android:id="@+id/btnCancelSelection"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:contentDescription="@string/cd_cancel_selection" />
+
+        <TextView
+            android:id="@+id/tvSelectionCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="17sp"
+            android:fontFamily="@font/poppins_semibold"
+            tools:text="3 selected" />
+
+        <ImageButton
+            android:id="@+id/btnDeleteSelection"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete"
+            android:contentDescription="@string/cd_delete_selected" />
+
+    </LinearLayout>
+
     <!-- ===== New matches strip =====
          Hidden for now. It only ever held placeholder avatars, and leaving
          those on screen beside real conversations would show invented people.

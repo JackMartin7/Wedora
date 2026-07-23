@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -23,7 +24,7 @@ import java.util.Date
  * prompt to start one, with an unread badge when the other person has written
  * something this user hasn't opened.
  */
-class ChatsActivity : AppCompatActivity() {
+class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraChat"
@@ -50,9 +51,12 @@ class ChatsActivity : AppCompatActivity() {
     /** The full conversation list, kept so search can filter it in memory. */
     private var allPreviews: List<ChatPreview> = emptyList()
 
-    private val adapter = ChatListAdapter { chat ->
-        startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
-    }
+    private val adapter = ChatListAdapter(
+        onClick = { chat ->
+            startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
+        },
+        onSelectionChanged = { selectionMode, count -> updateSelectionUi(selectionMode, count) }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,11 +76,82 @@ class ChatsActivity : AppCompatActivity() {
             applyChatFilter(currentQuery())
         })
 
-        // Back closes the search bar first; otherwise it behaves like the back
-        // arrow and returns to Home.
+        binding.btnCancelSelection.setOnClickListener { adapter.exitSelectionMode() }
+        binding.btnDeleteSelection.setOnClickListener { confirmDeleteSelected() }
+
+        // Back exits selection mode first, then closes the search bar; only
+        // once neither is active does it behave like the back arrow.
         onBackPressedDispatcher.addCallback(this) {
-            if (binding.searchBar.visibility == View.VISIBLE) collapseSearch() else goToHome()
+            when {
+                adapter.selectionMode -> adapter.exitSelectionMode()
+                binding.searchBar.visibility == View.VISIBLE -> collapseSearch()
+                else -> goToHome()
+            }
         }
+    }
+
+    // ----- Multi-select delete ------------------------------------------------
+
+    /**
+     * Swaps the top bar between its normal contents and the selection bar.
+     *
+     * Search and selection share that same row, so only one can show at a
+     * time — entering selection mode while search is open collapses it first
+     * rather than trying to lay out both. Reuses collapseSearch() itself
+     * rather than re-deriving its visibility/animation logic here.
+     */
+    private fun updateSelectionUi(selectionMode: Boolean, count: Int) {
+        if (selectionMode && binding.searchBar.visibility == View.VISIBLE) {
+            collapseSearch()
+        }
+
+        val normalVisibility = if (selectionMode) View.GONE else View.VISIBLE
+        // INVISIBLE, not GONE, for the same reason setTopBarVisible uses it —
+        // content below is positioned off btnBack's slot. selectionBar has no
+        // opaque background of its own (unlike searchBar), so leaving btnBack
+        // VISIBLE underneath would keep a sliver of it tappable — goToHome()
+        // firing mid-selection.
+        binding.btnBack.visibility = if (selectionMode) View.INVISIBLE else View.VISIBLE
+        binding.tvChatsTitle.visibility = normalVisibility
+        binding.btnSearch.visibility = normalVisibility
+
+        binding.selectionBar.visibility = if (selectionMode) View.VISIBLE else View.GONE
+        if (selectionMode) {
+            binding.tvSelectionCount.text =
+                resources.getQuantityString(R.plurals.chats_selected_count, count, count)
+        }
+    }
+
+    private fun confirmDeleteSelected() {
+        val count = adapter.selectedMatchIds().size
+        if (count == 0) return
+        DeleteChatsBottomSheet.show(supportFragmentManager, count)
+    }
+
+    /**
+     * Optimistic: the selected rows drop out of the list immediately, before
+     * the write confirms. If it fails, they're put back and the user is told —
+     * the same pattern ProfileDetailActivity uses for like/unlike. Without a
+     * rollback, a failed write would leave the rows hidden locally forever: a
+     * live listener only re-fires on an actual document change, and a failed
+     * write is exactly the case where nothing changed.
+     */
+    override fun onDeleteChatsConfirmed() {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val matchIds = adapter.selectedMatchIds()
+        val previousPreviews = allPreviews
+
+        allPreviews = allPreviews.filterNot { it.matchId in matchIds }
+        applyChatFilter(currentQuery())
+        adapter.exitSelectionMode()
+
+        hideMatchesForUser(firestore, matchIds, selfUid)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to delete ${matchIds.size} chat(s)", e)
+                allPreviews = previousPreviews
+                applyChatFilter(currentQuery())
+                Toast.makeText(this, R.string.error_delete_chats_failed, Toast.LENGTH_LONG).show()
+            }
     }
 
     // ----- Search -----------------------------------------------------------
@@ -211,7 +286,13 @@ class ChatsActivity : AppCompatActivity() {
                     return@addSnapshotListener
                 }
 
-                val matches = snapshot?.documents?.mapNotNull { Match.from(it) }.orEmpty()
+                // "Deleted for me": a match the current user has hidden is
+                // excluded from their own list, same as if it didn't exist —
+                // the other participant's list, and the underlying match and
+                // messages, are untouched.
+                val matches = snapshot?.documents?.mapNotNull { Match.from(it) }
+                    .orEmpty()
+                    .filterNot { it.isHiddenFor(selfUid) }
                 if (matches.isEmpty()) {
                     showEmpty(
                         R.drawable.ic_support_chat,

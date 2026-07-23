@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Selection overlay for a chat row's avatar in multi-select mode: a solid
+    accent disc with a white check, sized to exactly cover the avatar it's
+    placed over.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_accent"
+        android:pathData="M12,2 C6.48,2 2,6.48 2,12 C2,17.52 6.48,22 12,22 C17.52,22 22,17.52 22,12 C22,6.48 17.52,2 12,2 Z" />
+    <path
+        android:fillColor="@color/white"
+        android:pathData="M10.2,16.2 L6.4,12.4 L7.8,11 L10.2,13.4 L16,7.6 L17.4,9 Z" />
+</vector>

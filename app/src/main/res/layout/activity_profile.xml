@@ -66,8 +66,8 @@
                 android:src="@drawable/profile_photo"
                 android:scaleType="centerCrop"
                 android:contentDescription="@string/cd_avatar"
-                app:strokeColor="@color/wedora_accent"
-                app:strokeWidth="4dp"
+                app:strokeColor="@color/wedora_accent_shadow"
+                app:strokeWidth="3dp"
                 app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
 
             <TextView

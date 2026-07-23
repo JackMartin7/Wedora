@@ -249,6 +249,10 @@ class ChatThreadActivity : AppCompatActivity() {
         // count is whatever it was plus this message. It's safe to increment
         // from wherever it stands because opening a thread zeroes it, so by the
         // time this user is sending, their own side has already been cleared.
+        //
+        // Also drops otherUid out of hiddenBy in the same write: if they'd
+        // "deleted" this chat, a new message from this side brings it back —
+        // the standard WhatsApp-style behavior, not a block.
         val batch = firestore.batch()
         batch.set(messagesCollection().document(), message)
         batch.update(
@@ -256,7 +260,8 @@ class ChatThreadActivity : AppCompatActivity() {
             Match.PATH_LM_TEXT, text,
             Match.PATH_LM_SENT_AT, FieldValue.serverTimestamp(),
             Match.PATH_LM_SENDER_ID, selfUid,
-            Match.PATH_LM_UNREAD_COUNT, FieldValue.increment(1)
+            Match.PATH_LM_UNREAD_COUNT, FieldValue.increment(1),
+            Match.FIELD_HIDDEN_BY, FieldValue.arrayRemove(otherUid)
         )
 
         batch.commit()

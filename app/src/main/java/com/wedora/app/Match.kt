@@ -123,6 +123,32 @@ fun deleteMatchDocument(
         .delete()
 
 /**
+ * "Delete for me": hides one or more conversations from [selfUid]'s own Chats
+ * list, one-sided — the match document and its messages are untouched, so the
+ * other participant's list is unaffected. A new message from them removes
+ * [selfUid] from `hiddenBy` again (see the batch in ChatThreadActivity's
+ * sendMessage), so this isn't a block — it's exactly the WhatsApp-style
+ * "delete chat" behavior.
+ *
+ * One batch for the whole selection, so a multi-delete either fully applies or
+ * fully fails rather than leaving some chats hidden and others not.
+ */
+fun hideMatchesForUser(
+    firestore: FirebaseFirestore,
+    matchIds: Collection<String>,
+    selfUid: String
+): Task<Void> {
+    val batch = firestore.batch()
+    matchIds.forEach { matchId ->
+        batch.update(
+            firestore.collection(Match.COLLECTION).document(matchId),
+            Match.FIELD_HIDDEN_BY, FieldValue.arrayUnion(selfUid)
+        )
+    }
+    return batch.commit()
+}
+
+/**
  * A match between two users — `matches/{matchId}`.
  *
  * As with [UserProfile], the Firestore field names live here as constants
@@ -155,7 +181,14 @@ data class Match(
      * render (and live-update) without a per-match message query. Null on
      * matches nobody has messaged yet.
      */
-    val lastMessage: LastMessage?
+    val lastMessage: LastMessage?,
+    /**
+     * Everyone who has "deleted" this chat from their own Chats list —
+     * one-sided, not a block. A UID here is removed the moment the OTHER
+     * participant sends a new message, so the conversation reappears rather
+     * than staying hidden forever.
+     */
+    val hiddenBy: List<String>
 ) {
 
     /**
@@ -199,6 +232,9 @@ data class Match(
     /** The other participant, when they're the one who liked [selfUid]. */
     fun likerFor(selfUid: String): String? = likedUsers.firstOrNull { it != selfUid }
 
+    /** True when [selfUid] has "deleted" this chat from their own Chats list. */
+    fun isHiddenFor(selfUid: String): Boolean = selfUid in hiddenBy
+
     companion object {
         const val COLLECTION = "matches"
         const val SUBCOLLECTION_MESSAGES = "messages"
@@ -207,6 +243,7 @@ data class Match(
         const val FIELD_CREATED_AT = "createdAt"
         const val FIELD_LIKED_USERS = "likedUsers"
         const val FIELD_SEEN_BY = "seenBy"
+        const val FIELD_HIDDEN_BY = "hiddenBy"
 
         /**
          * Superseded by [FIELD_LIKED_USERS] and [FIELD_SEEN_BY]. Still read so
@@ -255,9 +292,15 @@ data class Match(
                 createdAt = snapshot.getTimestamp(FIELD_CREATED_AT),
                 likedUsers = likedUsers,
                 seenBy = parseSeenBy(snapshot, users, likedUsers),
-                lastMessage = parseLastMessage(snapshot)
+                lastMessage = parseLastMessage(snapshot),
+                hiddenBy = parseHiddenBy(snapshot)
             )
         }
+
+        /** Empty on any match predating this field — nothing is hidden. */
+        @Suppress("UNCHECKED_CAST")
+        private fun parseHiddenBy(snapshot: DocumentSnapshot): List<String> =
+            snapshot.get(FIELD_HIDDEN_BY) as? List<String> ?: emptyList()
 
         /**
          * Reads the likers as the UNION of `likedUsers` and the single-UID

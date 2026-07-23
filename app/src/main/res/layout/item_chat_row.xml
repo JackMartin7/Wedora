@@ -26,6 +26,21 @@
         app:layout_constraintEnd_toEndOf="@id/ivChatAvatar"
         app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar" />
 
+    <!-- Selection-mode overlay: fully covers the avatar when this row is
+         selected, so there's no ambiguity between "online" and "selected". -->
+    <ImageView
+        android:id="@+id/ivSelectedOverlay"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:src="@drawable/ic_avatar_selected"
+        android:contentDescription="@null"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintStart_toStartOf="@id/ivChatAvatar"
+        app:layout_constraintTop_toTopOf="@id/ivChatAvatar"
+        app:layout_constraintEnd_toEndOf="@id/ivChatAvatar"
+        app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar" />
+
     <TextView
         android:id="@+id/tvChatName"
         android:layout_width="0dp"

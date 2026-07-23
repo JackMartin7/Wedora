@@ -114,6 +114,20 @@ service cloud.firestore {
                  request.resource.data.get(field, []));
       }
 
+      // hiddenBy is NOT symmetric like onlySelfIn, on purpose. A caller may
+      // only ever ADD their own UID — "delete for me" — never force the chat
+      // hidden for the other participant. But either UID may be REMOVED:
+      // themselves (an unhide), or the other participant, which is exactly
+      // what sending a new message does automatically so a chat the recipient
+      // deleted reappears once there's something new in it. Removing only
+      // ever makes a conversation MORE visible again, so unlike additions
+      // there's nothing there worth restricting to "self only".
+      function hiddenByAdditionsAreSelfOnly() {
+        return request.resource.data.get('hiddenBy', [])
+            .removeAll(resource.data.get('hiddenBy', []))
+            .hasOnly([request.auth.uid]);
+      }
+
       allow read: if isMember();
       allow create: if isValidNewMatch();
 
@@ -121,20 +135,24 @@ service cloud.firestore {
       // like again re-runs set(merge), which rewrites createdAt. Liking back
       // is the same write, which is why it lands here rather than on create.
       //
-      // Three things are enforced. Participants can never change, so a member
-      // can't rewrite a match onto someone else. And likedUsers / seenBy may
-      // only ever gain or lose the caller — nobody likes, un-likes or dismisses
-      // a notification on the other person's behalf.
+      // Four things are enforced. Participants can never change, so a member
+      // can't rewrite a match onto someone else. likedUsers / seenBy may only
+      // ever gain or lose the caller — nobody likes, un-likes or dismisses a
+      // notification on the other person's behalf. And hiddenBy may only gain
+      // the caller (see hiddenByAdditionsAreSelfOnly) — nobody can hide the
+      // chat from the other participant's list.
       //
       // This also covers the lastMessage summary (text/sentAt/senderId/
       // unreadCount) that the chat thread maintains: sending a message writes
-      // it, and opening a thread zeroes unreadCount. Both are member updates
-      // that leave users/likedUsers/seenBy alone, so they pass here without a
-      // separate rule.
+      // it (and, in the same write, removes the recipient from hiddenBy), and
+      // opening a thread zeroes unreadCount. All of these are member updates
+      // that leave users/likedUsers/seenBy alone and only ever add themselves
+      // to hiddenBy, so they pass here without a separate rule.
       allow update: if isMember()
           && participantsUnchanged()
           && onlySelfIn('likedUsers')
-          && onlySelfIn('seenBy');
+          && onlySelfIn('seenBy')
+          && hiddenByAdditionsAreSelfOnly();
 
       // Only someone who actually liked can delete the match (an unlike). The
       // recipient can dismiss it from their view via seenBy, but can't erase a

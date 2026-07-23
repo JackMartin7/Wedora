@@ -101,6 +101,20 @@
     <string name="cd_like">Like</string>
     <string name="cd_pass">Pass</string>
 
+    <!-- Chats: multi-select delete -->
+    <string name="cd_cancel_selection">Cancel selection</string>
+    <string name="cd_delete_selected">Delete selected chats</string>
+    <plurals name="chats_selected_count">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <plurals name="delete_chats_sheet_title">
+        <item quantity="one">Delete %1$d chat?</item>
+        <item quantity="other">Delete %1$d chats?</item>
+    </plurals>
+    <string name="delete_chats_sheet_subtitle">These conversations will be removed from your Chats list. The other person will still see them.</string>
+    <string name="delete_chats_sheet_confirm">Delete</string>
+
     <!-- Progressive profile setup (5 steps after first verified login) -->
     <string name="step_counter_format">Step %1$d of %2$d</string>
     <string name="step_skip">Skip for now</string>
@@ -198,6 +212,7 @@
 
     <!-- Matching feed states -->
     <string name="error_unlike_failed">Couldn\'t undo that like. Please try again.</string>
+    <string name="error_delete_chats_failed">Couldn\'t delete. Please try again.</string>
 
     <!-- Swipe overlay stamps -->
 
