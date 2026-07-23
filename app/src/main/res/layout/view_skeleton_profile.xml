@@ -7,9 +7,14 @@
     session and local storage and are on screen immediately, so covering them
     would replace real content with a placeholder.
 -->
+<!--
+    Fixed height (76dp) prevents the shimmer alpha animation from triggering
+    layout recalculation. This matches the real stats card's stable height so
+    the crossfade is seamless.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="76dp"
     android:orientation="vertical"
     android:gravity="center_horizontal">
 

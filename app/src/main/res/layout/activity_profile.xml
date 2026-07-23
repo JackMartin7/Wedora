@@ -251,17 +251,21 @@
                 and replaces the "Payment & Subscription" settings row, which
                 led to the same screen.
 
+                Fixed height (52dp) keeps the card's position stable, so nothing
+                shifts during loading animations or when other elements transition.
+
                 Hidden for guests by ProfileActivity — there's no account to
                 upgrade — so its visibility is set in code, not here.
             -->
             <LinearLayout
                 android:id="@+id/cardPremium"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="18dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
+                android:layout_gravity="center_vertical"
                 android:background="@drawable/bg_premium_card"
                 android:elevation="6dp"
                 android:paddingHorizontal="16dp"
