@@ -473,9 +473,9 @@ class HomeActivity : AppCompatActivity() {
         b.btnPass.setOnClickListener { binding.cardStack.swipeLeft() }
         b.btnDismiss.setOnClickListener { binding.cardStack.swipeLeft() }
         b.btnChat.setOnClickListener { openChatWith(card) }
-        b.btnMore.setOnClickListener { view ->
+        b.btnMore.setOnClickListener {
             // Blocking dismisses the (top) card the menu was opened from.
-            showReportBlockMenu(view, card.id) { binding.cardStack.dismissTop() }
+            showReportBlockSheet(card.id) { binding.cardStack.dismissTop() }
         }
     }
 

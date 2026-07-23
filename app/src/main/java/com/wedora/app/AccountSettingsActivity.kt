@@ -30,7 +30,7 @@ import com.wedora.app.databinding.DialogPasswordPromptBinding
  * rather than a generic error — a wrong password is overwhelmingly the reason
  * it fails, and it's the one cause the user can act on.
  */
-class AccountSettingsActivity : AppCompatActivity() {
+class AccountSettingsActivity : AppCompatActivity(), DeleteAccountBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraAccount"
@@ -62,7 +62,9 @@ class AccountSettingsActivity : AppCompatActivity() {
         binding.btnUpdateEmail.setOnClickListener { updateEmail() }
         binding.btnUpdatePassword.addPressScale()
         binding.btnUpdateEmail.addPressScale()
-        binding.btnDeleteAccount.setOnClickListener { confirmDeleteAccount() }
+        binding.btnDeleteAccount.setOnClickListener {
+            DeleteAccountBottomSheet().show(supportFragmentManager, "delete_account")
+        }
     }
 
     // ----- Re-authentication ----------------------------------------------
@@ -222,17 +224,15 @@ class AccountSettingsActivity : AppCompatActivity() {
 
     // ----- Delete account -------------------------------------------------
 
-    private fun confirmDeleteAccount() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.account_delete_confirm_title)
-            .setMessage(R.string.account_delete_confirm_message)
-            .setPositiveButton(R.string.account_delete_confirm_button) { _, _ ->
-                promptForPassword { password ->
-                    reauthenticate(password) { user -> deleteAccountData(user) }
-                }
-            }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
+    /**
+     * From [DeleteAccountBottomSheet] once the user confirms. The password
+     * re-auth and the deletion itself are unchanged — the sheet only replaces
+     * the first "are you sure" step.
+     */
+    override fun onDeleteAccountConfirmed() {
+        promptForPassword { password ->
+            reauthenticate(password) { user -> deleteAccountData(user) }
+        }
     }
 
     /**

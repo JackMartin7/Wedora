@@ -1,19 +1,11 @@
 package com.wedora.app
 
-import android.util.Log
-import android.view.View
-import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.tasks.Task
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
-
-private const val TAG = "WedoraModeration"
 
 /**
  * Firestore layout for reports and blocks.
@@ -86,80 +78,24 @@ fun loadBlockedUserEntries(
 // ----- Shared report/block UI ----------------------------------------------
 
 /**
- * Shows the ⋮ Report / Block menu anchored to [anchor], for the user [targetUid].
- * [onBlocked] runs after a successful block, so each screen can react (the feed
- * drops the card, the profile screen closes).
+ * Opens the Report / Block flow for [targetUid] as a bottom sheet: an actions
+ * sheet first, then the reason picker or the block confirm.
  *
- * Lives here so HomeActivity and ProfileDetailActivity share one implementation
- * rather than each wiring their own dialogs.
+ * [onBlocked] runs after a successful block, so each screen can react (the feed
+ * drops the card, the profile screen closes). It's delivered through a fragment
+ * result rather than a captured lambda, so it survives the sheet — and the host
+ * — being recreated mid-flow.
+ *
+ * Lives here so HomeActivity and ProfileDetailActivity share one implementation.
  */
-fun AppCompatActivity.showReportBlockMenu(
-    anchor: View,
+fun AppCompatActivity.showReportBlockSheet(
     targetUid: String,
     onBlocked: () -> Unit
 ) {
-    PopupMenu(this, anchor).apply {
-        menu.add(0, MENU_REPORT, 0, R.string.action_report)
-        menu.add(0, MENU_BLOCK, 1, R.string.action_block)
-        setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                MENU_REPORT -> { showReportReasonDialog(targetUid); true }
-                MENU_BLOCK -> { showBlockConfirmDialog(targetUid, onBlocked); true }
-                else -> false
-            }
-        }
-        show()
-    }
-}
+    supportFragmentManager.setFragmentResultListener(
+        BlockConfirmBottomSheet.RESULT_BLOCKED, this
+    ) { _, _ -> onBlocked() }
 
-private const val MENU_REPORT = 1
-private const val MENU_BLOCK = 2
-
-private fun AppCompatActivity.showReportReasonDialog(targetUid: String) {
-    val reasons = resources.getStringArray(R.array.report_reasons)
-    var selected = 0
-    MaterialAlertDialogBuilder(this)
-        .setTitle(R.string.report_reason_title)
-        .setSingleChoiceItems(reasons, selected) { _, which -> selected = which }
-        .setPositiveButton(R.string.report_submit) { _, _ ->
-            submitReportFromUi(targetUid, reasons[selected])
-        }
-        .setNegativeButton(R.string.action_cancel, null)
-        .show()
-}
-
-private fun AppCompatActivity.submitReportFromUi(targetUid: String, reason: String) {
-    val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    submitReport(FirebaseFirestore.getInstance(), selfUid, targetUid, reason)
-        .addOnSuccessListener {
-            Toast.makeText(this, R.string.report_submitted, Toast.LENGTH_SHORT).show()
-        }
-        .addOnFailureListener { e ->
-            Log.w(TAG, "Failed to submit report", e)
-            Toast.makeText(this, R.string.report_failed, Toast.LENGTH_LONG).show()
-        }
-}
-
-private fun AppCompatActivity.showBlockConfirmDialog(targetUid: String, onBlocked: () -> Unit) {
-    MaterialAlertDialogBuilder(this)
-        .setTitle(R.string.block_confirm_title)
-        .setMessage(R.string.block_confirm_message)
-        .setPositiveButton(R.string.block_confirm_button) { _, _ ->
-            blockFromUi(targetUid, onBlocked)
-        }
-        .setNegativeButton(R.string.action_cancel, null)
-        .show()
-}
-
-private fun AppCompatActivity.blockFromUi(targetUid: String, onBlocked: () -> Unit) {
-    val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    blockUser(FirebaseFirestore.getInstance(), selfUid, targetUid)
-        .addOnSuccessListener {
-            Toast.makeText(this, R.string.block_success, Toast.LENGTH_SHORT).show()
-            onBlocked()
-        }
-        .addOnFailureListener { e ->
-            Log.w(TAG, "Failed to block user", e)
-            Toast.makeText(this, R.string.block_failed, Toast.LENGTH_LONG).show()
-        }
+    ReportBlockActionsBottomSheet.newInstance(targetUid)
+        .show(supportFragmentManager, "report_block_actions")
 }

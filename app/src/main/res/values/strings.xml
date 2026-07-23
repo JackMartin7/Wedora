@@ -304,9 +304,6 @@
 
     <string name="account_delete">Delete Account</string>
     <string name="account_delete_caption">Your matches and messages stay visible to the people you spoke with.</string>
-    <string name="account_delete_confirm_title">Delete your account?</string>
-    <string name="account_delete_confirm_message">This permanently deletes your profile, matches, and messages. This cannot be undone.</string>
-    <string name="account_delete_confirm_button">Delete</string>
     <string name="error_account_delete_failed">Couldn\'t delete your account. Please try again.</string>
 
     <string name="reauth_title">Confirm it\'s you</string>
@@ -399,6 +396,13 @@
     <string name="empty_blocked_subtitle">Anyone you block will appear here.</string>
     <string name="empty_blocked_error_title">Couldn\'t load your blocked users</string>
     <string name="empty_blocked_error_subtitle">Check your connection and try again.</string>
+
+    <!-- Bottom-sheet confirmations -->
+    <string name="logout_sheet_title">Log Out?</string>
+    <string name="logout_sheet_subtitle">Are you sure you want to log out of your Wedora account?</string>
+    <string name="delete_sheet_title">Delete Account?</string>
+    <string name="delete_sheet_subtitle">This permanently removes your profile, matches and messages. This can\'t be undone.</string>
+    <string name="delete_sheet_confirm">Delete My Account</string>
 
     <!-- Marriage intent -->
     <string name="label_my_status">My Status</string>

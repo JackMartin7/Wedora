@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Confirmation sheet: icon disc, title, subtitle, primary + secondary
+    buttons. Shared by Log Out, Delete Account and Block confirm — the icon
+    and copy are set by the fragment.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="20dp">
+
+    <!-- Small drag handle for affordance. -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_marginBottom="20dp"
+        android:background="@color/wedora_border" />
+
+    <ImageView
+        android:id="@+id/ivSheetIcon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:padding="16dp"
+        android:background="@drawable/bg_sheet_icon_circle"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_logout" />
+
+    <TextView
+        android:id="@+id/tvSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold"
+        tools:text="Log Out?" />
+
+    <TextView
+        android:id="@+id/tvSheetSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3sp"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        tools:text="Are you sure you want to log out of your Wedora account?" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSheetPrimary"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="24dp"
+        tools:text="Log Out" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSheetSecondary"
+        style="@style/WedoraSecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/action_cancel" />
+
+</LinearLayout>

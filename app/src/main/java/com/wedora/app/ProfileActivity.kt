@@ -13,7 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityProfileBinding
 import com.wedora.app.databinding.ItemSettingsRowBinding
 
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraProfile"
@@ -252,7 +252,7 @@ class ProfileActivity : AppCompatActivity() {
                 startActivity(Intent(this, PrivacyPolicyActivity::class.java))
             },
             SettingsRow(R.drawable.ic_logout, R.string.settings_logout) {
-                logOut()
+                LogoutBottomSheet().show(supportFragmentManager, "logout")
             }
         )
 
@@ -265,7 +265,8 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    private fun logOut() {
+    /** From [LogoutBottomSheet] once the user confirms. */
+    override fun onLogoutConfirmed() {
         FirebaseAuth.getInstance().signOut()
         GuestPrefs.clearGuest(this)
         startActivity(

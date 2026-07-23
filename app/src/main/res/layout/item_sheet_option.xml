@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One tappable option row in an actions sheet: icon + label, no button. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:paddingHorizontal="24dp"
+    android:paddingVertical="16dp">
+
+    <ImageView
+        android:id="@+id/ivOptionIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@null"
+        tools:src="@drawable/ic_flag" />
+
+    <TextView
+        android:id="@+id/tvOptionLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="16dp"
+        android:textColor="@color/wedora_text"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_medium"
+        tools:text="Report" />
+
+</LinearLayout>
