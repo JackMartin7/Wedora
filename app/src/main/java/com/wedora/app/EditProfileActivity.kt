@@ -13,6 +13,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.wedora.app.databinding.ActivityEditProfileBinding
@@ -297,6 +298,19 @@ class EditProfileActivity : AppCompatActivity() {
         val country = enteredCountry()
         if (country != original.country.orEmpty().trim()) {
             changes[UserProfile.FIELD_COUNTRY] = country
+        }
+
+        // This screen only edits the city/country by hand — it has no location
+        // re-detection — so any change here means the typed place no longer
+        // matches whatever coordinates were stored. Clear them rather than leave
+        // a stale fix pointing at the old city; distance then falls open for
+        // this user until they re-detect in the setup step. delete() is a no-op
+        // when there were none to begin with.
+        if (changes.containsKey(UserProfile.FIELD_CITY) ||
+            changes.containsKey(UserProfile.FIELD_COUNTRY)
+        ) {
+            changes[UserProfile.FIELD_LATITUDE] = FieldValue.delete()
+            changes[UserProfile.FIELD_LONGITUDE] = FieldValue.delete()
         }
 
         val gender = genderControl.selected?.firestoreValue

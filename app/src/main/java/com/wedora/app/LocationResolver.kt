@@ -37,7 +37,18 @@ class LocationResolver(private val context: Context) {
     private val geocodeExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    data class Place(val city: String, val country: String)
+    /**
+     * [latitude]/[longitude] are the raw coordinates the fix came from, carried
+     * through so callers can store them for distance. They're nullable because
+     * a manually typed place (built without a fix) has no coordinates; a
+     * detected place always sets them.
+     */
+    data class Place(
+        val city: String,
+        val country: String,
+        val latitude: Double? = null,
+        val longitude: Double? = null
+    )
 
     /**
      * Caller MUST have ACCESS_COARSE_LOCATION granted before calling this —
@@ -79,7 +90,7 @@ class LocationResolver(private val context: Context) {
             geocoder.getFromLocation(location.latitude, location.longitude, 1,
                 object : Geocoder.GeocodeListener {
                     override fun onGeocode(addresses: MutableList<Address>) {
-                        deliver(addresses.firstOrNull(), onSuccess, onFailure)
+                        deliver(addresses.firstOrNull(), location, onSuccess, onFailure)
                     }
 
                     override fun onError(errorMessage: String?) {
@@ -98,7 +109,7 @@ class LocationResolver(private val context: Context) {
                     Log.w(TAG, "Reverse geocode failed", e)
                     null
                 }
-                deliver(address, onSuccess, onFailure)
+                deliver(address, location, onSuccess, onFailure)
             }
         }
     }
@@ -106,8 +117,17 @@ class LocationResolver(private val context: Context) {
     /**
      * Called from a background/Geocoder callback thread on both paths, so it
      * always hops to main before invoking the caller's UI-touching callbacks.
+     *
+     * The city/country name comes from the reverse-geocoded [address], but the
+     * coordinates come straight off [location] — they're what the fix actually
+     * reported, independent of whether the geocoder could name them.
      */
-    private fun deliver(address: Address?, onSuccess: (Place) -> Unit, onFailure: () -> Unit) {
+    private fun deliver(
+        address: Address?,
+        location: Location,
+        onSuccess: (Place) -> Unit,
+        onFailure: () -> Unit
+    ) {
         val city = address?.locality
         val country = address?.countryName
         mainHandler.post {
@@ -115,7 +135,7 @@ class LocationResolver(private val context: Context) {
                 Log.w(TAG, "Geocoder returned no locality/country")
                 onFailure()
             } else {
-                onSuccess(Place(city, country))
+                onSuccess(Place(city, country, location.latitude, location.longitude))
             }
         }
     }

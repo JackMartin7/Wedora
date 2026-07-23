@@ -43,6 +43,14 @@ data class UserProfile(
     val city: String?,
     val country: String?,
     /**
+     * Coordinates of the detected location, for geographic distance. Present
+     * only when the city was auto-detected — a manually typed city has no
+     * coordinates, so both are null and every distance involving this user
+     * fails open (they're never excluded for being un-locatable).
+     */
+    val latitude: Double?,
+    val longitude: Double?,
+    /**
      * Free text the user writes about themselves, capped at 150 characters by
      * the editor. Null for anyone who hasn't written one — it is optional, so
      * it is optional and no setup step asks for it.
@@ -83,6 +91,8 @@ data class UserProfile(
         const val FIELD_AGE = "age"
         const val FIELD_CITY = "city"
         const val FIELD_COUNTRY = "country"
+        const val FIELD_LATITUDE = "latitude"
+        const val FIELD_LONGITUDE = "longitude"
         const val FIELD_BIO = "bio"
         const val FIELD_ONLY_MATCHES_CAN_MESSAGE = "onlyMatchesCanMessage"
         const val FIELD_MY_STATUS = "myStatus"
@@ -105,6 +115,8 @@ data class UserProfile(
             age = snapshot.getLong(FIELD_AGE)?.toInt(),
             city = snapshot.getString(FIELD_CITY),
             country = snapshot.getString(FIELD_COUNTRY),
+            latitude = snapshot.getDouble(FIELD_LATITUDE),
+            longitude = snapshot.getDouble(FIELD_LONGITUDE),
             bio = snapshot.getString(FIELD_BIO),
             onlyMatchesCanMessage =
                 snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false,

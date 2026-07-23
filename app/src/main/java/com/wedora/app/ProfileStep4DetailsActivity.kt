@@ -160,7 +160,7 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
 
     override fun stepUpdates(): Map<String, Any?> {
         val place = currentPlace() ?: return emptyMap()
-        return mapOf(
+        val updates = mutableMapOf<String, Any?>(
             UserProfile.FIELD_AGE to enteredAge(),
             UserProfile.FIELD_CITY to place.city,
             UserProfile.FIELD_COUNTRY to place.country,
@@ -168,6 +168,14 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
             // becomes real enough to appear in anyone's feed.
             UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
         )
+        // Coordinates only exist for a detected place. A manually typed city has
+        // none, so they're left absent rather than written null — there's simply
+        // nothing to record, and distance for this user falls open.
+        if (place.latitude != null && place.longitude != null) {
+            updates[UserProfile.FIELD_LATITUDE] = place.latitude
+            updates[UserProfile.FIELD_LONGITUDE] = place.longitude
+        }
+        return updates
     }
 
     /**
