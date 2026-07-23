@@ -4,8 +4,13 @@
     timestamp on the right.
 
     Name and action text form a packed horizontal chain so they read as one
-    sentence; the name ellipsizes rather than pushing the action text off the
-    row when it's long.
+    sentence, bounded by the timestamp on the right.
+
+    The name carries layout_constrainedWidth, which is what actually makes it
+    ellipsize. A wrap_content view in a chain is measured at its full desired
+    width and ConstraintLayout will not compress it, so a long name kept its
+    whole length and ran under the timestamp — ellipsize never fired because
+    the view was never denied the space it asked for.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -33,11 +38,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="14dp"
-        android:singleLine="true"
+        android:maxLines="1"
         android:ellipsize="end"
         android:textColor="@color/wedora_text"
         android:textSize="14sp"
         android:fontFamily="@font/poppins_semibold"
+        app:layout_constrainedWidth="true"
         app:layout_constraintStart_toEndOf="@id/ivNotificationAvatar"
         app:layout_constraintEnd_toStartOf="@id/tvNotificationAction"
         app:layout_constraintHorizontal_chainStyle="packed"
@@ -51,7 +57,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
-        android:singleLine="true"
+        android:layout_marginEnd="8dp"
+        android:maxLines="1"
+        android:ellipsize="end"
         android:text="@string/notification_liked_your_profile"
         android:textColor="@color/wedora_text_secondary"
         android:textSize="14sp"
@@ -60,11 +68,17 @@
         app:layout_constraintTop_toTopOf="@id/tvNotificationName"
         app:layout_constraintBottom_toBottomOf="@id/tvNotificationName" />
 
+    <!--
+        Deliberately not part of the chain: only its end is anchored, so it
+        always measures at full width and the name gives way instead. The 8dp
+        gap is the action's end margin, so the timestamp sits flush with the
+        row's own 20dp horizontal padding and lines up with the avatar.
+    -->
     <TextView
         android:id="@+id/tvNotificationTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:maxLines="1"
         android:textColor="@color/wedora_text_secondary"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
