@@ -33,6 +33,9 @@ class LikesActivity : AppCompatActivity() {
 
         /** How many likers are shown locked above the banner. */
         const val FEATURED_COUNT = 2
+
+        /** Two rows of two tiles each, i.e. four placeholder squares. */
+        const val SKELETON_ROWS = 2
     }
 
     private lateinit var binding: ActivityLikesBinding
@@ -91,13 +94,21 @@ class LikesActivity : AppCompatActivity() {
 
     // ----- View state -----------------------------------------------------
 
+    /** Two rows of two tiles — the 2-column grid the real list uses. */
     private fun showLoading() {
-        binding.progressLoading.visibility = View.VISIBLE
+        binding.progressLoading.visibility = View.GONE
         binding.tvLikesEmpty.visibility = View.GONE
-        binding.likesScroll.visibility = View.GONE
+        binding.likesScroll.visibility = View.VISIBLE
+
+        binding.tvLikeCount.visibility = View.GONE
+        binding.featuredContainer.visibility = View.GONE
+        binding.premiumBanner.visibility = View.GONE
+        binding.rvLikes.visibility = View.GONE
+        binding.skeletonLikes.showSkeleton(R.layout.item_skeleton_like_row, SKELETON_ROWS)
     }
 
     private fun showEmpty(message: String) {
+        binding.skeletonLikes.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
         binding.tvLikesEmpty.visibility = View.VISIBLE
         binding.tvLikesEmpty.text = message
@@ -120,6 +131,7 @@ class LikesActivity : AppCompatActivity() {
         binding.progressLoading.visibility = View.GONE
         binding.tvLikesEmpty.visibility = View.GONE
         binding.likesScroll.visibility = View.VISIBLE
+        binding.skeletonLikes.hideSkeleton()
 
         binding.tvLikeCount.visibility = View.VISIBLE
         binding.tvLikeCount.text =

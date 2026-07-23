@@ -20,6 +20,9 @@ class HomeActivity : AppCompatActivity() {
 
     private companion object {
         const val TAG = "WedoraMatching"
+
+        /** Enough to fill the screen and imply a stack, without scrolling. */
+        const val SKELETON_CARDS = 3
     }
 
     private lateinit var binding: ActivityHomeBinding
@@ -506,13 +509,20 @@ class HomeActivity : AppCompatActivity() {
 
     // ----- Feed view state --------------------------------------------------
 
+    /**
+     * Skeleton rather than a spinner: the feed's shape is known, so showing
+     * where the cards will be beats a dot on an empty screen and the layout
+     * doesn't jump when they land.
+     */
     private fun showLoading() {
-        binding.progressLoading.visibility = View.VISIBLE
+        binding.progressLoading.visibility = View.GONE
         binding.tvEmptyState.visibility = View.GONE
         binding.cardStack.visibility = View.GONE
+        binding.skeletonFeed.showSkeleton(R.layout.item_skeleton_card, SKELETON_CARDS)
     }
 
     private fun showEmptyState(message: String) {
+        binding.skeletonFeed.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
         binding.cardStack.visibility = View.GONE
         binding.tvEmptyState.visibility = View.VISIBLE
@@ -523,8 +533,11 @@ class HomeActivity : AppCompatActivity() {
         cards = loaded
         binding.progressLoading.visibility = View.GONE
         binding.tvEmptyState.visibility = View.GONE
-        binding.cardStack.visibility = View.VISIBLE
+
+        // Set up before the crossfade so the first card is bound and drawn as
+        // it fades in, rather than appearing a frame later.
         binding.cardStack.setup(R.layout.item_match_card, loaded.size, stackListener)
+        binding.skeletonFeed.crossfadeToContent(binding.cardStack)
     }
 
     private fun toggleDarkMode() {

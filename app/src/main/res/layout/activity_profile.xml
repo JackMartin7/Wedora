@@ -137,8 +137,22 @@
                 android:textSize="13sp"
                 android:fontFamily="@font/poppins_medium" />
 
+            <!--
+                Stands in for the stats card while Firestore loads. The name,
+                email and photo are not covered: they come from the Auth
+                session and local storage, so they are already on screen and a
+                placeholder would replace real content.
+            -->
+            <include
+                android:id="@+id/skeletonProfile"
+                layout="@layout/view_skeleton_profile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
             <!-- Stats card -->
             <LinearLayout
+                android:id="@+id/statsCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"

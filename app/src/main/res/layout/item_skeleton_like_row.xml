@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One row of the Likes grid placeholder: two square tiles side by side, so
+    two rows give the 2-column grid the real list uses. A row rather than a
+    single tile because the skeleton container is a plain LinearLayout —
+    androidx.gridlayout isn't a dependency and adding one for placeholders
+    isn't worth the build surface.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:baselineAligned="false">
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_margin="6dp"
+        android:minHeight="150dp"
+        android:background="@drawable/bg_skeleton_card" />
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_margin="6dp"
+        android:minHeight="150dp"
+        android:background="@drawable/bg_skeleton_card" />
+
+</LinearLayout>

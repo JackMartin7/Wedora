@@ -27,6 +27,9 @@ class ChatsActivity : AppCompatActivity() {
 
         /** Firestore caps `whereIn` values, so profile lookups go out in chunks. */
         const val WHERE_IN_CHUNK = 10
+
+        /** Roughly a screenful, so the list looks populated while it loads. */
+        const val SKELETON_ROWS = 4
     }
 
     private lateinit var binding: ActivityChatsBinding
@@ -172,12 +175,14 @@ class ChatsActivity : AppCompatActivity() {
     }
 
     private fun showLoading() {
-        binding.progressLoading.visibility = View.VISIBLE
+        binding.progressLoading.visibility = View.GONE
         binding.tvChatsEmpty.visibility = View.GONE
         binding.rvChats.visibility = View.GONE
+        binding.skeletonChats.showSkeleton(R.layout.item_skeleton_chat_row, SKELETON_ROWS)
     }
 
     private fun showEmpty(message: String) {
+        binding.skeletonChats.hideSkeleton()
         binding.progressLoading.visibility = View.GONE
         binding.rvChats.visibility = View.GONE
         binding.tvChatsEmpty.visibility = View.VISIBLE
@@ -187,8 +192,15 @@ class ChatsActivity : AppCompatActivity() {
     private fun showConversations(previews: List<ChatPreview>) {
         binding.progressLoading.visibility = View.GONE
         binding.tvChatsEmpty.visibility = View.GONE
-        binding.rvChats.visibility = View.VISIBLE
         adapter.submitList(previews)
+
+        // The listener re-fires on every message, so only the first pass has a
+        // skeleton to clear; afterwards this is a no-op on an already-hidden view.
+        if (binding.skeletonChats.visibility == View.VISIBLE) {
+            binding.skeletonChats.crossfadeToContent(binding.rvChats)
+        } else {
+            binding.rvChats.visibility = View.VISIBLE
+        }
     }
 
     /**

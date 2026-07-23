@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Stats-card placeholder, matching the real card's three-column shape and
+    padding so nothing shifts when the numbers arrive.
+
+    Name, email and photo are deliberately absent: they come from the Auth
+    session and local storage and are on screen immediately, so covering them
+    would replace real content with a placeholder.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="24dp"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_card"
+        android:paddingVertical="20dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_skeleton" />
+
+            <View
+                android:layout_width="54dp"
+                android:layout_height="10dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_skeleton" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_skeleton" />
+
+            <View
+                android:layout_width="54dp"
+                android:layout_height="10dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_skeleton" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_skeleton" />
+
+            <View
+                android:layout_width="54dp"
+                android:layout_height="10dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_skeleton" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

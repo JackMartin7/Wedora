@@ -74,6 +74,12 @@ class ProfileActivity : AppCompatActivity() {
             // Likewise no account to attach a subscription to.
             binding.cardPremium.visibility = View.GONE
             binding.tvProfileIntent.visibility = View.GONE
+            // A guest makes no Firestore read, so nothing will ever arrive to
+            // replace a skeleton — show the card's "—" placeholders instead of
+            // a shimmer that never resolves.
+            binding.skeletonProfile.root.stopShimmer()
+            binding.skeletonProfile.root.visibility = View.GONE
+            binding.statsCard.visibility = View.VISIBLE
             return
         }
 
@@ -112,6 +118,7 @@ class ProfileActivity : AppCompatActivity() {
      * or a network failure shouldn't render a half-empty line.
      */
     private fun loadProfileDocument(uid: String) {
+        showStatsSkeleton()
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 val profile = UserProfile.from(snapshot)
@@ -134,6 +141,7 @@ class ProfileActivity : AppCompatActivity() {
                 }
 
                 showCompletion(calculateProfileCompletion(this, uid, profile))
+                binding.skeletonProfile.root.crossfadeToContent(binding.statsCard, clearChildren = false)
             }
             .addOnFailureListener { e ->
                 // The placeholder stays rather than showing a figure: a wrong
@@ -141,7 +149,23 @@ class ProfileActivity : AppCompatActivity() {
                 // already filled in.
                 Log.w(TAG, "Couldn't load the profile document", e)
                 binding.tvProfileAgeLocation.visibility = View.GONE
+                // Reveal the card even on failure — its "—" placeholders say
+                // "unknown", where a shimmer left running would say "still
+                // loading" forever.
+                binding.skeletonProfile.root.crossfadeToContent(binding.statsCard, clearChildren = false)
             }
+    }
+
+    /**
+     * Hides the real stats card behind its placeholder. Called on every load,
+     * including the reload on resume — the numbers are re-read each time, so
+     * they're genuinely unknown again until it lands.
+     */
+    private fun showStatsSkeleton() {
+        binding.statsCard.visibility = View.GONE
+        binding.skeletonProfile.root.visibility = View.VISIBLE
+        binding.skeletonProfile.root.alpha = 1f
+        binding.skeletonProfile.root.startShimmer()
     }
 
     // ----- Stats ----------------------------------------------------------

@@ -16,6 +16,11 @@ import com.wedora.app.databinding.ActivityNotificationsBinding
  */
 class NotificationsActivity : AppCompatActivity() {
 
+    private companion object {
+        /** Enough to fill the top of the list while the read is in flight. */
+        const val SKELETON_ROWS = 3
+    }
+
     private lateinit var binding: ActivityNotificationsBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
@@ -65,18 +70,26 @@ class NotificationsActivity : AppCompatActivity() {
     }
 
     private fun showLoading() {
-        binding.progressLoading.visibility = View.VISIBLE
+        binding.progressLoading.visibility = View.GONE
         binding.tvNotificationsEmpty.visibility = View.GONE
         binding.rvNotifications.visibility = View.GONE
+        binding.skeletonNotifications.showSkeleton(
+            R.layout.item_skeleton_notification_row, SKELETON_ROWS
+        )
     }
 
     private fun showNotifications(items: List<NotificationItem>) {
         binding.progressLoading.visibility = View.GONE
+        adapter.submitList(items)
 
         val isEmpty = items.isEmpty()
         binding.tvNotificationsEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        binding.rvNotifications.visibility = if (isEmpty) View.GONE else View.VISIBLE
 
-        adapter.submitList(items)
+        if (isEmpty) {
+            binding.skeletonNotifications.hideSkeleton()
+            binding.rvNotifications.visibility = View.GONE
+        } else {
+            binding.skeletonNotifications.crossfadeToContent(binding.rvNotifications)
+        }
     }
 }

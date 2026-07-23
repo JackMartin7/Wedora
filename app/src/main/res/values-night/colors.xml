@@ -22,6 +22,9 @@
     <color name="wedora_text">#F5EEEF</color>
     <color name="wedora_text_secondary">#B8ABAE</color>
 
+    <!-- Skeleton loading placeholders -->
+    <color name="wedora_skeleton">#2E2529</color>
+
     <!-- Inputs -->
     <color name="wedora_input_bg">#241A1D</color>
     <color name="wedora_input_border">#3A2E32</color>

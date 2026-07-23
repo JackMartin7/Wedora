@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Holds the running shimmer animator on the view it animates, so
+        stopShimmer can cancel exactly that one. A tag id rather than a field
+        keeps the helper usable on any view without a wrapper class.
+    -->
+    <item name="tag_shimmer" type="id" />
+</resources>
