@@ -496,7 +496,7 @@ class HomeActivity : AppCompatActivity() {
         likedUserIds.add(card.id)
         createMatchDocument(firestore, selfUid, card.id)
             .addOnFailureListener { e ->
-                logMatchWriteFailure(TAG, "Failed to like ${card.id}", e)
+                logFirestoreWriteFailure(TAG, "Failed to like ${card.id}", e)
                 likedUserIds.remove(card.id)
                 toast(getString(R.string.error_match_failed))
             }
@@ -536,7 +536,7 @@ class HomeActivity : AppCompatActivity() {
                             openChatThread(card)
                         }
                         .addOnFailureListener { e ->
-                            logMatchWriteFailure(TAG, "Failed to create match before chat", e)
+                            logFirestoreWriteFailure(TAG, "Failed to create match before chat", e)
                             toast(getString(R.string.error_match_failed))
                         }
                 }

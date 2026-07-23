@@ -1,0 +1,198 @@
+package com.wedora.app
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.Log
+import android.view.View
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.google.firebase.firestore.FieldValue
+
+/**
+ * Step 4: age and location.
+ *
+ * Location has two modes. With ACCESS_COARSE_LOCATION granted the city is
+ * detected via [LocationResolver] and shown read-only with a Refresh; if it's
+ * denied — or detection legitimately fails (no last-known fix, no geocoder
+ * backend) — it falls back to manual City/Country. Every failure path lands on
+ * manual entry, so there is deliberately no way to get stuck.
+ */
+class ProfileStep4DetailsActivity : ProfileStepActivity() {
+
+    private companion object {
+        /** Hard minimum age policy for the app, enforced in the rules too. */
+        const val MIN_AGE = 18
+
+        /** Upper sanity bound, to reject typos like "999". */
+        const val MAX_AGE = 120
+    }
+
+    private lateinit var etAge: EditText
+    private lateinit var etCity: EditText
+    private lateinit var etCountry: EditText
+    private lateinit var groupDetected: View
+    private lateinit var groupManual: View
+    private lateinit var tvDetectedLocation: TextView
+
+    private val locationResolver by lazy { LocationResolver(this) }
+
+    /** Non-null once detection has succeeded; null means we're in manual mode. */
+    private var detectedPlace: LocationResolver.Place? = null
+
+    private val requestLocationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) detectLocation() else showManualLocationMode()
+        }
+
+    override val stepNumber = 4
+    override val titleRes = R.string.step4_title
+    override val subtitleRes = R.string.step4_subtitle
+    override val contentLayoutRes = R.layout.view_step_details
+
+    override fun bindContent(content: View) {
+        etAge = content.findViewById(R.id.etAge)
+        etCity = content.findViewById(R.id.etCity)
+        etCountry = content.findViewById(R.id.etCountry)
+        groupDetected = content.findViewById(R.id.groupDetectedLocation)
+        groupManual = content.findViewById(R.id.groupManualLocation)
+        tvDetectedLocation = content.findViewById(R.id.tvDetectedLocation)
+
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) = Unit
+            override fun afterTextChanged(s: Editable?) = updateContinueEnabled()
+        }
+        etAge.addTextChangedListener(watcher)
+        etCity.addTextChangedListener(watcher)
+        etCountry.addTextChangedListener(watcher)
+
+        content.findViewById<View>(R.id.tvRefreshLocation)
+            .setOnClickListener { detectLocation() }
+
+        requestLocationOrFallBack()
+    }
+
+    override fun onExistingProfile(profile: UserProfile) {
+        profile.age?.let { if (etAge.text.isEmpty()) etAge.setText(it.toString()) }
+        // Only pre-fills the manual fields; a stored place shouldn't override a
+        // fresh detection that may already have landed.
+        if (isInManualMode()) {
+            if (etCity.text.isEmpty()) etCity.setText(profile.city.orEmpty())
+            if (etCountry.text.isEmpty()) etCountry.setText(profile.country.orEmpty())
+        }
+    }
+
+    // ----- Location -------------------------------------------------------
+
+    private fun requestLocationOrFallBack() {
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (alreadyGranted) {
+            detectLocation()
+        } else {
+            requestLocationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+    }
+
+    private fun detectLocation() {
+        detectedPlace = null
+        tvDetectedLocation.setText(R.string.location_detecting)
+        groupDetected.visibility = View.VISIBLE
+        groupManual.visibility = View.GONE
+        updateContinueEnabled()
+
+        locationResolver.resolve(
+            onSuccess = { place ->
+                detectedPlace = place
+                tvDetectedLocation.text =
+                    getString(R.string.location_detected_format, place.city, place.country)
+                updateContinueEnabled()
+            },
+            onFailure = {
+                // Detection failing is a normal outcome, not an error.
+                Log.i(TAG, "Location detection unavailable; falling back to manual entry")
+                showManualLocationMode()
+            }
+        )
+    }
+
+    private fun showManualLocationMode() {
+        detectedPlace = null
+        groupDetected.visibility = View.GONE
+        groupManual.visibility = View.VISIBLE
+        updateContinueEnabled()
+    }
+
+    private fun isInManualMode(): Boolean = groupManual.visibility == View.VISIBLE
+
+    /** City/country from whichever mode is active, or null if not yet available. */
+    private fun currentPlace(): LocationResolver.Place? {
+        if (!isInManualMode()) return detectedPlace
+
+        val city = etCity.text.toString().trim()
+        val country = etCountry.text.toString().trim()
+        return if (city.isNotEmpty() && country.isNotEmpty()) {
+            LocationResolver.Place(city, country)
+        } else {
+            null
+        }
+    }
+
+    // ----- Age ------------------------------------------------------------
+
+    /**
+     * A syntactically plausible age, deliberately NOT applying [MIN_AGE]. The
+     * 18+ rule is checked on Continue instead, so an under-age entry leaves
+     * the button tappable and gets an explicit message — gating the button on
+     * it would reject them silently with no way to find out why.
+     */
+    private fun enteredAge(): Int? =
+        etAge.text.toString().trim().toIntOrNull()?.takeIf { it in 1..MAX_AGE }
+
+    override fun isStepValid(): Boolean = enteredAge() != null && currentPlace() != null
+
+    override fun stepUpdates(): Map<String, Any?> {
+        val place = currentPlace() ?: return emptyMap()
+        return mapOf(
+            UserProfile.FIELD_AGE to enteredAge(),
+            UserProfile.FIELD_CITY to place.city,
+            UserProfile.FIELD_COUNTRY to place.country,
+            // Set here rather than at sign-up: this is the point the profile
+            // becomes real enough to appear in anyone's feed.
+            UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
+        )
+    }
+
+    /**
+     * The 18+ check runs before the write, not as part of validity, so the
+     * user sees why. The security rules enforce the same floor server-side —
+     * this is the explanation, not the protection.
+     */
+    override fun onContinueRequested(): Boolean {
+        val age = enteredAge()
+        if (age == null) {
+            etAge.error = getString(R.string.error_age_invalid)
+            etAge.requestFocus()
+            return false
+        }
+        if (age < MIN_AGE) {
+            etAge.error = getString(R.string.error_age_minimum, MIN_AGE)
+            etAge.requestFocus()
+            return false
+        }
+        if (currentPlace() == null) {
+            Toast.makeText(this, R.string.error_city_required, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
+
+    override fun nextStep(): Class<*> = ProfileStep5PhotoActivity::class.java
+}

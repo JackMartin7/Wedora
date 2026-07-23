@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Looking For options depend on gender, so both groups are built in code. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        style="@style/WedoraFieldLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_my_status" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipsMyStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:singleLine="false"
+        app:singleSelection="true"
+        app:chipSpacingHorizontal="8dp" />
+
+    <TextView
+        style="@style/WedoraFieldLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/label_looking_for" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipsLookingFor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:singleLine="false"
+        app:singleSelection="true"
+        app:chipSpacingHorizontal="8dp" />
+
+</LinearLayout>

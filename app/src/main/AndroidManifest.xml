@@ -44,6 +44,30 @@
             android:name=".CompleteProfileActivity"
             android:exported="false" />
 
+        <!-- Progressive profile setup. adjustResize so the keyboard doesn't
+             cover the Continue button on the text-entry steps. -->
+        <activity
+            android:name=".ProfileStep1NameActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ProfileStep2GenderActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ProfileStep3StatusActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ProfileStep4DetailsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ProfileStep5PhotoActivity"
+            android:exported="false" />
+
         <activity
             android:name=".HomeActivity"
             android:exported="false" />

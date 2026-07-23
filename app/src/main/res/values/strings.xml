@@ -86,6 +86,25 @@
     <string name="cd_like">Like</string>
     <string name="cd_pass">Pass</string>
 
+    <!-- Progressive profile setup (5 steps after first verified login) -->
+    <string name="step_counter_format">Step %1$d of %2$d</string>
+    <string name="step_skip">Skip for now</string>
+
+    <string name="step1_title">What\'s your name?</string>
+    <string name="step1_subtitle">This is how you\'ll appear to others</string>
+
+    <string name="step2_title">Tell us about yourself</string>
+    <string name="step2_subtitle">Help us find your perfect match</string>
+
+    <string name="step3_title">Your relationship status</string>
+    <string name="step3_subtitle">Be honest — it helps find the right match</string>
+
+    <string name="step4_title">A bit more about you</string>
+    <string name="step4_subtitle">Almost done!</string>
+
+    <string name="step5_title">Add your best photo</string>
+    <string name="step5_subtitle">Profiles with photos get 3x more matches</string>
+
     <!-- Complete Profile (one-time step after first verified login) -->
     <string name="complete_profile_title">Complete Your Profile</string>
     <string name="complete_profile_subtitle">Just a couple more details before you get started.</string>

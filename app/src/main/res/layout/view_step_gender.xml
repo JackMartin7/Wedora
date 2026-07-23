@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same segmented-control markup the profile editor uses. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        style="@style/WedoraFieldLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_gender" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvGenderMale"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_male"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <TextView
+            android:id="@+id/tvGenderFemale"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_female"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <TextView
+            android:id="@+id/tvGenderOther"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_other"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+    <TextView
+        style="@style/WedoraFieldLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/label_interested_in" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvInterestedMale"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_male"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <TextView
+            android:id="@+id/tvInterestedFemale"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_female"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <TextView
+            android:id="@+id/tvInterestedOther"
+            android:layout_width="0dp"
+            android:layout_height="46dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_segment_option_unselected"
+            android:gravity="center"
+            android:text="@string/gender_other"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+</LinearLayout>

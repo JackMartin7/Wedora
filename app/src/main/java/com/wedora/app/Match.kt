@@ -82,15 +82,15 @@ fun createMatchDocument(
 }
 
 /**
- * Logs a failed match write with its Firestore error code, rather than leaving
- * only the generic toast the user sees.
+ * Logs a failed Firestore write with its error code, rather than leaving only
+ * the generic toast the user sees.
  *
  * PERMISSION_DENIED is called out by name because it has one overwhelmingly
  * likely cause here — firestore.rules changed but was never deployed — and
  * that has cost real debugging time on this project more than once. The
  * message names the command so the log line is self-explanatory.
  */
-fun logMatchWriteFailure(tag: String, what: String, e: Exception) {
+fun logFirestoreWriteFailure(tag: String, what: String, e: Exception) {
     val code = (e as? FirebaseFirestoreException)?.code
     if (code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
         Log.w(

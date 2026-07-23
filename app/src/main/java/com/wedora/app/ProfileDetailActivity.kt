@@ -160,7 +160,7 @@ class ProfileDetailActivity : AppCompatActivity() {
         applyLikeState(true) // optimistic
         createMatchDocument(firestore, selfUid, userId)
             .addOnFailureListener { e ->
-                logMatchWriteFailure(TAG, "Failed to like $userId", e)
+                logFirestoreWriteFailure(TAG, "Failed to like $userId", e)
                 applyLikeState(false)
                 toast(getString(R.string.error_match_failed))
             }
@@ -199,7 +199,7 @@ class ProfileDetailActivity : AppCompatActivity() {
         createMatchDocument(firestore, selfUid, userId)
             .addOnSuccessListener { openChatThread() }
             .addOnFailureListener { e ->
-                logMatchWriteFailure(TAG, "Failed to create match before chat with $userId", e)
+                logFirestoreWriteFailure(TAG, "Failed to create match before chat with $userId", e)
                 binding.btnMessage.isEnabled = true
                 toast(getString(R.string.error_match_failed))
             }
