@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Light-amber rounded callout for the "check your spam folder" tip. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_warning_bg" />
+    <corners android:radius="12dp" />
+</shape>

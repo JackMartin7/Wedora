@@ -43,11 +43,25 @@
     <string name="signup_success">Account created successfully!</string>
 
     <!-- Email verification -->
-    <string name="signup_success_verify">Signed up successfully — check your email to verify your account.</string>
-    <string name="error_email_not_verified">Please verify your email address before signing in.</string>
-    <string name="action_resend_verification">Resend</string>
-    <string name="verification_email_sent">Verification email sent. Check your inbox.</string>
     <string name="error_verification_send">Couldn\'t send the verification email. Try again shortly.</string>
+
+    <!-- Email verification screen -->
+    <string name="verify_title">Check Your Email</string>
+    <string name="verify_subtitle">We\'ve sent a verification link to %1$s</string>
+    <string name="verify_spam_warning">⚠️ Can\'t find the email? Check your spam or junk folder — verification emails sometimes land there.</string>
+    <string name="verify_steps">1. Open your email app\n2. Look for an email from Wedora\n3. Check spam/junk if you don\'t see it\n4. Click the verification link\n5. Come back and log in</string>
+    <string name="verify_open_email">Open Email App</string>
+    <string name="verify_resend">Resend Verification Email</string>
+    <string name="verify_resend_countdown">Resend in %1$ds…</string>
+    <string name="verify_resent_toast">Email resent!</string>
+    <string name="verify_back_to_login">Back to Login</string>
+    <string name="verify_no_email_app">No email app found on this device.</string>
+
+    <!-- Email Not Verified sheet (Login) -->
+    <string name="verify_sheet_title">Email Not Verified</string>
+    <string name="verify_sheet_message">Please verify your email before logging in. Check your inbox and spam/junk folder for the verification link.</string>
+    <string name="verify_sheet_retry">I\'ve Verified, Try Again</string>
+    <string name="verify_sheet_still_unverified">Still not verified. Check your inbox and spam folder for the link.</string>
 
     <!-- Guest mode -->
     <string name="continue_as_guest">Continue as Guest</string>

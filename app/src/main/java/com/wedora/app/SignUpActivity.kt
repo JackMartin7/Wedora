@@ -144,21 +144,23 @@ class SignUpActivity : AppCompatActivity() {
     }
 
     /**
-     * Sign the new account out and hand off to Login. The user must verify their
-     * email before they can get in, so we deliberately do not drop them straight
-     * into the app — which is also why the profile steps start after the first
-     * verified login rather than here.
+     * Hand off to the verification screen. The user must verify their email
+     * before they can get in, so we deliberately do not drop them into the app —
+     * which is also why the profile steps start after the first verified login
+     * rather than here.
+     *
+     * Unlike before, the account is NOT signed out here: the verification screen
+     * offers a Resend, which needs a current user. That screen signs out when
+     * the user leaves for Login, and an unverified session can't reach the app
+     * regardless (Splash and Login both re-check verification).
      */
     private fun finishSignUp() {
         setLoading(false)
         // The user now has a real account, so they are no longer a guest.
         GuestPrefs.clearGuest(this)
-        auth.signOut()
-        Toast.makeText(this, R.string.signup_success_verify, Toast.LENGTH_LONG).show()
-        startActivity(
-            Intent(this, LoginActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        )
+        val email = auth.currentUser?.email
+            ?: binding.etEmail.text.toString().trim()
+        startActivity(EmailVerificationActivity.intent(this, email))
         finish()
     }
 

@@ -12,7 +12,6 @@ import android.util.Patterns
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -20,7 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.FirebaseNetworkException
 import com.wedora.app.databinding.ActivityLoginBinding
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : AppCompatActivity(), EmailNotVerifiedBottomSheet.Host {
 
     private lateinit var binding: ActivityLoginBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
@@ -162,22 +161,39 @@ class LoginActivity : AppCompatActivity() {
     /**
      * The account exists but the address is unverified. We keep the user signed in
      * (signing out would make [FirebaseUser.sendEmailVerification] unavailable) but
-     * deliberately do not navigate onwards.
+     * deliberately do not navigate onwards — the sheet offers a resend and a
+     * re-check instead.
      */
     private fun promptEmailVerification() {
-        Snackbar.make(binding.root, R.string.error_email_not_verified, Snackbar.LENGTH_INDEFINITE)
-            .setAction(R.string.action_resend_verification) { resendVerificationEmail() }
-            .setActionTextColor(ContextCompat.getColor(this, R.color.wedora_accent))
-            .show()
+        EmailNotVerifiedBottomSheet().show(supportFragmentManager, "email_not_verified")
     }
 
-    private fun resendVerificationEmail() {
+    /** Resend from the sheet. The sheet owns the cooldown; this just sends. */
+    override fun onResendVerificationRequested() {
         val user = auth.currentUser ?: return
         user.sendEmailVerification().addOnCompleteListener(this) { task ->
             val msg =
-                if (task.isSuccessful) R.string.verification_email_sent
+                if (task.isSuccessful) R.string.verify_resent_toast
                 else R.string.error_verification_send
             Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /**
+     * "I've Verified, Try Again": reload the user so the freshly-verified state
+     * is reflected, then continue exactly as a normal sign-in would. Still
+     * unverified is a normal outcome, not an error — say so and leave them here.
+     */
+    override fun onVerifiedRetryRequested() {
+        val user = auth.currentUser ?: return
+        setLoading(true)
+        user.reload().addOnCompleteListener(this) {
+            if (auth.currentUser?.isEmailVerified == true) {
+                onSignInSuccess()
+            } else {
+                setLoading(false)
+                Toast.makeText(this, R.string.verify_sheet_still_unverified, Toast.LENGTH_LONG).show()
+            }
         }
     }
 

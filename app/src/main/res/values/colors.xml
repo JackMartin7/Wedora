@@ -41,6 +41,14 @@
     <!-- Presence: "online" green. Reads on both the light and the dark bar. -->
     <color name="wedora_online">#22C55E</color>
 
+    <!--
+        Highlighted warning box (spam-folder tip). Deliberately a fixed light
+        amber with dark amber text in both themes: it's meant to stand out as a
+        callout, and dark text on the light box stays legible either way.
+    -->
+    <color name="wedora_warning_bg">#FFF8E1</color>
+    <color name="wedora_warning_text">#8A6410</color>
+
     <!-- Base -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>

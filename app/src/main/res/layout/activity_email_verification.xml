@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shown right after sign-up: tells the user to go verify their email, with a
+    prominent nudge to check spam (where these messages often land) and a
+    numbered walkthrough so there's no ambiguity about what to do next.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="28dp"
+        android:paddingTop="48dp"
+        android:paddingBottom="32dp">
+
+        <ImageView
+            android:id="@+id/ivIllustration"
+            android:layout_width="220dp"
+            android:layout_height="180dp"
+            android:adjustViewBounds="true"
+            android:src="@drawable/ic_forgot_password_illustration"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/verify_title"
+            android:textColor="@color/wedora_text"
+            android:textSize="24sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3sp"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            tools:text="We've sent a verification link to sam@example.com" />
+
+        <!-- Spam-folder callout. -->
+        <TextView
+            android:id="@+id/tvSpamWarning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/bg_warning_box"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp"
+            android:lineSpacingExtra="3sp"
+            android:text="@string/verify_spam_warning"
+            android:textColor="@color/wedora_warning_text"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <!-- Numbered walkthrough. -->
+        <TextView
+            android:id="@+id/tvSteps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:lineSpacingExtra="8sp"
+            android:text="@string/verify_steps"
+            android:textColor="@color/wedora_text"
+            android:textSize="14sp" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnOpenEmail"
+            style="@style/WedoraPrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_marginTop="32dp"
+            android:text="@string/verify_open_email" />
+
+        <TextView
+            android:id="@+id/tvResend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="@string/verify_resend"
+            android:textColor="@color/wedora_accent"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+        <TextView
+            android:id="@+id/tvBackToLogin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="@string/verify_back_to_login"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+</ScrollView>

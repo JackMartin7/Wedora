@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shown on Login when the account exists but its email isn't verified yet.
+    Offers a resend (with a cooldown) and a "try again" that re-checks, plus a
+    plain Cancel.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="20dp">
+
+    <!-- Small drag handle for affordance. -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_marginBottom="20dp"
+        android:background="@color/wedora_border" />
+
+    <TextView
+        android:id="@+id/tvSheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/verify_sheet_title"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold" />
+
+    <TextView
+        android:id="@+id/tvSheetMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3sp"
+        android:text="@string/verify_sheet_message"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnResend"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="24dp"
+        android:text="@string/verify_resend" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnTryAgain"
+        style="@style/WedoraSecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/verify_sheet_retry" />
+
+    <TextView
+        android:id="@+id/btnCancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp"
+        android:text="@string/action_cancel"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        tools:ignore="TouchTargetSizeCheck" />
+
+</LinearLayout>
