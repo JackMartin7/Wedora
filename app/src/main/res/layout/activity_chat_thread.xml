@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/wedora_bg">
 
-    <!-- ===== Top bar: back + matched user's name ===== -->
+    <!-- ===== Top bar: back + matched user's avatar/name/status ===== -->
 
     <ImageButton
         android:id="@+id/btnBack"
@@ -21,35 +21,92 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/ivChatAvatar"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="4dp"
-        android:src="@drawable/ic_avatar_placeholder"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/cd_avatar"
-        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
-        app:layout_constraintStart_toEndOf="@id/btnBack"
-        app:layout_constraintTop_toTopOf="@id/btnBack"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack" />
-
-    <TextView
-        android:id="@+id/tvChatTitle"
+    <!--
+        Avatar + name + status are one tap target to the other person's profile,
+        so they're wrapped in a single clickable container with one ripple
+        across the whole area rather than three separate listeners.
+    -->
+    <LinearLayout
+        android:id="@+id/chatHeader"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="16dp"
-        android:singleLine="true"
-        android:ellipsize="end"
-        android:textColor="@color/wedora_text"
-        android:textSize="17sp"
-        android:fontFamily="@font/poppins_semibold"
-        app:layout_constraintStart_toEndOf="@id/ivChatAvatar"
+        android:layout_marginStart="4dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBack"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack"
-        tools:text="Amelia Hart" />
+        app:layout_constraintBottom_toBottomOf="@id/btnBack">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivChatAvatar"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_avatar_placeholder"
+            android:scaleType="centerCrop"
+            android:contentDescription="@string/cd_avatar"
+            app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvChatTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_text"
+                android:textSize="17sp"
+                android:fontFamily="@font/poppins_semibold"
+                tools:text="Amelia Hart" />
+
+            <!-- Presence line; hidden until lastSeen resolves. The dot shows
+                 only when they're online. -->
+            <LinearLayout
+                android:id="@+id/statusRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <View
+                    android:id="@+id/vOnlineDot"
+                    android:layout_width="8dp"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/bg_online_dot"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tvChatStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="12sp"
+                    tools:text="Online" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
 
     <View
         android:id="@+id/topDivider"

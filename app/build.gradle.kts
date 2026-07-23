@@ -44,6 +44,9 @@ dependencies {
     implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // App-level foreground/background detection, for presence (lastSeen)
+    implementation("androidx.lifecycle:lifecycle-process:2.8.4")
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-auth-ktx")

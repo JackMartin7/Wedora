@@ -3,6 +3,7 @@ package com.wedora.app
 import android.content.Context
 import androidx.annotation.StringRes
 import com.google.firebase.firestore.DocumentSnapshot
+import java.util.Date
 
 /**
  * Formats an "age • city, country" line, or returns null if any part is
@@ -73,7 +74,13 @@ data class UserProfile(
      * gender (see [MarriageIntent.lookingForOptions]), and the stored value is
      * the display string itself, so anything reading it can render it as-is.
      */
-    val lookingFor: String?
+    val lookingFor: String?,
+    /**
+     * When this user was last seen — updated on every app foreground/background
+     * transition (see PresenceTracker). Null for anyone who predates presence or
+     * whose server timestamp hasn't resolved yet; consumers show nothing then.
+     */
+    val lastSeen: Date?
 ) {
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
@@ -97,6 +104,7 @@ data class UserProfile(
         const val FIELD_ONLY_MATCHES_CAN_MESSAGE = "onlyMatchesCanMessage"
         const val FIELD_MY_STATUS = "myStatus"
         const val FIELD_LOOKING_FOR = "lookingFor"
+        const val FIELD_LAST_SEEN = "lastSeen"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -121,7 +129,9 @@ data class UserProfile(
             onlyMatchesCanMessage =
                 snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false,
             myStatus = snapshot.getString(FIELD_MY_STATUS),
-            lookingFor = snapshot.getString(FIELD_LOOKING_FOR)
+            lookingFor = snapshot.getString(FIELD_LOOKING_FOR),
+            // Null while a just-written serverTimestamp is still pending.
+            lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate()
         )
     }
 }

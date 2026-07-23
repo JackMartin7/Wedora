@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -15,6 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.wedora.app.databinding.ActivityChatThreadBinding
+import java.util.Date
 
 /**
  * A conversation with one matched user, backed by a real-time listener on
@@ -45,6 +47,10 @@ class ChatThreadActivity : AppCompatActivity() {
     private lateinit var matchId: String
 
     private var messagesListener: ListenerRegistration? = null
+
+    /** Live view of the other user's presence, so the status updates in place. */
+    private var statusListener: ListenerRegistration? = null
+
     private lateinit var adapter: MessageAdapter
 
     /**
@@ -71,6 +77,11 @@ class ChatThreadActivity : AppCompatActivity() {
         matchId = Match.idFor(selfUid, otherUid)
 
         binding.tvChatTitle.text = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
+        // The whole header (avatar + name + status) opens the other person's
+        // profile. Uses the intent factory so the extra key can't drift.
+        binding.chatHeader.setOnClickListener {
+            startActivity(ProfileDetailActivity.intent(this, otherUid))
+        }
         binding.btnBack.setOnClickListener { goToChats() }
         // Route the system/gesture back to the same place, so it doesn't return
         // to whatever happened to launch the thread (a Home card, a profile).
@@ -82,7 +93,46 @@ class ChatThreadActivity : AppCompatActivity() {
         binding.rvMessages.adapter = adapter
 
         observeMessages()
+        observeOtherUserStatus()
         applyMessagingGate()
+    }
+
+    /**
+     * Live listener on the other user's document, for their presence line. A
+     * listener rather than a one-shot read so "Online" / "last seen" updates
+     * while the thread is open; its first callback is also the initial load, so
+     * there's no separate get(). Fails open — a read error just leaves the
+     * status hidden.
+     */
+    private fun observeOtherUserStatus() {
+        statusListener = firestore.collection(UserProfile.COLLECTION).document(otherUid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    if (error != null) Log.w(TAG, "Presence listener failed", error)
+                    return@addSnapshotListener
+                }
+                renderStatus(UserProfile.from(snapshot).lastSeen)
+            }
+    }
+
+    private fun renderStatus(lastSeen: Date?) {
+        val label = OnlineStatus.format(lastSeen)
+        if (label == null) {
+            binding.statusRow.visibility = View.GONE
+            return
+        }
+
+        binding.statusRow.visibility = View.VISIBLE
+        binding.tvChatStatus.text = label
+
+        val online = OnlineStatus.isOnline(lastSeen)
+        binding.vOnlineDot.visibility = if (online) View.VISIBLE else View.GONE
+        binding.tvChatStatus.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (online) R.color.wedora_online else R.color.wedora_text_secondary
+            )
+        )
     }
 
     /**
@@ -260,6 +310,7 @@ class ChatThreadActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         messagesListener?.remove()
+        statusListener?.remove()
         super.onDestroy()
     }
 }
