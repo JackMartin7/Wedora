@@ -235,7 +235,7 @@ class ChatsActivity : AppCompatActivity() {
             .filterNot { nameCache.containsKey(it) }
 
         if (missing.isEmpty()) {
-            render(matches, selfUid)
+            loadLastSeenThenRender(matches, selfUid)
             return
         }
 
