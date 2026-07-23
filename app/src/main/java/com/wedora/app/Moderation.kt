@@ -83,24 +83,6 @@ fun loadBlockedUserEntries(
     selfUid: String
 ): Task<QuerySnapshot> = blockedUsersRef(firestore, selfUid).get()
 
-/**
- * Reads the current user's block list for filtering the feed. Fails *open* —
- * an empty set on a read error — so a transient failure shows an unfiltered
- * feed rather than hiding everyone; the filter re-applies on the next load.
- */
-fun loadBlockedUserIds(
-    firestore: FirebaseFirestore,
-    selfUid: String,
-    onResult: (Set<String>) -> Unit
-) {
-    blockedUsersRef(firestore, selfUid).get()
-        .addOnSuccessListener { snapshot -> onResult(snapshot.documents.map { it.id }.toSet()) }
-        .addOnFailureListener { e ->
-            Log.w(TAG, "Failed to load block list", e)
-            onResult(emptySet())
-        }
-}
-
 // ----- Shared report/block UI ----------------------------------------------
 
 /**

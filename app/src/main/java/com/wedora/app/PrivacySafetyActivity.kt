@@ -114,7 +114,7 @@ class PrivacySafetyActivity : AppCompatActivity() {
     /**
      * Reads the block list, then resolves each UID to a display name.
      *
-     * Unlike the feed's [loadBlockedUserIds], this fails *closed* — a read
+     * Unlike the feed's [loadFeedExclusions], this fails *closed* — a read
      * error shows an error rather than an empty list, because "you haven't
      * blocked anyone" is a claim about a safety setting and must not be shown
      * when it isn't known to be true.

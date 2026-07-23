@@ -37,9 +37,14 @@ class HomeActivity : AppCompatActivity() {
     private var cards: List<MatchCard> = emptyList()
 
     /**
-     * UIDs the user has liked. Seeded from Firestore (so already-liked people
-     * show a filled heart on a fresh launch) and updated as they like/unlike.
-     * Additive from the listener, per the reasoning in [observeMatches].
+     * UIDs the user has liked, kept updated by the match listener.
+     *
+     * Already-liked people are now excluded from the feed by
+     * [loadFeedExclusions], so in the normal case no card is ever bound for
+     * one and the filled heart doesn't appear. This isn't dead weight though:
+     * the exclusion read fails *open*, so a network failure can still put a
+     * liked person on screen — and when that happens the heart should be red
+     * and unlike-in-place should work, which is what this set drives.
      */
     private val likedUserIds = mutableSetOf<String>()
 
@@ -53,7 +58,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         override fun onSwipedLeft(position: Int) {
-            // Pass: no Firestore write, the card is simply gone.
+            cards.getOrNull(position)?.let { recordPass(it) }
         }
 
         override fun onEmptied() {
@@ -268,11 +273,12 @@ class HomeActivity : AppCompatActivity() {
                         onAction = ::openFilters
                     )
                 } else {
-                    // Block list is read before the feed query so blocked users
-                    // are filtered out (client-side, same reasoning as the self
-                    // filter — no composite index, and the block set is small).
-                    loadBlockedUserIds(firestore, uid) { blocked ->
-                        queryMatches(interestedIn, uid, blocked)
+                    // Blocked, passed and already-liked users are gathered
+                    // before the feed query and filtered client-side — the
+                    // same reasoning as the self filter: no composite index,
+                    // and the sets are small.
+                    loadFeedExclusions(firestore, uid) { excluded ->
+                        queryMatches(interestedIn, uid, excluded)
                     }
                 }
             }
@@ -286,13 +292,13 @@ class HomeActivity : AppCompatActivity() {
             }
     }
 
-    private fun queryMatches(interestedIn: String, selfUid: String, blockedUids: Set<String>) {
+    private fun queryMatches(interestedIn: String, selfUid: String, excludedUids: Set<String>) {
         firestore.collection(UserProfile.COLLECTION)
             .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
             .get()
             .addOnSuccessListener { snapshot ->
                 val candidates = snapshot.documents
-                    .filter { it.id != selfUid && it.id !in blockedUids }
+                    .filter { it.id != selfUid && it.id !in excludedUids }
                     .mapNotNull { it.toMatchCard() }
 
                 val loaded = candidates.filter { matchesFilters(it) }
@@ -487,6 +493,24 @@ class HomeActivity : AppCompatActivity() {
     }
 
     /** Called when a card is liked, by swipe or by the heart on a grey card. */
+    /**
+     * Records a pass so this person doesn't come back on the next load.
+     *
+     * Fired from [SwipeCardStackView.Listener.onSwipedLeft], which covers a
+     * left swipe and both X buttons — they all call swipeLeft(). Blocking is
+     * deliberately not routed here: it dismisses via dismissTop(), which
+     * reports no swipe, and a block is already a stronger and permanent
+     * exclusion.
+     *
+     * Nothing is awaited. The card has already gone, and a failed write only
+     * means the profile can reappear in a later session — not worth
+     * interrupting a run of swipes with an error.
+     */
+    private fun recordPass(card: MatchCard) {
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        passUser(firestore, selfUid, card.id)
+    }
+
     private fun likeUser(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 

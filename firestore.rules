@@ -211,5 +211,13 @@ service cloud.firestore {
     match /blocks/{userId}/blockedUsers/{blockedUid} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Same shape as blocks: who this user has swiped past, readable and
+    // writable only by them. Kept private not because a pass is sensitive in
+    // itself, but because the set of people someone declined says a lot about
+    // them and nothing another user needs.
+    match /passes/{userId}/passedUsers/{passedUid} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
   }
 }
