@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Sign Up: email and password only.
+
+    Everything else about a profile — name, gender, intent, age, location,
+    photo — is collected afterwards by the ProfileStep screens, one question at
+    a time. Asking for all of it before an account exists made this the longest
+    screen in the app and put the whole thing behind a single Sign Up button.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -46,38 +54,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-        <!-- Username field -->
-        <TextView
-            android:id="@+id/labelUsername"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/label_username"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvSubtitle" />
-
-        <EditText
-            android:id="@+id/etUsername"
-            style="@style/WedoraInputField"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="@string/hint_username"
-            android:inputType="text"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelUsername" />
-
         <!-- Email field -->
         <TextView
             android:id="@+id/labelEmail"
             style="@style/WedoraFieldLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="28dp"
             android:text="@string/label_email"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etUsername" />
+            app:layout_constraintTop_toBottomOf="@id/tvSubtitle" />
 
         <EditText
             android:id="@+id/etEmail"
@@ -86,6 +72,7 @@
             android:layout_height="48dp"
             android:hint="@string/hint_email"
             android:inputType="textEmailAddress"
+            android:autofillHints="emailAddress"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/labelEmail" />
@@ -109,6 +96,7 @@
             android:hint="@string/hint_password"
             android:inputType="textPassword"
             android:paddingEnd="48dp"
+            android:autofillHints="newPassword"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/labelPassword" />
@@ -125,212 +113,6 @@
             app:layout_constraintTop_toTopOf="@id/etPassword"
             app:layout_constraintBottom_toBottomOf="@id/etPassword" />
 
-        <!-- Gender -->
-        <TextView
-            android:id="@+id/labelGender"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/label_gender"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etPassword" />
-
-        <LinearLayout
-            android:id="@+id/rowGender"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelGender">
-
-            <TextView
-                android:id="@+id/tvGenderMale"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_male"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-            <TextView
-                android:id="@+id/tvGenderFemale"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_female"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-            <TextView
-                android:id="@+id/tvGenderOther"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_other"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-        </LinearLayout>
-
-        <!-- Interested In -->
-        <TextView
-            android:id="@+id/labelInterestedIn"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/label_interested_in"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/rowGender" />
-
-        <LinearLayout
-            android:id="@+id/rowInterestedIn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelInterestedIn">
-
-            <TextView
-                android:id="@+id/tvInterestedMale"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_male"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-            <TextView
-                android:id="@+id/tvInterestedFemale"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_female"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-            <TextView
-                android:id="@+id/tvInterestedOther"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@drawable/bg_segment_option_unselected"
-                android:gravity="center"
-                android:text="@string/gender_other"
-                android:textColor="@color/wedora_text"
-                android:textSize="13sp"
-                android:fontFamily="@font/poppins_medium" />
-
-        </LinearLayout>
-
-        <!-- Add Photo (optional) -->
-        <!-- ===== My Status ===== -->
-        <TextView
-            android:id="@+id/labelMyStatus"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/label_my_status"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/rowInterestedIn" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipsMyStatus"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:singleLine="false"
-            app:singleSelection="true"
-            app:chipSpacingHorizontal="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelMyStatus" />
-
-        <!-- ===== Looking For ===== -->
-        <!-- Options depend on the selected gender, so the chips are built in
-             code rather than declared here. -->
-        <TextView
-            android:id="@+id/labelLookingFor"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="@string/label_looking_for"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chipsMyStatus" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipsLookingFor"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:singleLine="false"
-            app:singleSelection="true"
-            app:chipSpacingHorizontal="8dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelLookingFor" />
-
-        <LinearLayout
-            android:id="@+id/rowAddPhoto"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground"
-            android:padding="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chipsLookingFor">
-
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/ivPhotoPreview"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="@color/wedora_input_bg"
-                android:padding="18dp"
-                android:src="@drawable/ic_add_photo"
-                android:scaleType="centerCrop"
-                android:contentDescription="@string/cd_add_photo"
-                app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
-
-            <TextView
-                android:id="@+id/tvAddPhoto"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:text="@string/add_photo"
-                android:textColor="@color/wedora_accent"
-                android:textSize="14sp"
-                android:fontFamily="@font/poppins_medium" />
-
-        </LinearLayout>
-
         <!-- Sign Up button.
              Explicitly AppCompatButton: under a Theme.MaterialComponents.* theme a
              plain <Button> is auto-inflated as MaterialButton, which manages its own
@@ -339,11 +121,11 @@
             android:id="@+id/btnSignUp"
             style="@style/WedoraPrimaryButton"
             android:layout_width="match_parent"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="32dp"
             android:text="@string/btn_signup"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/rowAddPhoto" />
+            app:layout_constraintTop_toBottomOf="@id/etPassword" />
 
         <!-- Login prompt -->
         <TextView
