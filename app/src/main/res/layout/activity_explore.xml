@@ -14,26 +14,29 @@
 
     <!-- ===== Top bar ===== -->
 
+    <!-- Title is centred within the icon band so it lines up with the search
+         bar that replaces it. -->
     <TextView
         android:id="@+id/tvExploreTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="18dp"
         android:text="@string/explore_title"
         android:textColor="@color/wedora_text"
         android:textSize="20sp"
         android:fontFamily="@font/poppins_semibold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnFilter"
         app:layout_constraintBottom_toBottomOf="@id/btnFilter" />
 
+    <!-- 16dp top margin matches the other tabs' top bars — the previous 8dp sat
+         the whole row (and so the search bar) too tight under the status bar. -->
     <ImageButton
         android:id="@+id/btnFilter"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="20dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_filter"
