@@ -121,6 +121,18 @@ private class BottomNavBadgeObserver(
     }
 }
 
+/**
+ * The badge's current live count for [menuItemId], or 0 if none was ever
+ * created or it's currently hidden — the exact number [BottomNavBadgeObserver]
+ * last set. Public so ExitConfirm.kt can read the same unseen-likes/unread-
+ * messages counts the tab icons already show, rather than re-querying
+ * Firestore just to personalize the exit-confirm prompt.
+ */
+fun BottomNavigationView.currentBadgeCount(menuItemId: Int): Int {
+    val badge = getBadge(menuItemId) ?: return 0
+    return if (badge.isVisible) badge.number else 0
+}
+
 /** Shows [count] as an accent badge on [menuItemId], or hides it at zero. */
 private fun BottomNavigationView.applyBadgeCount(menuItemId: Int, count: Int) {
     if (count <= 0) {

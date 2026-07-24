@@ -71,6 +71,16 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
         binding.rvDiscover.adapter = discoverAdapter
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_maps)
+        // Registered before the search-collapse callback below, so that one
+        // (added later, i.e. on top of the back-press callback stack) always
+        // gets first refusal — search collapses before this ever fires.
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(
+                unseenLikes = binding.bottomNav.currentBadgeCount(R.id.nav_match),
+                unreadMessages = binding.bottomNav.currentBadgeCount(R.id.nav_chats)
+            )
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
 
         binding.btnFilter.setOnClickListener {
             filterLauncher.launch(Intent(this, FilterActivity::class.java))

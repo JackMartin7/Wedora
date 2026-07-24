@@ -567,6 +567,24 @@
         <item quantity="other">%1$d people liked you</item>
     </plurals>
     <string name="premium_upgrade_cta">Unlock all features →</string>
+
+    <!-- Exit-confirmation sheet, shown on back-press from a root tab screen
+         (see ExitConfirmBottomSheet) — title depends on what personalized
+         data that screen already has loaded. -->
+    <string name="exit_confirm_subtitle">Are you sure you want to leave?</string>
+    <string name="exit_confirm_stay">Stay</string>
+    <string name="exit_confirm_exit">Exit</string>
+    <string name="exit_confirm_unswiped_title">New people are waiting to meet you</string>
+    <string name="exit_confirm_generic_title">Wait! Don\'t miss your chance to find someone special</string>
+    <string name="exit_confirm_guest_title">Sign up before you go to save your progress!</string>
+    <plurals name="exit_confirm_likes_title">
+        <item quantity="one">You have %1$d new like! 💕</item>
+        <item quantity="other">You have %1$d new likes! 💕</item>
+    </plurals>
+    <plurals name="exit_confirm_messages_title">
+        <item quantity="one">%1$d person is waiting to chat 💬</item>
+        <item quantity="other">%1$d people are waiting to chat 💬</item>
+    </plurals>
     <string name="plan_current_label">Current Plan</string>
     <string name="plan_free">Free Plan</string>
     <string name="plan_badge_basic">Basic</string>

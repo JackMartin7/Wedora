@@ -60,6 +60,15 @@ class HomeActivity :
     private var displayItems: List<StackItem> = emptyList()
 
     /**
+     * Index of the card currently on top of the stack — everything at or
+     * after this position in [displayItems] hasn't been swiped yet. Kept
+     * updated by the stack listener rather than read off the view, so
+     * [hasUnswipedProfiles] (used to personalize the exit-confirm prompt) is
+     * cheap and synchronous.
+     */
+    private var currentStackPosition = 0
+
+    /**
      * Loaded-and-ready native ads, refilled as they're consumed so there are
      * always up to AD_POOL_TARGET ahead of where the stack needs them next.
      * buildDisplayItems only ever draws from what's already here — never
@@ -102,6 +111,7 @@ class HomeActivity :
         }
 
         override fun onEmptied() {
+            currentStackPosition = displayItems.size
             showEmptyState(
                 icon = R.drawable.ic_sparkle_heart,
                 title = R.string.empty_home_title,
@@ -114,9 +124,14 @@ class HomeActivity :
         }
 
         override fun onTopCardChanged(position: Int) {
+            currentStackPosition = position
             recordGuestProfileViewIfNeeded(displayItems.getOrNull(position))
         }
     }
+
+    /** Whether any real profile (not just ad slots) is still left to swipe. */
+    private fun hasUnswipedProfiles(): Boolean =
+        displayItems.drop(currentStackPosition).any { it is StackItem.Profile }
 
     /**
      * Guests only — signed-in users, free or Premium, aren't tracked here at
@@ -190,6 +205,14 @@ class HomeActivity :
         refillAdPool()
         loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(
+                unseenLikes = binding.bottomNav.currentBadgeCount(R.id.nav_match),
+                unreadMessages = binding.bottomNav.currentBadgeCount(R.id.nav_chats),
+                hasUnswipedProfiles = hasUnswipedProfiles()
+            )
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
 
         binding.btnDarkMode.setOnClickListener { toggleDarkMode() }
 

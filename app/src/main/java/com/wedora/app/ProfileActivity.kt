@@ -37,6 +37,13 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         setUpDarkModeSwitch()
         setUpSettingsRows()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_profile)
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(
+                unseenLikes = binding.bottomNav.currentBadgeCount(R.id.nav_match),
+                unreadMessages = binding.bottomNav.currentBadgeCount(R.id.nav_chats)
+            )
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
 
         // Re-checked at click time rather than captured once, so this stays
         // correct even if guest status somehow changes without the Activity

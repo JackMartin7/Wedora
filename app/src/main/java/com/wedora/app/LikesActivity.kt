@@ -76,6 +76,13 @@ class LikesActivity : AppCompatActivity() {
         binding.rvProfileViewers.adapter = profileViewerAdapter
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_match)
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(
+                unseenLikes = binding.bottomNav.currentBadgeCount(R.id.nav_match),
+                unreadMessages = binding.bottomNav.currentBadgeCount(R.id.nav_chats)
+            )
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
 
         val openSignUp = View.OnClickListener {
             startActivity(Intent(this, SignUpActivity::class.java))
