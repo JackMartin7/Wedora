@@ -9,6 +9,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityLikesBinding
@@ -47,6 +48,10 @@ class LikesActivity : AppCompatActivity() {
         startActivity(ProfileDetailActivity.intent(this, like.likerUserId))
     }
 
+    private val matchedUserAdapter = MatchedUserAdapter { user ->
+        startActivity(ProfileDetailActivity.intent(this, user.otherUserId))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLikesBinding.inflate(layoutInflater)
@@ -55,9 +60,39 @@ class LikesActivity : AppCompatActivity() {
         binding.rvLikes.layoutManager = GridLayoutManager(this, GRID_COLUMNS)
         binding.rvLikes.adapter = adapter
 
+        binding.rvUsersMatched.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvUsersMatched.adapter = matchedUserAdapter
+
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_match)
 
         loadLikes()
+        loadUsersMatched()
+    }
+
+    /**
+     * Independent of [loadLikes]: this strip cares about the match count, not
+     * the like count, so it loads and shows/hides on its own rather than
+     * threading through the likes empty-state logic below.
+     */
+    private fun loadUsersMatched() {
+        val selfUid = FirebaseAuth.getInstance().currentUser
+            ?.takeUnless { GuestPrefs.isGuest(this) }?.uid
+        if (selfUid == null) {
+            binding.usersMatchedSection.visibility = View.GONE
+            return
+        }
+
+        loadMatchedUsers(
+            firestore,
+            selfUid,
+            onResult = { users ->
+                binding.usersMatchedSection.visibility =
+                    if (users.isEmpty()) View.GONE else View.VISIBLE
+                matchedUserAdapter.submitList(users)
+            },
+            onError = { binding.usersMatchedSection.visibility = View.GONE }
+        )
     }
 
     private fun loadLikes() {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One person in the Likes tab's "Users Matched" strip: a circular avatar
+    ringed in accent — the same treatment as the Chats matches strip and
+    Explore's "People Nearby" strip — with the name below and an online dot at
+    the avatar's corner when this person is currently active.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="72dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="14dp"
+    android:background="?attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivMatchedAvatar"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_avatar"
+        app:strokeColor="@color/wedora_accent"
+        app:strokeWidth="2dp"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <include
+        android:id="@+id/onlineDot"
+        layout="@layout/view_online_status_dot"
+        app:layout_constraintEnd_toEndOf="@id/ivMatchedAvatar"
+        app:layout_constraintBottom_toBottomOf="@id/ivMatchedAvatar" />
+
+    <TextView
+        android:id="@+id/tvMatchedName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/ivMatchedAvatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Amelia" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

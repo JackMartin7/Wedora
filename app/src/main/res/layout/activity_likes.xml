@@ -28,6 +28,57 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!--
+        "Users Matched" strip. Independent of the likes grid below — it cares
+        about the match count, not the like count, so it stays up even when
+        LikesActivity's own empty state hides likesScroll (no likes, but
+        matches exist). Hidden entirely (LikesActivity) rather than shown with
+        an empty strip when there are zero matches; the divider lives inside
+        this section so it disappears along with everything else.
+    -->
+    <LinearLayout
+        android:id="@+id/usersMatchedSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/tvLikesTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/likes_users_matched_label"
+            android:textColor="@color/wedora_text"
+            android:textSize="16sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvUsersMatched"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clipToPadding="false"
+            android:paddingStart="20dp"
+            android:paddingEnd="8dp"
+            android:orientation="horizontal"
+            android:scrollbars="none"
+            tools:listitem="@layout/item_likes_matched_user" />
+
+        <!-- Separates this section from the likes grid below. -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="16dp"
+            android:background="@color/wedora_border" />
+
+    </LinearLayout>
+
     <androidx.core.widget.NestedScrollView
         android:id="@+id/likesScroll"
         android:layout_width="0dp"
@@ -36,7 +87,7 @@
         android:clipToPadding="false"
         android:paddingBottom="12dp"
         android:scrollbars="none"
-        app:layout_constraintTop_toBottomOf="@id/tvLikesTitle"
+        app:layout_constraintTop_toBottomOf="@id/usersMatchedSection"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
@@ -150,13 +201,16 @@
 
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Anchored below usersMatchedSection, not tvLikesTitle directly — that
+         section can be visible above them, and anchoring to the title would
+         have them render underneath/over it instead of below it. -->
     <ProgressBar
         android:id="@+id/progressLoading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:indeterminateTint="@color/wedora_accent"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tvLikesTitle"
+        app:layout_constraintTop_toBottomOf="@id/usersMatchedSection"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -167,7 +221,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/tvLikesTitle"
+        app:layout_constraintTop_toBottomOf="@id/usersMatchedSection"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
