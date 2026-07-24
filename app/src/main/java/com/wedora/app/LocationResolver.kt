@@ -10,18 +10,28 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.Executors
 
 /**
- * Resolves the device's last-known coarse location into a city + country.
+ * Resolves the device's coarse location into a city + country.
  *
  * Two-step: FusedLocationProviderClient for the coordinates, then [Geocoder]
- * to reverse-geocode them. Either step can legitimately come up empty — a
- * fresh emulator has no last-known location, and some devices ship without a
- * geocoder backend — so callers must handle [onFailure] as a normal outcome
- * and fall back to manual entry, not treat it as an error state.
+ * to reverse-geocode them. Either step can legitimately come up empty — some
+ * devices ship without a geocoder backend — so callers must handle
+ * [onFailure] as a normal outcome and fall back to manual entry, not treat it
+ * as an error state.
+ *
+ * The coordinate step itself tries twice: [lastLocation] first (instant, no
+ * new fix needed, but only populated if *something* on the device has
+ * requested a location recently), then [getCurrentLocation] if that comes up
+ * empty (slower — it actively waits for a fresh fix — but this is exactly the
+ * case that matters most here: permission was very likely *just* granted on
+ * the permissions primer screen, with nothing else on the device having ever
+ * requested a fix, so lastLocation is reliably null on a fresh grant and
+ * detection would silently fall back to manual every time without this).
  */
 class LocationResolver(private val context: Context) {
 
@@ -65,15 +75,41 @@ class LocationResolver(private val context: Context) {
         fusedClient.lastLocation
             .addOnSuccessListener { location ->
                 if (location == null) {
-                    // Normal on a device that has never acquired a fix.
-                    Log.w(TAG, "No last-known location available")
-                    onFailure()
+                    // Normal right after a fresh grant — nothing has requested
+                    // a fix yet for the OS to have cached one. Not a failure;
+                    // request one directly instead of giving up here.
+                    Log.d(TAG, "No cached last-known location; requesting a fresh fix")
+                    requestFreshLocation(onSuccess, onFailure)
                 } else {
+                    Log.d(TAG, "Using cached last-known location")
                     reverseGeocode(location, onSuccess, onFailure)
                 }
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to get last-known location", e)
+                Log.w(TAG, "Failed to get last-known location; requesting a fresh fix", e)
+                requestFreshLocation(onSuccess, onFailure)
+            }
+    }
+
+    /**
+     * Actively waits for a fresh fix, unlike [FusedLocationProviderClient.getLastLocation]
+     * which only ever returns a cached one. Balanced accuracy is plenty for
+     * city-level resolution and settles faster than high accuracy would.
+     */
+    @SuppressLint("MissingPermission")
+    private fun requestFreshLocation(onSuccess: (Place) -> Unit, onFailure: () -> Unit) {
+        fusedClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                if (location == null) {
+                    Log.w(TAG, "Fresh location request returned no fix")
+                    onFailure()
+                } else {
+                    Log.d(TAG, "Using freshly requested location")
+                    reverseGeocode(location, onSuccess, onFailure)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Fresh location request failed", e)
                 onFailure()
             }
     }

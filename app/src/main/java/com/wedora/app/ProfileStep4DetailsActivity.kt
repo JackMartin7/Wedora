@@ -95,6 +95,10 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
         val alreadyGranted = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+        // Confirms what actually reaches this screen after a grant on the
+        // permissions primer — checkSelfPermission is process-wide and live,
+        // so this should read true whenever it was granted there.
+        Log.d(TAG, "ACCESS_COARSE_LOCATION granted=$alreadyGranted on step $stepNumber load")
 
         if (alreadyGranted) {
             detectLocation()
