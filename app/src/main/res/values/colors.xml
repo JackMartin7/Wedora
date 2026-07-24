@@ -25,6 +25,17 @@
          comment for the measured ratios). -->
     <color name="wedora_guest_cta_bg">#FFDADE</color>
 
+    <!-- WedoraPrimaryButton's disabled state (bg_button_primary_stateful.xml
+         / btn_primary_text_color.xml) — extracted to tokens so dark mode can
+         override them instead of the drawable/selector carrying a hardcoded
+         hex that can't respond to the night qualifier. Every button using
+         that shared style (Login, Sign Up, all six profile-setup Continue
+         buttons, Save, Apply Filters, Send Reset Link, Subscribe Now, ...)
+         picks up either mode's value automatically. See values-night's own
+         comment for the measured contrast this pair was chosen for. -->
+    <color name="wedora_btn_disabled_bg">#FBBCC4</color>
+    <color name="wedora_btn_disabled_text">#99FFFFFF</color>
+
     <!-- Surfaces -->
     <color name="wedora_bg">#FAF7F7</color>
     <color name="wedora_surface">#FFFFFF</color>

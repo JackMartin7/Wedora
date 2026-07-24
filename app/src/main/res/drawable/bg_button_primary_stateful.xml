@@ -2,16 +2,21 @@
 <!--
     Primary CTA background with a disabled state.
 
-    Enabled keeps the accent fill and press ripple; disabled washes out to a
-    pale accent (#FBBCC4) so a gated button reads as clearly off rather than
-    just un-tappable. The coloured drop shadow still comes from
-    android:elevation + outlineSpotShadowColor in WedoraPrimaryButton.
+    Enabled keeps the accent fill and press ripple; disabled washes out to
+    wedora_btn_disabled_bg (a pale accent pink in light mode, a muted dark
+    rose in dark mode — see values-night/colors.xml's own comment for the
+    measured contrast) so a gated button reads as clearly off rather than
+    just un-tappable. Color is a token rather than a literal hex specifically
+    so dark mode can override it — this is what every button using this
+    drawable (via WedoraPrimaryButton) picks up automatically. The coloured
+    drop shadow still comes from android:elevation + outlineSpotShadowColor
+    in WedoraPrimaryButton.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item android:state_enabled="false">
         <shape android:shape="rectangle">
-            <solid android:color="#FBBCC4" />
+            <solid android:color="@color/wedora_btn_disabled_bg" />
             <corners android:radius="14dp" />
         </shape>
     </item>

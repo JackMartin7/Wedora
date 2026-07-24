@@ -24,6 +24,25 @@
          of the same near-black. -->
     <color name="wedora_guest_cta_bg">#2E1B22</color>
 
+    <!-- WedoraPrimaryButton's disabled state. The light-mode pair (#FBBCC4
+         bg + 60%-alpha white text) is a washed-out pastel that reads as
+         "off" against a light page — reused unchanged in dark mode before
+         this, it read as an oddly bright pink patch instead, and its own
+         internal text contrast (already low by design — WCAG exempts
+         disabled-control text from contrast requirements, this is
+         intentionally muted, not a bug on light) got worse once the
+         background got objectively brighter than the dark page around it
+         rather than blending into a light one.
+         Muted dark rose #7A3F47 instead: against wedora_bg (#1C1417,
+         luminance ~0.008) it measures ~2.26:1 and against the enabled
+         wedora_accent (#FA4659) ~2.32:1 — clearly a distinct, deliberately
+         desaturated version of the same rose family, not blending into
+         either. Paired with full-opacity white text rather than carrying
+         the 60%-alpha version over: at 60% alpha it measured ~4.01:1,
+         just under AA's 4.5:1; at full opacity it's ~7.99:1. -->
+    <color name="wedora_btn_disabled_bg">#7A3F47</color>
+    <color name="wedora_btn_disabled_text">#FFFFFFFF</color>
+
     <!-- Surfaces -->
     <color name="wedora_bg">#1C1417</color>
     <color name="wedora_surface">#2A2124</color>
