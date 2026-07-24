@@ -93,6 +93,17 @@ class HomeActivity :
      */
     private val likedUserIds = mutableSetOf<String>()
 
+    /**
+     * An ad's [NativeAd.destroy] fires the moment its card leaves the stack
+     * (either direction — a dismissed ad and a swiped one are the same exit),
+     * not deferred to [onDestroy]. Left any longer, a swiped-away ad's
+     * rendered resources (creative assets, click tracking, and — with the
+     * test ad unit this still uses, see NativeAdLoader — possibly the test
+     * SDK's own debug overlay) stayed alive on screen until the whole
+     * Activity closed. [onDestroy] still calls destroy() on every ad in
+     * [displayItems]/[adPool] too, for anything never swiped — a repeat call
+     * on one already destroyed here is a documented no-op, not an error.
+     */
     private val stackListener = object : SwipeCardStackView.Listener {
         override fun onBindCard(cardView: View, position: Int) {
             when (val item = displayItems.getOrNull(position)) {
@@ -103,10 +114,12 @@ class HomeActivity :
         }
 
         override fun onSwipedRight(position: Int) {
+            (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
             (displayItems.getOrNull(position) as? StackItem.Profile)?.let { likeUser(it.card) }
         }
 
         override fun onSwipedLeft(position: Int) {
+            (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
             (displayItems.getOrNull(position) as? StackItem.Profile)?.let { recordPass(it.card) }
         }
 
