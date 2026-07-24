@@ -410,6 +410,10 @@ class EditProfileActivity : AppCompatActivity() {
      * Copy-then-delete rather than renameTo: both paths are in filesDir so a
      * rename would normally work, but a failed rename leaves no way to tell
      * whether the destination survived intact.
+     *
+     * Also kicks off [uploadThenSaveUrl] once the local copy is confirmed
+     * good — fire-and-forget, same as ProfileStep5PhotoActivity's own upload;
+     * this function's own success/failure is purely about the local file.
      */
     private fun commitStagedPhoto(): Boolean {
         val staging = stagedPhotoFile ?: return true
@@ -424,10 +428,34 @@ class EditProfileActivity : AppCompatActivity() {
             staging.delete()
             stagedPhotoFile = null
             photoChanged = false
+            uploadThenSaveUrl(destination)
             true
         } catch (e: IOException) {
             Log.w(TAG, "Failed to commit staged profile photo", e)
             false
+        }
+    }
+
+    /**
+     * Fire-and-forget: never blocks Save from finishing, and a failure only
+     * shows a toast — the local copy this device's own Profile screen reads
+     * is already committed either way. Re-picking and saving again retries
+     * this from scratch.
+     */
+    private fun uploadThenSaveUrl(file: File) {
+        PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
+            if (!isFinishing && success && url != null) {
+                firestore.collection(UserProfile.COLLECTION).document(uid)
+                    .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())
+                    .addOnFailureListener { e ->
+                        logFirestoreWriteFailure(TAG, "Uploaded photo but failed to save its url", e)
+                    }
+            } else if (!success) {
+                Log.w(TAG, "Profile photo upload failed: $error")
+                if (!isFinishing) {
+                    Toast.makeText(this, R.string.error_photo_upload_failed, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

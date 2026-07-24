@@ -11,16 +11,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.google.android.material.imageview.ShapeableImageView
+import com.google.firebase.firestore.SetOptions
 import java.io.File
 import java.io.IOException
 
 /**
  * Step 5: the profile photo — the only optional step.
  *
- * The photo is device-local (see [LocalProfilePrefs]): never uploaded, never
- * written to Firestore. That's why this step writes nothing and why the
- * routing gate doesn't check it — a user who skips is fully set up as far as
- * the server is concerned, and would otherwise be sent back here forever.
+ * The local copy (see [LocalProfilePrefs]) is what this device's own Profile
+ * screen reads, and that part of the flow is unchanged: writing nothing here
+ * and the routing gate not checking this step are both still about the local
+ * copy, not about whether the upload below has succeeded — a user who skips,
+ * or whose upload fails, is still fully set up as far as the server is
+ * concerned, and would otherwise be sent back here forever.
+ *
+ * On top of that, a picked photo is now also uploaded (see
+ * [PhotoUploadService]) so OTHER users' devices have something to load — see
+ * uploadThenSaveUrl. That part is fire-and-forget: it never blocks Continue
+ * or Skip, and a failure only shows a toast, since the local copy already
+ * covers this user's own Profile screen either way.
  *
  * Unlike the other steps it saves on pick rather than on Continue. There is no
  * document write to batch it with, and both Continue and Skip end the flow at
@@ -104,9 +113,35 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
 
             LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
             showPhoto(destination)
+            uploadThenSaveUrl(destination)
         } catch (e: IOException) {
             Log.w(TAG, "Failed to copy picked profile photo", e)
             Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Fire-and-forget: never blocks Continue/Skip, and a failure only shows
+     * a toast — [file] is already saved locally either way (see
+     * savePickedPhoto), so this user's own Profile screen is fine regardless
+     * of whether other users can see the photo yet. Re-picking retries this
+     * from scratch; EditProfileActivity's own upload is the other retry path
+     * once setup is finished.
+     */
+    private fun uploadThenSaveUrl(file: File) {
+        PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
+            if (!isFinishing && success && url != null) {
+                firestore.collection(UserProfile.COLLECTION).document(uid)
+                    .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())
+                    .addOnFailureListener { e ->
+                        logFirestoreWriteFailure(TAG, "Uploaded photo but failed to save its url", e)
+                    }
+            } else if (!success) {
+                Log.w(TAG, "Profile photo upload failed: $error")
+                if (!isFinishing) {
+                    Toast.makeText(this, R.string.error_photo_upload_failed, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

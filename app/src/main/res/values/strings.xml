@@ -32,6 +32,7 @@
     <string name="error_gender_required">Please select your gender</string>
     <string name="error_interested_in_required">Please select who you\'re interested in</string>
     <string name="error_photo_copy_failed">Couldn\'t use that photo. Please try another.</string>
+    <string name="error_photo_upload_failed">Couldn\'t upload your photo to show to others. You can try again from Edit Profile.</string>
     <string name="error_wrong_password">Incorrect email or password. Please try again.</string>
     <string name="error_no_account">No account found with this email.</string>
     <string name="error_email_in_use">An account already exists with this email.</string>

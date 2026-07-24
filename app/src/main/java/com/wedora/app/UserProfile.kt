@@ -103,7 +103,16 @@ data class UserProfile(
      */
     val messagesSentToday: Int,
     /** "yyyy-MM-dd", device-local calendar day the count above is for. */
-    val messagesSentDate: String?
+    val messagesSentDate: String?,
+    /**
+     * The hosted URL of this user's uploaded photo (see PhotoUploadService),
+     * for OTHER users' devices to load — the local file [LocalProfilePrefs]
+     * points at only exists on this account's own device. Null until the
+     * first successful upload, on accounts that predate this field, or if an
+     * upload never succeeded; every reader treats that as "no photo" and
+     * falls back to the neutral placeholder rather than erroring.
+     */
+    val photoUrl: String?
 ) {
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
@@ -133,6 +142,7 @@ data class UserProfile(
         const val FIELD_LIKES_GIVEN_DATE = "likesGivenDate"
         const val FIELD_MESSAGES_SENT_TODAY = "messagesSentToday"
         const val FIELD_MESSAGES_SENT_DATE = "messagesSentDate"
+        const val FIELD_PHOTO_URL = "photoUrl"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -164,7 +174,8 @@ data class UserProfile(
             likesGivenToday = snapshot.getLong(FIELD_LIKES_GIVEN_TODAY)?.toInt() ?: 0,
             likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE),
             messagesSentToday = snapshot.getLong(FIELD_MESSAGES_SENT_TODAY)?.toInt() ?: 0,
-            messagesSentDate = snapshot.getString(FIELD_MESSAGES_SENT_DATE)
+            messagesSentDate = snapshot.getString(FIELD_MESSAGES_SENT_DATE),
+            photoUrl = snapshot.getString(FIELD_PHOTO_URL)
         )
     }
 }
