@@ -238,7 +238,6 @@ class LikesActivity : AppCompatActivity() {
 
         binding.tvLikeCount.visibility = View.GONE
         binding.featuredContainer.visibility = View.GONE
-        binding.premiumBanner.visibility = View.GONE
         binding.guestSignUpBanner.visibility = View.GONE
         binding.rvLikes.visibility = View.GONE
         binding.skeletonLikes.showSkeleton(R.layout.item_skeleton_like_row, SKELETON_ROWS)
@@ -292,7 +291,6 @@ class LikesActivity : AppCompatActivity() {
             binding.featuredContainer.removeAllViews()
             binding.rvLikes.visibility = View.VISIBLE
             adapter.submitList(likes)
-            binding.premiumBanner.visibility = View.GONE
             binding.guestSignUpBanner.visibility = View.GONE
             return
         }
@@ -310,12 +308,6 @@ class LikesActivity : AppCompatActivity() {
         adapter.submitList(remainder)
 
         binding.guestSignUpBanner.visibility = View.GONE
-        binding.premiumBanner.visibility = View.VISIBLE
-        val open = View.OnClickListener {
-            startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
-        }
-        binding.premiumBanner.setOnClickListener(open)
-        binding.btnBannerAction.setOnClickListener(open)
     }
 
     /**
@@ -336,7 +328,6 @@ class LikesActivity : AppCompatActivity() {
 
         binding.tvLikeCount.visibility = View.GONE
         binding.rvLikes.visibility = View.GONE
-        binding.premiumBanner.visibility = View.GONE
         showFeatured(FEATURED_COUNT)
 
         binding.guestSignUpBanner.visibility = View.VISIBLE

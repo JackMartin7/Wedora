@@ -206,63 +206,6 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
-            <!-- Upgrade banner. Copy and destination differ for guests, so
-                 both are set in code. Sizing matches activity_profile.xml's
-                 cardPremium (same gradient card, same feature family) rather
-                 than this screen's own original wrap_content/16dp/14sp
-                 dimensions. -->
-            <LinearLayout
-                android:id="@+id/premiumBanner"
-                android:layout_width="match_parent"
-                android:layout_height="72dp"
-                android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_premium_card"
-                android:elevation="6dp"
-                android:paddingHorizontal="20dp"
-                android:paddingVertical="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_crown"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:id="@+id/tvBannerText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:textColor="@color/white"
-                    android:textSize="17sp"
-                    android:lineSpacingExtra="2sp"
-                    android:fontFamily="@font/poppins_medium"
-                    android:maxLines="2"
-                    android:ellipsize="end"
-                    tools:text="Upgrade to Premium to see who liked you" />
-
-                <TextView
-                    android:id="@+id/btnBannerAction"
-                    android:layout_width="wrap_content"
-                    android:layout_height="34dp"
-                    android:layout_marginStart="10dp"
-                    android:background="@drawable/bg_badge_on_accent"
-                    android:gravity="center"
-                    android:paddingHorizontal="14dp"
-                    android:textColor="@color/wedora_accent"
-                    android:textSize="14sp"
-                    android:fontFamily="@font/poppins_semibold"
-                    tools:text="Upgrade Now" />
-
-            </LinearLayout>
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvLikes"
                 android:layout_width="match_parent"
@@ -280,13 +223,9 @@
     </androidx.core.widget.NestedScrollView>
 
     <!--
-        Guest-only sticky sign-up prompt. Same gradient-card design as
-        premiumBanner below it (identical background, crown icon, text and
-        pill styling) — only its position changes: this sits outside
-        likesScroll, anchored straight to bottomNav, so it never moves while
-        the blurred teaser above scrolls underneath it. premiumBanner itself
-        is untouched and stays mid-scroll for the unrelated free-tier
-        upgrade case. Starts GONE.
+        Guest-only sticky sign-up prompt. Sits outside likesScroll, anchored
+        straight to bottomNav, so it never moves while the blurred teaser
+        above scrolls underneath it. Starts GONE.
     -->
     <LinearLayout
         android:id="@+id/guestSignUpBanner"
