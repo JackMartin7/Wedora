@@ -95,6 +95,27 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
+            <!-- Guest-only, same styling as the signed-in tvProfileIntent
+                 pill below. Starts GONE; ProfileActivity only shows it when
+                 GuestPrefs has both a gender and an interestedIn value —
+                 there's currently no screen that collects either from a
+                 guest, so in practice this stays hidden until one exists. -->
+            <TextView
+                android:id="@+id/tvGuestGenderPill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_intent_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="5dp"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:text="Male • Looking for Female"
+                tools:visibility="visible" />
+
             <!-- Real Firebase email; hidden for guests, who have none -->
             <TextView
                 android:id="@+id/tvProfileEmail"

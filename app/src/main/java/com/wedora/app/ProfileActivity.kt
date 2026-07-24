@@ -144,6 +144,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
 
         binding.btnHistory.alpha = 1f
         binding.tvGuestSubtitle.visibility = View.GONE
+        binding.tvGuestGenderPill.visibility = View.GONE
         binding.btnGuestSignUp.visibility = View.GONE
         binding.guestCtaBanner.visibility = View.GONE
         binding.tvGuestLogIn.visibility = View.GONE
@@ -189,6 +190,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         binding.tvProfileEmail.visibility = View.GONE
         binding.tvProfileAgeLocation.visibility = View.GONE
         binding.tvProfileIntent.visibility = View.GONE
+        showGuestGenderPill()
 
         // A guest has no Firestore document, so there is nothing for the
         // editor to load or save — it would open, fail its read and close.
@@ -217,6 +219,33 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         binding.guestCtaBanner.visibility = View.VISIBLE
         binding.tvGuestLogIn.visibility = View.VISIBLE
     }
+
+    /**
+     * "Male • Looking for Female" — the guest equivalent of the signed-in
+     * tvProfileIntent pill. Hidden rather than shown with a blank or partial
+     * label if either value is missing, which is the normal case today:
+     * nothing currently sets GuestPrefs' gender fields (see
+     * GuestPrefs.setGuestGenderPreferences's own doc comment), so this stays
+     * hidden until a guest-facing gender prompt exists to populate them.
+     */
+    private fun showGuestGenderPill() {
+        val gender = GuestPrefs.guestGender(this)?.let { genderLabel(it) }
+        val interestedIn = GuestPrefs.guestInterestedIn(this)?.let { genderLabel(it) }
+
+        if (gender == null || interestedIn == null) {
+            binding.tvGuestGenderPill.visibility = View.GONE
+            return
+        }
+
+        binding.tvGuestGenderPill.text =
+            getString(R.string.guest_gender_pill_format, gender, interestedIn)
+        binding.tvGuestGenderPill.visibility = View.VISIBLE
+    }
+
+    /** Resolves a stored Gender.firestoreValue back to its display label. */
+    private fun genderLabel(firestoreValue: String): String? =
+        Gender.values().firstOrNull { it.firestoreValue == firestoreValue }
+            ?.let { getString(it.labelRes) }
 
     /** Toggles the three stat columns' lock badges, guest vs signed-in. */
     private fun setStatsLocked(locked: Boolean) {

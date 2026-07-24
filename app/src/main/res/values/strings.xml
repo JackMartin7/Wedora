@@ -72,6 +72,8 @@
     <!-- %1$s is the zero-padded guest number, e.g. "Guest 001" — see GuestPrefs.guestDisplayName. -->
     <string name="guest_numbered_label">Guest %1$s</string>
     <string name="guest_profile_subtitle">Sign up to unlock your full profile</string>
+    <!-- e.g. "Male • Looking for Female" -->
+    <string name="guest_gender_pill_format">%1$s • Looking for %2$s</string>
     <string name="guest_sign_up_now">Sign Up Now</string>
     <string name="guest_cta_banner_text">Create an account to like profiles, chat with matches, and get personalized recommendations</string>
     <string name="guest_stats_locked_toast">Sign up to see your stats</string>

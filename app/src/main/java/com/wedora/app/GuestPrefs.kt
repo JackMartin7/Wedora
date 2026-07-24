@@ -23,6 +23,8 @@ object GuestPrefs {
     private const val KEY_GUEST_NUMBER = "guest_number"
     private const val KEY_PROFILES_VIEWED_TODAY = "guest_profiles_viewed_today"
     private const val KEY_PROFILES_VIEWED_DATE = "guest_profiles_viewed_date"
+    private const val KEY_GUEST_GENDER = "guest_gender"
+    private const val KEY_GUEST_INTERESTED_IN = "guest_interested_in"
 
     /**
      * Range for a freshly generated guest number — wide enough that two
@@ -78,6 +80,38 @@ object GuestPrefs {
             .remove(KEY_GUEST_NUMBER)
             .remove(KEY_PROFILES_VIEWED_TODAY)
             .remove(KEY_PROFILES_VIEWED_DATE)
+            .remove(KEY_GUEST_GENDER)
+            .remove(KEY_GUEST_INTERESTED_IN)
+            .apply()
+    }
+
+    /**
+     * A guest's own gender and who they're interested in, as [Gender]'s
+     * canonical firestoreValue strings — the same "male"/"female"/"other"
+     * vocabulary the signed-up profile-setup flow writes to Firestore,
+     * kept consistent here even though this never leaves the device, so
+     * formatting either one only ever needs one lookup table (Gender.values).
+     * Null until something sets them; nothing does yet — see
+     * [setGuestGenderPreferences]'s own doc comment.
+     */
+    fun guestGender(context: Context): String? =
+        prefs(context).getString(KEY_GUEST_GENDER, null)
+
+    fun guestInterestedIn(context: Context): String? =
+        prefs(context).getString(KEY_GUEST_INTERESTED_IN, null)
+
+    /**
+     * Not called anywhere yet — there's currently no guest-facing screen
+     * that asks for either value, only the signed-up Sign Up flow's own
+     * ProfileStep2GenderActivity, which guests never reach. Added so
+     * ProfileActivity's guest gender pill has a real API to read once such
+     * a screen exists, instead of that screen having to reach into
+     * SharedPreferences directly.
+     */
+    fun setGuestGenderPreferences(context: Context, gender: String, interestedIn: String) {
+        prefs(context).edit()
+            .putString(KEY_GUEST_GENDER, gender)
+            .putString(KEY_GUEST_INTERESTED_IN, interestedIn)
             .apply()
     }
 
