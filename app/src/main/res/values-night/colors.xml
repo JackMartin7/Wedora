@@ -13,7 +13,16 @@
     <color name="wedora_error">#E23B4E</color>
     <color name="wedora_accent_shadow">#4DFA4659</color>
     <color name="wedora_premium_gold">#E5A93B</color>
-    <color name="wedora_guest_cta_bg">#FFDADE</color>
+    <!-- Was left at the light-mode value (#FFDADE) — a bug, not a deliberate
+         "fixed both modes" choice like wedora_warning_bg: wedora_text on an
+         unchanged light pink measured ~1.12:1 in dark mode, effectively
+         invisible. This muted deep maroon-pink keeps the same card
+         identity while giving wedora_text ~14.15:1 and wedora_accent (the
+         inline "Sign Up" span) ~4.70:1 — both clear WCAG AA passes — and
+         stays clearly distinct from wedora_bg (#1C1417, luminance ~0.008)
+         at roughly 1.8x its luminance (~0.0148), not just a fainter shade
+         of the same near-black. -->
+    <color name="wedora_guest_cta_bg">#2E1B22</color>
 
     <!-- Surfaces -->
     <color name="wedora_bg">#1C1417</color>

@@ -17,9 +17,12 @@
          (Home's crown icon once isPremium == true) as distinct from the
          wedora_accent pink used for the upgrade-focused crown. -->
     <color name="wedora_premium_gold">#E5A93B</color>
-    <!-- Fixed soft pink, same both modes — the guest profile's "create an
-         account" banner. Deliberately flatter than bg_premium_card's
-         gradient upsell: this is an encouraging preview, not a hard sell. -->
+    <!-- Soft pink — the guest profile's "create an account" banner.
+         Deliberately flatter than bg_premium_card's gradient upsell: this is
+         an encouraging preview, not a hard sell. Has its own dark-mode value
+         in values-night/colors.xml (this light value was previously left
+         unset there too, which broke text contrast — see that file's
+         comment for the measured ratios). -->
     <color name="wedora_guest_cta_bg">#FFDADE</color>
 
     <!-- Surfaces -->

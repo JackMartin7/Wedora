@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableString
@@ -205,7 +206,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         // Greyed rather than hidden, matching this screen's "preview, not
         // blocked" tone — the icon signals there's a real history feature
         // behind sign-up, not that the button doesn't exist.
-        binding.btnHistory.alpha = 0.4f
+        binding.btnHistory.alpha = disabledAlpha(0.4f)
 
         // A guest makes no Firestore read, so nothing will ever arrive to
         // replace a skeleton — show the card's "—" placeholders (already set
@@ -246,6 +247,21 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
     private fun genderLabel(firestoreValue: String): String? =
         Gender.values().firstOrNull { it.firestoreValue == firestoreValue }
             ?.let { getString(it.labelRes) }
+
+    /**
+     * The alpha this app dims a "locked for guests" element to. Light mode
+     * keeps [lightAlpha] (0.4 for btnHistory, 0.5 for a settings row)
+     * unchanged; dark mode uses a fixed, higher floor instead, because the
+     * same alpha composites toward a much darker background there and the
+     * result falls under WCAG's non-text 3:1 minimum. Measured: a settings
+     * row's lock icon (tinted wedora_text_secondary, see setUpSettingsRows)
+     * blended at 50% over wedora_bg dark computes to ~2.98:1 — below 3:1.
+     * At the 0.68 used here it computes to ~4.13:1, and the row's label text
+     * (wedora_text, full strength before dimming) clears WCAG AA's 4.5:1
+     * text minimum by a wide margin at this alpha too.
+     */
+    private fun disabledAlpha(lightAlpha: Float): Float =
+        if (ThemePrefs.isDarkEnabled(this)) 0.68f else lightAlpha
 
     /** Toggles the three stat columns' lock badges, guest vs signed-in. */
     private fun setStatsLocked(locked: Boolean) {
@@ -445,8 +461,16 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             rowBinding.ivRowIcon.setImageResource(row.iconRes)
             rowBinding.tvRowLabel.setText(row.labelRes)
             if (isGuest && !row.guestEnabled) {
-                rowBinding.root.alpha = 0.5f
+                rowBinding.root.alpha = disabledAlpha(0.5f)
                 rowBinding.ivRowChevron.setImageResource(R.drawable.ic_lock)
+                // ic_lock.xml's own fill is a hardcoded white, meant for the
+                // badge-on-accent-circle context it was built for (see
+                // item_like_featured.xml) — not for sitting directly on this
+                // row's plain background the way ic_chevron_right (which it
+                // replaces here) already does via its own baked-in
+                // wedora_text_secondary fill. Explicit tint matches that.
+                rowBinding.ivRowChevron.imageTintList =
+                    ColorStateList.valueOf(ContextCompat.getColor(this, R.color.wedora_text_secondary))
                 rowBinding.root.setOnClickListener {
                     toast(getString(R.string.guest_settings_locked_toast))
                 }
