@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One-time gate right after "Continue as Guest" — same two segmented
+    controls as ProfileStep2GenderActivity (view_step_gender, reused as-is),
+    but standalone rather than part of the 6-step flow: no back arrow (there's
+    nothing before this to return to — backing out goes to Login, the normal
+    system-back behavior), no step counter or progress bar (this isn't step
+    N of anything), and Continue writes to GuestPrefs instead of Firestore.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wedora_bg">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/btnGuestGenderContinue">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="48dp"
+                android:text="@string/guest_gender_prompt_title"
+                android:textColor="@color/wedora_text"
+                android:textSize="24sp"
+                android:lineSpacingExtra="2sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/guest_gender_prompt_subtitle"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="14sp"
+                android:lineSpacingExtra="3sp" />
+
+            <include
+                android:id="@+id/guestGenderContent"
+                layout="@layout/view_step_gender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnGuestGenderContinue"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="0dp"
+        android:layout_height="54dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="20dp"
+        android:text="@string/btn_continue"
+        tools:enabled="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

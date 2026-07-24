@@ -67,10 +67,21 @@ class LoginActivity : AppCompatActivity(), EmailNotVerifiedBottomSheet.Host {
             binding.etPassword.text.isNotEmpty()
     }
 
-    /** Enter the app without an account. Guests get a read-only feed. */
+    /**
+     * Enter the app without an account. Guests get a read-only feed.
+     *
+     * A returning guest — same session, or the app reopened without logging
+     * out — already has both GuestPrefs values from a previous run through
+     * GuestGenderPromptActivity, so there's nothing left to ask; skip
+     * straight to Home rather than showing the same prompt twice.
+     */
     private fun continueAsGuest() {
         GuestPrefs.setGuest(this)
-        startActivity(Intent(this, HomeActivity::class.java))
+        val alreadyAnswered =
+            GuestPrefs.guestGender(this) != null && GuestPrefs.guestInterestedIn(this) != null
+        val destination =
+            if (alreadyAnswered) HomeActivity::class.java else GuestGenderPromptActivity::class.java
+        startActivity(Intent(this, destination))
         finish()
     }
 
