@@ -10,6 +10,7 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -24,18 +25,47 @@ import java.util.Date
  * Takes the other user's UID and name rather than a match ID — the match ID is
  * derived via [Match.idFor], so callers can't pass one that disagrees with the
  * participants.
+ *
+ * A guest opening one of the two demo conversations from ChatsActivity gets
+ * an entirely different, Firestore-free path instead — see
+ * [setUpDemoThread] and [demoIntent]. The two never mix: onCreate branches
+ * on EXTRA_DEMO before touching anything the real path needs (selfUid,
+ * matchId, Firestore listeners), so nothing below that branch has to account
+ * for a demo thread at all.
  */
-class ChatThreadActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
+class ChatThreadActivity :
+    AppCompatActivity(),
+    DailyLimitReachedBottomSheet.Host,
+    GuestChatBlockedBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraChat"
         private const val EXTRA_OTHER_USER_ID = "extra_other_user_id"
         private const val EXTRA_OTHER_USER_NAME = "extra_other_user_name"
+        private const val EXTRA_DEMO = "extra_demo"
+
+        /**
+         * MessageAdapter renders a message as sent-by-me when its senderId
+         * equals this. Every demo message's senderId is the demo otherUid
+         * instead (see demoMessagesFor), so nothing in a demo thread can ever
+         * match this and render as a sent bubble — "received bubbles only",
+         * as specified.
+         */
+        private const val DEMO_SELF_UID = "demo-self"
 
         fun intent(context: Context, otherUserId: String, otherUserName: String): Intent =
             Intent(context, ChatThreadActivity::class.java)
                 .putExtra(EXTRA_OTHER_USER_ID, otherUserId)
                 .putExtra(EXTRA_OTHER_USER_NAME, otherUserName)
+
+        /**
+         * A guest's preview thread — no match, no messages collection, no
+         * other real user behind [demoName] at all. See setUpDemoThread.
+         */
+        fun demoIntent(context: Context, demoName: String): Intent =
+            Intent(context, ChatThreadActivity::class.java)
+                .putExtra(EXTRA_OTHER_USER_NAME, demoName)
+                .putExtra(EXTRA_DEMO, true)
     }
 
     private lateinit var binding: ActivityChatThreadBinding
@@ -62,6 +92,11 @@ class ChatThreadActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Hos
         super.onCreate(savedInstanceState)
         binding = ActivityChatThreadBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (intent.getBooleanExtra(EXTRA_DEMO, false)) {
+            setUpDemoThread()
+            return
+        }
 
         val otherUserId = intent.getStringExtra(EXTRA_OTHER_USER_ID)
         val uid = FirebaseAuth.getInstance().realUid
@@ -94,6 +129,80 @@ class ChatThreadActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Hos
         observeMessages()
         observeOtherUserStatus()
         applyMessagingGate()
+    }
+
+    /**
+     * A guest's preview thread — everything here is either hardcoded copy or
+     * client-only state; nothing touches Firestore, and there is no real
+     * match, real other user, or real message ever written anywhere.
+     *
+     * otherUid is still assigned (to a fake id that can never match a real
+     * one) rather than left uninitialized, purely so onResume/onPause/
+     * onDestroy below — none of which know or need to know this is a demo
+     * thread — don't crash reading a lateinit property nothing set.
+     */
+    private fun setUpDemoThread() {
+        val demoName = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
+        otherUid = "demo-$demoName"
+
+        binding.tvChatTitle.text = demoName
+        // No real presence behind a demo conversation to show a status for.
+        binding.statusRow.visibility = View.GONE
+        // No real profile behind it either, so the header doesn't open one.
+        binding.chatHeader.isClickable = false
+        binding.chatHeader.isFocusable = false
+
+        binding.btnBack.setOnClickListener { goToChats() }
+        onBackPressedDispatcher.addCallback(this) { goToChats() }
+
+        val demoAdapter = MessageAdapter(DEMO_SELF_UID)
+        binding.rvMessages.layoutManager = LinearLayoutManager(this)
+        binding.rvMessages.adapter = demoAdapter
+        val demoMessages = demoMessagesFor(demoName)
+        binding.tvChatEmpty.visibility = View.GONE
+        demoAdapter.submitList(demoMessages) {
+            binding.rvMessages.scrollToPosition(demoMessages.size - 1)
+        }
+
+        // The composer works normally — a guest can type freely — but Send
+        // always shows the block sheet instead of writing anywhere. Text
+        // isn't cleared on that tap: leaving it in place is the less
+        // surprising of the two acceptable outcomes once "Keep Exploring"
+        // dismisses the sheet and leaves the guest right back in this thread.
+        binding.etMessage.isEnabled = true
+        binding.btnSend.isEnabled = true
+        binding.btnSend.setOnClickListener {
+            GuestChatBlockedBottomSheet.show(supportFragmentManager)
+        }
+    }
+
+    override fun onSignUpFromChatBlockedRequested() {
+        startActivity(Intent(this, SignUpActivity::class.java))
+    }
+
+    /** Two received-only messages, the first matching the ChatsActivity preview line for continuity. */
+    private fun demoMessagesFor(demoName: String): List<Message> {
+        val (firstRes, secondRes) = if (demoName == getString(R.string.guest_demo_chat_sarah_name)) {
+            R.string.guest_demo_chat_sarah_message_1 to R.string.guest_demo_chat_sarah_message_2
+        } else {
+            R.string.guest_demo_chat_ahmed_message_1 to R.string.guest_demo_chat_ahmed_message_2
+        }
+
+        val now = System.currentTimeMillis()
+        return listOf(
+            Message(
+                id = "demo-1",
+                senderId = otherUid,
+                text = getString(firstRes),
+                sentAt = Timestamp(Date(now - 2 * 60 * 60 * 1000))
+            ),
+            Message(
+                id = "demo-2",
+                senderId = otherUid,
+                text = getString(secondRes),
+                sentAt = Timestamp(Date(now - 90 * 60 * 1000))
+            )
+        )
     }
 
     /**

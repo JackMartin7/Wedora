@@ -484,8 +484,6 @@
 
     <string name="empty_chats_title">No conversations yet</string>
     <string name="empty_chats_subtitle">Start by liking someone on the Home screen</string>
-    <string name="empty_chats_guest_title">Sign up to start chatting</string>
-    <string name="empty_chats_guest_subtitle">Create an account to message your matches.</string>
     <string name="empty_chats_error_title">Couldn\'t load your chats</string>
     <string name="empty_chats_error_subtitle">Check your connection and try again.</string>
 
@@ -517,6 +515,17 @@
     <string name="guest_limit_empty_action">Sign Up</string>
     <string name="like_limit_sheet_subtitle">You\'ve used all 10 likes today. Upgrade to Premium for unlimited likes!</string>
     <string name="message_limit_sheet_subtitle">You\'ve used all 10 messages today. Upgrade to Premium for unlimited messages!</string>
+
+    <!-- Guest demo chat -->
+    <string name="guest_chat_blocked_title">Ready to Connect?</string>
+    <string name="guest_chat_blocked_subtitle">Sign up to send messages and start real conversations</string>
+    <string name="guest_keep_exploring_action">Keep Exploring</string>
+    <string name="guest_demo_chat_sarah_name">Sarah</string>
+    <string name="guest_demo_chat_sarah_message_1">Hey! How\'s it going? 😊</string>
+    <string name="guest_demo_chat_sarah_message_2">I\'d love to get to know you better!</string>
+    <string name="guest_demo_chat_ahmed_name">Ahmed</string>
+    <string name="guest_demo_chat_ahmed_message_1">Would love to know more about you!</string>
+    <string name="guest_demo_chat_ahmed_message_2">What do you like to do for fun?</string>
 
     <string name="logout_sheet_title">Log Out?</string>
     <string name="logout_sheet_subtitle">Are you sure you want to log out of your Wedora account?</string>

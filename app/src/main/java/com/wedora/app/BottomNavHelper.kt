@@ -1,7 +1,6 @@
 package com.wedora.app
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -17,22 +16,17 @@ import com.google.firebase.firestore.ListenerRegistration
  * is tapped, and keeps the Likes/Chats badges live for as long as this screen
  * is in front.
  *
- * Chats is account-only — a guest has no matches to message, so there's
- * nothing there to preview — and guests are redirected to sign-up instead of
- * navigating to it. Profile is NOT gated here: it has its own guest state
- * (see ProfileActivity.showGuestChrome) that's a preview, not a dead end, so
- * guests navigate to it like any other tab.
+ * No tab is guest-gated here anymore. Profile has its own guest state (see
+ * ProfileActivity.showGuestChrome) and Chats now shows two hardcoded demo
+ * conversations for a guest (see ChatsActivity.observeConversations) rather
+ * than being blocked outright — both are previews of the real thing, not
+ * dead ends, so a guest navigates to every tab the same way a signed-in user
+ * does.
  */
 fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, activeTabId: Int) {
     bottomNav.selectedItemId = activeTabId
     bottomNav.setOnItemSelectedListener { item ->
         if (item.itemId == activeTabId) return@setOnItemSelectedListener true
-
-        if (item.itemId == R.id.nav_chats && GuestPrefs.isGuest(this)) {
-            Toast.makeText(this, R.string.guest_action_blocked, Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, SignUpActivity::class.java))
-            return@setOnItemSelectedListener false
-        }
 
         // Every tab now has a screen, so there's no null case and no
         // hardcoded "coming soon" toast — Explore says that itself, in a real

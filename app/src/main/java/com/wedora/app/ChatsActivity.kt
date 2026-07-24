@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.Timestamp
 import com.wedora.app.databinding.ActivityChatsBinding
 import java.util.Date
 
@@ -53,7 +54,15 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
 
     private val adapter = ChatListAdapter(
         onClick = { chat ->
-            startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
+            // Every row a guest ever sees is one of the two hardcoded demo
+            // previews from demoGuestPreviews() — GuestPrefs.isGuest() here
+            // is really asking "is this a demo row", just without needing
+            // ChatPreview itself to carry a flag for it.
+            if (GuestPrefs.isGuest(this)) {
+                startActivity(ChatThreadActivity.demoIntent(this, chat.name))
+            } else {
+                startActivity(ChatThreadActivity.intent(this, chat.otherUserId, chat.name))
+            }
         },
         onSelectionChanged = { selectionMode, count -> updateSelectionUi(selectionMode, count) }
     )
@@ -238,6 +247,44 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
     }
 
     /**
+     * Two hardcoded rows, entirely local — never a Firestore read. matchId/
+     * otherUserId are stable fake ids rather than real ones, which matters
+     * for the adapter's DiffUtil (areItemsTheSame) and for the click handler
+     * above, which reroutes to ChatThreadActivity.demoIntent rather than the
+     * real intent() precisely because these ids don't back anything real.
+     *
+     * No unread badge, no online dot (lastSeen null renders as "unknown",
+     * same as a real user whose presence hasn't loaded yet) — a demo
+     * conversation should read as a normal-looking, already-seen one, not
+     * one flagged as needing attention.
+     */
+    private fun demoGuestPreviews(): List<ChatPreview> {
+        val now = System.currentTimeMillis()
+        return listOf(
+            ChatPreview(
+                matchId = "demo-sarah",
+                otherUserId = "demo-sarah",
+                name = getString(R.string.guest_demo_chat_sarah_name),
+                lastMessage = getString(R.string.guest_demo_chat_sarah_message_1),
+                lastMessageAt = Timestamp(Date(now - 2 * 60 * 60 * 1000)),
+                isUnread = false,
+                unreadCount = 0,
+                lastSeen = null
+            ),
+            ChatPreview(
+                matchId = "demo-ahmed",
+                otherUserId = "demo-ahmed",
+                name = getString(R.string.guest_demo_chat_ahmed_name),
+                lastMessage = getString(R.string.guest_demo_chat_ahmed_message_1),
+                lastMessageAt = Timestamp(Date(now - 5 * 60 * 60 * 1000)),
+                isUnread = false,
+                unreadCount = 0,
+                lastSeen = null
+            )
+        )
+    }
+
+    /**
      * Live listener rather than a one-shot read, so a new message updates the
      * preview, ordering and unread badge without leaving and re-entering.
      *
@@ -247,15 +294,11 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
      */
     private fun observeConversations() {
         if (GuestPrefs.isGuest(this)) {
-            showEmpty(
-                R.drawable.ic_support_chat,
-                R.string.empty_chats_guest_title,
-                R.string.empty_chats_guest_subtitle
-            )
+            showConversations(demoGuestPreviews())
             return
         }
 
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             showEmpty(
                     R.drawable.ic_support_chat,
