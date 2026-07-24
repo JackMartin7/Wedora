@@ -66,6 +66,16 @@ service cloud.firestore {
             || request.resource.data.get('likesGivenToday', 0) <= 10;
       }
 
+      // Same best-effort shape and the same gap as likesLimitRespected() above
+      // — an independent quota, tracked in its own pair of fields, so it's
+      // checked separately rather than folded into the same function.
+      function messagesLimitRespected() {
+        return resource.data.get('isPremium', false)
+            || request.resource.data.get('messagesSentDate', '')
+                != resource.data.get('messagesSentDate', '')
+            || request.resource.data.get('messagesSentToday', 0) <= 10;
+      }
+
       // The document is built up across the profile-setup steps, so both
       // create and update tolerate a missing age — step 1 creates it with a
       // name, steps 2 and 3 add gender and intent, and age only arrives at
@@ -84,7 +94,8 @@ service cloud.firestore {
       allow update: if isOwner(userId)
           && ageAbsentOrValid()
           && isPremiumUnchanged()
-          && likesLimitRespected();
+          && likesLimitRespected()
+          && messagesLimitRespected();
 
       allow delete: if isOwner(userId);
     }

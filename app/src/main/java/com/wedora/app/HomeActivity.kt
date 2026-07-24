@@ -488,10 +488,10 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
     }
 
     private fun showDailyLimitReachedSheet() {
-        DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+        DailyLimitReachedBottomSheet.show(supportFragmentManager, DailyLimitReachedBottomSheet.Kind.LIKES)
     }
 
-    override fun onUpgradeFromLikeLimitRequested() {
+    override fun onUpgradeFromDailyLimitRequested() {
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 

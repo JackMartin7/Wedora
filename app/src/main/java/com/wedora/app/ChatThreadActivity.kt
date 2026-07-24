@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
@@ -26,7 +25,7 @@ import java.util.Date
  * derived via [Match.idFor], so callers can't pass one that disagrees with the
  * participants.
  */
-class ChatThreadActivity : AppCompatActivity() {
+class ChatThreadActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraChat"
@@ -226,52 +225,49 @@ class ChatThreadActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * unreadCount increments rather than being set: the recipient's unread
+     * count is whatever it was plus this message. It's safe to increment
+     * from wherever it stands because opening a thread zeroes it, so by the
+     * time this user is sending, their own side has already been cleared.
+     *
+     * Drops otherUid out of hiddenBy in the same write: if they'd "deleted"
+     * this chat, a new message from this side brings it back — the standard
+     * WhatsApp-style behavior, not a block. All of that write shape now lives
+     * in sendMessageRespectingDailyLimit, which also folds in the free-tier
+     * message count so a send and its count update are one atomic batch.
+     */
     private fun sendMessage() {
         val text = binding.etMessage.text.toString().trim()
         if (text.isEmpty()) return
 
         // Cleared immediately: the snapshot listener echoes the message back
         // from the local cache before the server round-trip, so the thread
-        // updates without waiting.
+        // updates without waiting. Restored if the send doesn't happen —
+        // daily limit, or the write itself failing — so nothing typed is lost.
         binding.etMessage.text.clear()
 
-        val message = mapOf(
-            Message.FIELD_SENDER_ID to selfUid,
-            Message.FIELD_TEXT to text,
-            Message.FIELD_SENT_AT to FieldValue.serverTimestamp()
-        )
-
-        // The message and the match's lastMessage summary go in one batch, so
-        // the Chats list can never show a preview for a message that failed to
-        // write (or miss one that succeeded).
-        //
-        // unreadCount increments rather than being set: the recipient's unread
-        // count is whatever it was plus this message. It's safe to increment
-        // from wherever it stands because opening a thread zeroes it, so by the
-        // time this user is sending, their own side has already been cleared.
-        //
-        // Also drops otherUid out of hiddenBy in the same write: if they'd
-        // "deleted" this chat, a new message from this side brings it back —
-        // the standard WhatsApp-style behavior, not a block.
-        val batch = firestore.batch()
-        batch.set(messagesCollection().document(), message)
-        batch.update(
-            matchDocument(),
-            Match.PATH_LM_TEXT, text,
-            Match.PATH_LM_SENT_AT, FieldValue.serverTimestamp(),
-            Match.PATH_LM_SENDER_ID, selfUid,
-            Match.PATH_LM_UNREAD_COUNT, FieldValue.increment(1),
-            Match.FIELD_HIDDEN_BY, FieldValue.arrayRemove(otherUid)
-        )
-
-        batch.commit()
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to send message", e)
-                // Put the text back so it isn't silently lost.
-                binding.etMessage.setText(text)
-                binding.etMessage.setSelection(text.length)
-                Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
+        sendMessageRespectingDailyLimit(firestore, selfUid, otherUid, matchId, text) { attempt ->
+            when (attempt) {
+                is MessageSendAttempt.DailyLimitReached -> {
+                    binding.etMessage.setText(text)
+                    binding.etMessage.setSelection(text.length)
+                    DailyLimitReachedBottomSheet.show(
+                        supportFragmentManager, DailyLimitReachedBottomSheet.Kind.MESSAGES
+                    )
+                }
+                is MessageSendAttempt.Started -> attempt.task.addOnFailureListener { e ->
+                    Log.w(TAG, "Failed to send message", e)
+                    binding.etMessage.setText(text)
+                    binding.etMessage.setSelection(text.length)
+                    Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
+                }
             }
+        }
+    }
+
+    override fun onUpgradeFromDailyLimitRequested() {
+        startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
     /**

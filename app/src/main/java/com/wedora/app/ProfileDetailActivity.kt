@@ -191,7 +191,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
             when (attempt) {
                 is LikeAttempt.DailyLimitReached -> {
                     applyLikeState(false)
-                    DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+                    DailyLimitReachedBottomSheet.show(supportFragmentManager, DailyLimitReachedBottomSheet.Kind.LIKES)
                 }
                 is LikeAttempt.Started -> attempt.task.addOnFailureListener { e ->
                     logFirestoreWriteFailure(TAG, "Failed to like $userId", e)
@@ -202,7 +202,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
         }
     }
 
-    override fun onUpgradeFromLikeLimitRequested() {
+    override fun onUpgradeFromDailyLimitRequested() {
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
@@ -240,7 +240,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
             when (attempt) {
                 is LikeAttempt.DailyLimitReached -> {
                     binding.btnMessage.isEnabled = true
-                    DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+                    DailyLimitReachedBottomSheet.show(supportFragmentManager, DailyLimitReachedBottomSheet.Kind.LIKES)
                 }
                 is LikeAttempt.Started -> attempt.task
                     .addOnSuccessListener { openChatThread() }

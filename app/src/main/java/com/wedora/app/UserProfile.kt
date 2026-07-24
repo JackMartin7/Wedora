@@ -95,7 +95,15 @@ data class UserProfile(
     /** How many likes this user has given on [likesGivenDate]. Free tier only. */
     val likesGivenToday: Int,
     /** "yyyy-MM-dd", device-local calendar day the count above is for. */
-    val likesGivenDate: String?
+    val likesGivenDate: String?,
+    /**
+     * How many messages this user has sent on [messagesSentDate]. Free tier
+     * only — an independent quota from the like limit above, not a shared
+     * pool; messaging 10 people and liking 10 people are separate allowances.
+     */
+    val messagesSentToday: Int,
+    /** "yyyy-MM-dd", device-local calendar day the count above is for. */
+    val messagesSentDate: String?
 ) {
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
@@ -123,6 +131,8 @@ data class UserProfile(
         const val FIELD_IS_PREMIUM = "isPremium"
         const val FIELD_LIKES_GIVEN_TODAY = "likesGivenToday"
         const val FIELD_LIKES_GIVEN_DATE = "likesGivenDate"
+        const val FIELD_MESSAGES_SENT_TODAY = "messagesSentToday"
+        const val FIELD_MESSAGES_SENT_DATE = "messagesSentDate"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -152,7 +162,9 @@ data class UserProfile(
             lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate(),
             isPremium = snapshot.getBoolean(FIELD_IS_PREMIUM) ?: false,
             likesGivenToday = snapshot.getLong(FIELD_LIKES_GIVEN_TODAY)?.toInt() ?: 0,
-            likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE)
+            likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE),
+            messagesSentToday = snapshot.getLong(FIELD_MESSAGES_SENT_TODAY)?.toInt() ?: 0,
+            messagesSentDate = snapshot.getString(FIELD_MESSAGES_SENT_DATE)
         )
     }
 }
