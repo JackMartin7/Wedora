@@ -11,10 +11,13 @@ import androidx.annotation.StringRes
  * [GuestPrefs] and [LocalProfilePrefs], and are cleared with them on account
  * deletion (see clearAllWedoraData).
  *
- * The settings are recorded but nothing acts on them yet: there is no push
- * delivery in the app, so no code path currently reads these to decide whether
- * to notify. They exist so the choices survive until FCM is wired up — see the
- * TODO in [NotificationsSettingsActivity].
+ * NEW_MATCHES, MESSAGES and LIKES are read live by
+ * [MatchNotificationWatcher] before every local notification it considers
+ * showing — these are process-local only, since there's no push delivery yet,
+ * so they can only ever fire while the app itself is running (see that
+ * class's doc for what that does and doesn't cover). APP_UPDATES and
+ * PROMOTIONS have no trigger source at all yet, local or server-side — see
+ * the TODO in [NotificationsSettingsActivity].
  *
  * The toggles are an enum rather than five pairs of getters and setters, so
  * the screen can build itself from the list and adding a category is a
@@ -70,6 +73,22 @@ object NotificationPrefs {
 
     fun setEnabled(context: Context, toggle: Toggle, enabled: Boolean) {
         prefs(context).edit().putBoolean(toggle.key, enabled).apply()
+    }
+
+    private const val KEY_ASKED_SYSTEM_PERMISSION = "notif_asked_system_permission"
+
+    /**
+     * Whether the OS POST_NOTIFICATIONS prompt has already been shown once.
+     * Separate from the category toggles above, which are this app's own
+     * preferences UI — this tracks the one-time system dialog instead, so
+     * HomeActivity doesn't re-trigger it (a no-op after the first decision
+     * anyway, but there's no reason to keep calling it).
+     */
+    fun hasAskedSystemPermission(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_ASKED_SYSTEM_PERMISSION, false)
+
+    fun markAskedSystemPermission(context: Context) {
+        prefs(context).edit().putBoolean(KEY_ASKED_SYSTEM_PERMISSION, true).apply()
     }
 
     private fun prefs(context: Context) =

@@ -1,0 +1,126 @@
+package com.wedora.app
+
+import android.Manifest
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+
+/**
+ * Builds and shows this app's three local-notification categories.
+ *
+ * Every function here re-reads [NotificationPrefs] at call time rather than
+ * once when [MatchNotificationWatcher] starts — so switching a toggle off in
+ * Settings takes effect on the very next event, with no restart needed. The
+ * cost is one SharedPreferences read per event, which is negligible next to
+ * the Firestore round trip that triggered it.
+ */
+object AppNotifications {
+
+    /**
+     * Distinct id ranges per category so a match/like/message about the same
+     * matchId can't silently overwrite one another's notification — while a
+     * second event of the *same* category for the same match still correctly
+     * replaces the first rather than stacking duplicates.
+     */
+    private const val ID_OFFSET_MATCH = 0
+    private const val ID_OFFSET_LIKE = 1
+    private const val ID_OFFSET_MESSAGE = 2
+
+    fun notifyNewMatch(context: Context, matchId: String, otherUid: String, otherName: String) {
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) return
+
+        val intent = ProfileDetailActivity.intent(context, otherUid)
+        show(
+            context = context,
+            channelId = NotificationChannels.MATCHES,
+            notificationId = idFor(matchId, ID_OFFSET_MATCH),
+            title = context.getString(R.string.notif_new_match_title),
+            text = context.getString(R.string.notif_new_match_body, otherName),
+            contentIntent = intent
+        )
+    }
+
+    /** Deliberately vague — who liked isn't named, matching the Likes tab's blurred teaser. */
+    fun notifyNewLike(context: Context, matchId: String) {
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.LIKES)) return
+
+        show(
+            context = context,
+            channelId = NotificationChannels.LIKES,
+            notificationId = idFor(matchId, ID_OFFSET_LIKE),
+            title = context.getString(R.string.notif_new_like_title),
+            text = context.getString(R.string.notif_new_like_body),
+            contentIntent = Intent(context, LikesActivity::class.java)
+        )
+    }
+
+    fun notifyNewMessage(
+        context: Context,
+        matchId: String,
+        otherUid: String,
+        senderName: String,
+        messageText: String
+    ) {
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.MESSAGES)) return
+
+        val intent = ChatThreadActivity.intent(context, otherUid, senderName)
+        show(
+            context = context,
+            channelId = NotificationChannels.MESSAGES,
+            notificationId = idFor(matchId, ID_OFFSET_MESSAGE),
+            title = senderName,
+            text = messageText,
+            contentIntent = intent
+        )
+    }
+
+    private fun idFor(matchId: String, offset: Int): Int =
+        matchId.hashCode() * 4 + offset
+
+    /**
+     * FLAG_ACTIVITY_NEW_TASK because the PendingIntent fires from outside any
+     * Activity context. No parent-stack synthesis (TaskStackBuilder) — this
+     * app doesn't declare parentActivityName anywhere, so it wouldn't produce
+     * a real back stack, just an extra layer of indirection over what
+     * PendingIntent.getActivity already does directly.
+     */
+    private fun show(
+        context: Context,
+        channelId: String,
+        notificationId: Int,
+        title: String,
+        text: String,
+        contentIntent: Intent
+    ) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        contentIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_notification_bell)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(notificationId, notification)
+    }
+}

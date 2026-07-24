@@ -5,6 +5,9 @@
     <!-- Coarse is deliberate: city-level accuracy is all Complete Profile needs,
          and it is less invasive than ACCESS_FINE_LOCATION. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Required on API 33+ to post local notifications (matches/messages/likes).
+         No-op below API 33, where notifications don't need runtime consent. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".WedoraApplication"

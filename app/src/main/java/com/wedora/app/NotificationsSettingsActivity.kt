@@ -41,7 +41,12 @@ class NotificationsSettingsActivity : AppCompatActivity() {
             // setting it here would immediately fire and write it back.
             row.switchToggle.isChecked = NotificationPrefs.isEnabled(this, toggle)
             row.switchToggle.setOnCheckedChangeListener { _, isChecked ->
-                // TODO: wire to FCM topic subscriptions when Blaze plan is available
+                // NEW_MATCHES, MESSAGES and LIKES need nothing further here —
+                // MatchNotificationWatcher reads NotificationPrefs fresh at
+                // notify time, so flipping the switch takes effect on the very
+                // next event with no other wiring. APP_UPDATES and PROMOTIONS
+                // have no trigger source yet, local or server-side:
+                // TODO: wire to admin announcement system when available
                 NotificationPrefs.setEnabled(this, toggle, isChecked)
             }
 

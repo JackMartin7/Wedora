@@ -14,5 +14,12 @@ class WedoraApplication : Application() {
         // App-level foreground/background presence. Registered once here so it
         // tracks the whole process rather than any single activity.
         ProcessLifecycleOwner.get().lifecycle.addObserver(PresenceTracker)
+
+        // Local notifications for matches/messages/likes. Channels must exist
+        // before the first notification is ever posted; the watcher attaches
+        // to whichever user is (or becomes) signed in and runs for the life of
+        // the process, independent of which Activity — if any — is in front.
+        NotificationChannels.createAll(this)
+        MatchNotificationWatcher.attach(this)
     }
 }

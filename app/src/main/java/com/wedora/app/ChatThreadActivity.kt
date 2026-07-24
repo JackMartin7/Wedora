@@ -321,6 +321,26 @@ class ChatThreadActivity : AppCompatActivity() {
         applyBackTransition()
     }
 
+    /**
+     * Marks this conversation as the one on screen, so
+     * [MatchNotificationWatcher] skips it — no point notifying about a message
+     * the user is already reading. Set in onResume/cleared in onPause rather
+     * than onCreate/onDestroy, so backgrounding the app (home button, screen
+     * off) while the thread is still on top correctly re-enables notifications
+     * for it, and returning to the foreground suppresses them again.
+     */
+    override fun onResume() {
+        super.onResume()
+        ActiveChatTracker.openThreadUid = otherUid
+    }
+
+    override fun onPause() {
+        if (ActiveChatTracker.openThreadUid == otherUid) {
+            ActiveChatTracker.openThreadUid = null
+        }
+        super.onPause()
+    }
+
     override fun onDestroy() {
         messagesListener?.remove()
         statusListener?.remove()
