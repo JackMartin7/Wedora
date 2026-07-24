@@ -29,6 +29,28 @@ fun ImageView.loadAvatarOrPlaceholder(photoUrl: Uri?, @DrawableRes placeholderRe
 }
 
 /**
+ * Loads [url] — another user's hosted photo (see PhotoUploadService's
+ * `photoUrl`) — into this ImageView, falling back to [placeholderRes] while
+ * it loads, on a null/blank url, or if the load fails.
+ *
+ * Unlike [loadAvatarOrPlaceholder]'s no-op-on-null, this always resolves to
+ * something explicitly: a RecyclerView row reused for an item with no photo
+ * must not keep showing whatever the previous item's photo was, which a
+ * silent no-op here would let happen.
+ */
+fun ImageView.loadRemoteProfilePhoto(
+    url: String?,
+    @DrawableRes placeholderRes: Int = R.drawable.ic_avatar_placeholder
+) {
+    Glide.with(this)
+        .load(url?.takeIf { it.isNotBlank() })
+        .placeholder(placeholderRes)
+        .error(placeholderRes)
+        .centerCrop()
+        .into(this)
+}
+
+/**
  * Loads [uid]'s locally-stored profile photo (see [LocalProfilePrefs]) into
  * this ImageView, if one was saved and the file still exists. Otherwise a
  * no-op — the view keeps its XML placeholder drawable.

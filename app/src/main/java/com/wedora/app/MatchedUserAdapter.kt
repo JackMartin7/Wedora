@@ -24,8 +24,7 @@ class MatchedUserAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(user: MatchedUser) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the
-            // neutral placeholder set in the layout.
+            ivMatchedAvatar.loadRemoteProfilePhoto(user.photoUrl)
             tvMatchedName.text = user.name
             onlineDot.root.bindOnlineDot(user.lastSeen)
 

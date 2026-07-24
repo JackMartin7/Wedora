@@ -25,8 +25,7 @@ class LikesAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(like: ReceivedLike) = with(binding) {
-            // No photo backend for other users, so the tile keeps the neutral
-            // placeholder set in the layout.
+            ivLikePhoto.loadRemoteProfilePhoto(like.profile.photoUrl)
             tvLikeName.text = like.likerName
             onlineDot.root.bindOnlineDot(like.profile.lastSeen)
 

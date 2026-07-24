@@ -55,7 +55,8 @@ class MatchHistoryActivity : AppCompatActivity() {
                         otherUserId = it.otherUserId,
                         name = it.name,
                         matchedOn = it.createdAt?.toDate(),
-                        lastSeen = it.lastSeen
+                        lastSeen = it.lastSeen,
+                        photoUrl = it.photoUrl
                     )
                 }
                 if (items.isEmpty()) showEmpty() else showHistory(items)

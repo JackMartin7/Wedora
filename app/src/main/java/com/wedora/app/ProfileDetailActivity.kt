@@ -289,6 +289,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
     private fun showProfile(name: String, profile: UserProfile) {
         userName = name
         binding.tvDetailName.text = name
+        binding.ivDetailPhoto.loadRemoteProfilePhoto(profile.photoUrl)
 
         val line = formatAgeLocation(
             this,

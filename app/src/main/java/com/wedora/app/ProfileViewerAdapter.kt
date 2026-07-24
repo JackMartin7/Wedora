@@ -25,8 +25,7 @@ class ProfileViewerAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(viewer: ProfileViewer) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the
-            // neutral placeholder set in the layout.
+            ivViewerAvatar.loadRemoteProfilePhoto(viewer.photoUrl)
             tvViewerName.text = viewer.name
             tvViewerTime.text = root.context.getString(
                 R.string.profile_viewer_viewed_format,

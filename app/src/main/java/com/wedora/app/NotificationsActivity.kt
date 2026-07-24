@@ -60,7 +60,8 @@ class NotificationsActivity : AppCompatActivity() {
                             likerUserId = it.likerUserId,
                             likerName = it.likerName,
                             createdAt = it.createdAt,
-                            lastSeen = it.profile.lastSeen
+                            lastSeen = it.profile.lastSeen,
+                            photoUrl = it.profile.photoUrl
                         )
                     }
                 )

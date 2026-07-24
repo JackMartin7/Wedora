@@ -16,7 +16,8 @@ import com.wedora.app.databinding.ItemExploreNearbyBinding
 data class NearbyPerson(
     val userId: String,
     val name: String,
-    val distanceBadge: String?
+    val distanceBadge: String?,
+    val photoUrl: String?
 )
 
 /** Horizontal strip of circular avatars for the Explore "People Nearby" row. */
@@ -36,8 +37,7 @@ class NearbyAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(person: NearbyPerson) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the neutral
-            // placeholder set in the layout.
+            ivNearbyAvatar.loadRemoteProfilePhoto(person.photoUrl)
             tvNearbyName.text = person.name
 
             if (person.distanceBadge == null) {

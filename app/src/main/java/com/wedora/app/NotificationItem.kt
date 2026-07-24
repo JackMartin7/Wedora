@@ -15,7 +15,8 @@ data class NotificationItem(
     val likerName: String,
     val createdAt: Timestamp?,
     /** For the online-status dot; comes free with the liker's profile. */
-    val lastSeen: Date?
+    val lastSeen: Date?,
+    val photoUrl: String?
 )
 
 /**

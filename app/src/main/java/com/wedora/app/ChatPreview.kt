@@ -23,5 +23,7 @@ data class ChatPreview(
     val isUnread: Boolean,
     val unreadCount: Int,
     /** For the online-status dot; batch-loaded alongside the match data. */
-    val lastSeen: Date?
+    val lastSeen: Date?,
+    /** The other user's hosted photo, batch-loaded the same way as [lastSeen]; null on a demo/guest row or an account with none. */
+    val photoUrl: String?
 )

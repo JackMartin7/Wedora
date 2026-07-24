@@ -20,9 +20,6 @@ import com.google.firebase.firestore.FirebaseFirestore
  * Maps a user document to a feed [MatchCard], or null when it has no usable
  * display name — an unnamed profile has nothing to show and is dropped rather
  * than rendered blank.
- *
- * Photos aren't backed for other users yet, so both image slots take the
- * neutral placeholder; the caller shows name, age/location and marriage intent.
  */
 fun DocumentSnapshot.toMatchCard(): MatchCard? {
     val profile = UserProfile.from(this)
@@ -31,8 +28,6 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         id = id,
         name = name,
         role = "",
-        avatarRes = R.drawable.ic_avatar_placeholder,
-        photoRes = R.drawable.ic_avatar_placeholder,
         // Filled in later by withDistanceFrom once the viewer's own coordinates
         // are known; a card mapped in isolation has no distance yet.
         distanceKm = null,
@@ -46,7 +41,8 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         myStatus = profile.myStatus,
         lookingFor = profile.lookingFor,
         lastSeen = profile.lastSeen,
-        isPremium = profile.isPremium
+        isPremium = profile.isPremium,
+        photoUrl = profile.photoUrl
     )
 }
 

@@ -574,8 +574,8 @@ class HomeActivity :
     private fun bindCard(cardView: View, card: MatchCard) {
         val b = ItemMatchCardBinding.bind(cardView)
 
-        b.ivCardAvatar.setImageResource(card.avatarRes)
-        b.ivCardPhoto.setImageResource(card.photoRes)
+        b.ivCardAvatar.loadRemoteProfilePhoto(card.photoUrl)
+        b.ivCardPhoto.loadRemoteProfilePhoto(card.photoUrl)
         b.tvCardName.text = card.name
         b.onlineDot.root.bindOnlineDot(card.lastSeen)
 

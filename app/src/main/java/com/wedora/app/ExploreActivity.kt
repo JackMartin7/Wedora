@@ -161,7 +161,7 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
         if (filtered.isEmpty()) {
             showDiscoverSearchEmpty(q)
         } else {
-            showDiscover(filtered.map { DiscoverProfile(it.id, it.name, it.ageLocationLine(this)) })
+            showDiscover(filtered.map { DiscoverProfile(it.id, it.name, it.ageLocationLine(this), it.photoUrl) })
         }
     }
 
@@ -196,7 +196,7 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
         }
 
         val nearby = cards.take(NEARBY_STRIP_MAX).map {
-            NearbyPerson(it.id, it.name, it.distanceBadge())
+            NearbyPerson(it.id, it.name, it.distanceBadge(), it.photoUrl)
         }
         showNearby(nearby)
 

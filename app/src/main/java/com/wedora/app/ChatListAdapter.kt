@@ -76,9 +76,7 @@ class ChatListAdapter(
         fun bind(chat: ChatPreview) = with(binding) {
             val context = root.context
 
-            // No photo backend for other users, so every row uses the neutral
-            // placeholder rather than a stock face.
-            ivChatAvatar.setImageResource(R.drawable.ic_avatar_placeholder)
+            ivChatAvatar.loadRemoteProfilePhoto(chat.photoUrl)
             tvChatName.text = chat.name
             onlineDot.root.bindOnlineDot(chat.lastSeen)
 

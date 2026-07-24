@@ -269,7 +269,8 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
                 lastMessageAt = Timestamp(Date(now - 2 * 60 * 60 * 1000)),
                 isUnread = false,
                 unreadCount = 0,
-                lastSeen = null
+                lastSeen = null,
+                photoUrl = null
             ),
             ChatPreview(
                 matchId = "demo-ahmed",
@@ -279,7 +280,8 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
                 lastMessageAt = Timestamp(Date(now - 5 * 60 * 60 * 1000)),
                 isUnread = false,
                 unreadCount = 0,
-                lastSeen = null
+                lastSeen = null,
+                photoUrl = null
             )
         )
     }
@@ -386,11 +388,12 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
     }
 
     /**
-     * Batched, one-time presence read for everyone currently in the list —
-     * unlike [nameCache], not skipped for already-known users, since presence
-     * (unlike a name) goes stale. A single get() per render rather than a
-     * listener per row: the online dot is "close enough", not real-time, so
-     * this matches how the list already refreshes on every message event.
+     * Batched, one-time presence (and photo) read for everyone currently in
+     * the list — unlike [nameCache], not skipped for already-known users,
+     * since presence and a photo (unlike a name) can both go stale. A single
+     * get() per render rather than a listener per row: the online dot is
+     * "close enough", not real-time, so this matches how the list already
+     * refreshes on every message event.
      */
     private fun loadLastSeenThenRender(matches: List<Match>, selfUid: String) {
         val otherUids = matches.mapNotNull { it.otherUserId(selfUid) }.distinct()
@@ -407,19 +410,19 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
 
         Tasks.whenAllSuccess<QuerySnapshot>(tasks)
             .addOnSuccessListener { snapshots ->
-                val lastSeenByUid = snapshots.flatMap { it.documents }
-                    .associate { it.id to UserProfile.from(it).lastSeen }
-                render(matches, selfUid, lastSeenByUid)
+                val profilesByUid = snapshots.flatMap { it.documents }
+                    .associate { it.id to UserProfile.from(it) }
+                render(matches, selfUid, profilesByUid)
             }
             .addOnFailureListener { e ->
-                // Presence is a nicety — render without dots rather than
-                // blocking the list on a second read failing.
+                // Presence/photo are a nicety — render without them rather
+                // than blocking the list on a second read failing.
                 Log.w(TAG, "Failed to load presence for chat list", e)
                 render(matches, selfUid, emptyMap())
             }
     }
 
-    private fun render(matches: List<Match>, selfUid: String, lastSeenByUid: Map<String, Date?>) {
+    private fun render(matches: List<Match>, selfUid: String, profilesByUid: Map<String, UserProfile>) {
         val previews = matches.mapNotNull { match ->
             val otherUid = match.otherUserId(selfUid) ?: return@mapNotNull null
             // A match whose user document is missing or unnamed is dropped
@@ -437,7 +440,8 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
                 lastMessageAt = lastMessage?.sentAt ?: match.createdAt,
                 isUnread = match.hasUnreadFor(selfUid),
                 unreadCount = lastMessage?.unreadCount ?: 0,
-                lastSeen = lastSeenByUid[otherUid]
+                lastSeen = profilesByUid[otherUid]?.lastSeen,
+                photoUrl = profilesByUid[otherUid]?.photoUrl
             )
         }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
 

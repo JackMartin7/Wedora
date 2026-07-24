@@ -15,7 +15,8 @@ import com.wedora.app.databinding.ItemDiscoverGridBinding
 data class DiscoverProfile(
     val userId: String,
     val name: String,
-    val meta: String?
+    val meta: String?,
+    val photoUrl: String?
 )
 
 /** 2-column grid of discoverable profiles, mirroring the Likes grid. */
@@ -35,8 +36,7 @@ class DiscoverAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(profile: DiscoverProfile) = with(binding) {
-            // No photo backend for other users, so the tile keeps the neutral
-            // placeholder set in the layout.
+            ivDiscoverPhoto.loadRemoteProfilePhoto(profile.photoUrl)
             tvDiscoverName.text = profile.name
 
             if (profile.meta == null) {

@@ -21,7 +21,8 @@ data class MatchHistoryItem(
     val name: String,
     val matchedOn: Date?,
     /** For the online-status dot; batch-loaded alongside the match data. */
-    val lastSeen: Date?
+    val lastSeen: Date?,
+    val photoUrl: String?
 )
 
 /**
@@ -50,8 +51,7 @@ class MatchHistoryAdapter(
         private val dateFormat = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
 
         fun bind(item: MatchHistoryItem) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the neutral
-            // placeholder set in the layout.
+            ivAvatar.loadRemoteProfilePhoto(item.photoUrl)
             tvName.text = item.name
             onlineDot.root.bindOnlineDot(item.lastSeen)
 

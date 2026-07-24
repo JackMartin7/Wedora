@@ -25,7 +25,8 @@ data class MatchedUser(
     val otherUserId: String,
     val name: String,
     val lastSeen: Date?,
-    val createdAt: Timestamp?
+    val createdAt: Timestamp?,
+    val photoUrl: String?
 )
 
 /**
@@ -80,7 +81,8 @@ fun loadMatchedUsers(
                             otherUserId = otherUid,
                             name = name,
                             lastSeen = profile.lastSeen,
-                            createdAt = match.createdAt
+                            createdAt = match.createdAt,
+                            photoUrl = profile.photoUrl
                         )
                     }
                     onResult(users)

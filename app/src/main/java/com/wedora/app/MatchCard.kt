@@ -1,7 +1,6 @@
 package com.wedora.app
 
 import android.content.Context
-import androidx.annotation.DrawableRes
 import java.util.Date
 
 /**
@@ -25,8 +24,6 @@ data class MatchCard(
     val id: String,
     val name: String,
     val role: String,
-    @DrawableRes val avatarRes: Int,
-    @DrawableRes val photoRes: Int,
     /** Distance in km from the viewer, or null when it can't be computed. */
     val distanceKm: Double?,
     val bio: String,
@@ -47,7 +44,14 @@ data class MatchCard(
     /** For the online-status dot; null on accounts predating presence tracking. */
     val lastSeen: Date?,
     /** This user's own Premium status — see withPremiumPriority() in Feed.kt. */
-    val isPremium: Boolean
+    val isPremium: Boolean,
+    /**
+     * This user's hosted photo (see PhotoUploadService), or null if they've
+     * never uploaded one — callers load it via [loadRemoteProfilePhoto],
+     * which falls back to the neutral placeholder either way (null, or a
+     * failed load).
+     */
+    val photoUrl: String?
 ) {
 
     /**

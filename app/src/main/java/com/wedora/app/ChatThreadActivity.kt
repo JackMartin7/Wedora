@@ -219,7 +219,9 @@ class ChatThreadActivity :
                     if (error != null) Log.w(TAG, "Presence listener failed", error)
                     return@addSnapshotListener
                 }
-                renderStatus(UserProfile.from(snapshot).lastSeen)
+                val profile = UserProfile.from(snapshot)
+                renderStatus(profile.lastSeen)
+                binding.ivChatAvatar.loadRemoteProfilePhoto(profile.photoUrl)
             }
     }
 

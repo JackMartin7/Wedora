@@ -25,7 +25,8 @@ data class ProfileViewer(
     val viewerUid: String,
     val name: String,
     val lastSeen: Date?,
-    val viewedAt: Timestamp?
+    val viewedAt: Timestamp?,
+    val photoUrl: String?
 )
 
 /**
@@ -98,7 +99,8 @@ fun loadProfileViewers(
                             viewerUid = uid,
                             name = name,
                             lastSeen = profile.lastSeen,
-                            viewedAt = viewedAtByUid[uid]
+                            viewedAt = viewedAtByUid[uid],
+                            photoUrl = profile.photoUrl
                         )
                     }.sortedByDescending { it.viewedAt?.toDate()?.time ?: 0L }
 

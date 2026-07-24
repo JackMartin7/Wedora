@@ -25,8 +25,7 @@ class NotificationsAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: NotificationItem) = with(binding) {
-            // No photo backend for other users, so the row keeps the neutral
-            // placeholder set in the layout.
+            ivNotificationAvatar.loadRemoteProfilePhoto(item.photoUrl)
             tvNotificationName.text = item.likerName
             onlineDot.root.bindOnlineDot(item.lastSeen)
             tvNotificationTime.text = formatRelativeShort(root.context, item.createdAt)
