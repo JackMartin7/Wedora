@@ -80,6 +80,22 @@ class HomeActivity :
     private var adsInFlight = 0
 
     /**
+     * Positions in [displayItems] where [buildDisplayItems] wanted to insert
+     * an ad but [adPool] was empty at that moment — a Profile ended up there
+     * instead. This is the fix for a real race: an ad's network load (several
+     * hundred ms) routinely loses against a fast local query, especially a
+     * guest's (no self-profile read, no exclusion gathering first) — so
+     * "skip and hope the pool is warm next time" left guests seeing no ads at
+     * all in a session. Backfilled in place — never spliced in, since
+     * SwipeCardStackView's item count is fixed once setup() runs and growing
+     * [displayItems] after the fact isn't supported — the next time an ad
+     * finishes loading, by [backfillPendingAdSlot]. Cleared at the top of
+     * every [buildDisplayItems] call, since indices from a previous stack
+     * mean nothing against a new one.
+     */
+    private val pendingAdSlots = mutableListOf<Int>()
+
+    /**
      * UIDs the user has liked, kept updated by the match listener.
      *
      * Already-liked people are normally excluded from the feed by
@@ -830,9 +846,11 @@ class HomeActivity :
      * Weaves a native ad in after every AD_INTERVALth real profile, using
      * only whatever's already sitting in [adPool] — never waiting on a fresh
      * load. If the pool is empty when a slot comes up (nothing preloaded yet,
-     * or a run of failed loads), that slot is simply skipped: no gap, no
-     * broken card, the next real profile follows immediately. A later reload
-     * (e.g. applying filters) gets another chance once the pool has refilled.
+     * or a run of failed loads), that slot is recorded in [pendingAdSlots]
+     * rather than lost outright: no gap, no broken card, the next real
+     * profile follows immediately, and [backfillPendingAdSlot] converts it
+     * to an ad in place once one finishes loading, still well before the
+     * user reaches it in the common case.
      *
      * Premium is checked here, not just at insertion time elsewhere — this is
      * the single point every card the stack ever shows passes through, so
@@ -850,6 +868,7 @@ class HomeActivity :
     private fun buildDisplayItems(profiles: List<MatchCard>): List<StackItem> {
         if (PremiumStatus.isPremium()) return profiles.map { StackItem.Profile(it) }
 
+        pendingAdSlots.clear()
         val items = mutableListOf<StackItem>()
         profiles.forEachIndexed { index, card ->
             items += StackItem.Profile(card)
@@ -857,20 +876,67 @@ class HomeActivity :
                 adPool.removeFirstOrNull()?.let { ad ->
                     items += StackItem.Ad(ad)
                     refillAdPool()
+                } ?: run {
+                    // items.size right now is exactly the index the next
+                    // profile (appended on the following iteration) will
+                    // land at — that's the position backfillPendingAdSlot
+                    // converts once an ad is ready.
+                    pendingAdSlots += items.size
+                    refillAdPool()
                 }
             }
         }
         return items
     }
 
-    /** Tops the pool back up to AD_POOL_TARGET, fire-and-forget. */
+    /**
+     * Converts the earliest still-untouched entry in [pendingAdSlots] into
+     * [ad], now that it's finished loading — the actual fix for the race
+     * where [buildDisplayItems] ran before any ad was ready.
+     *
+     * Eligible positions start at [currentStackPosition] + 2, not + 1:
+     * SwipeCardStackView only ever has two real inflated views at once, the
+     * top card (at [currentStackPosition]) and the peek right behind it —
+     * both already bound to whatever layout their StackItem type resolved to
+     * ([item_match_card] for a Profile) before this ever runs. Converting
+     * either now would leave a mismatched view underneath — bindAdCard
+     * expects an inflated item_native_ad_card, and rebinding doesn't
+     * re-inflate — so only a position the stack hasn't touched yet at all is
+     * safe to change type on; it simply renders correctly as an ad whenever
+     * the stack actually reaches it.
+     *
+     * Returns whether [ad] was used this way, so [refillAdPool] knows
+     * whether to fall back to adding it to [adPool] instead.
+     */
+    private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
+        val firstUntouchedIndex = currentStackPosition + 2
+        pendingAdSlots.removeAll { it < firstUntouchedIndex }
+        val index = pendingAdSlots.firstOrNull { it < displayItems.size } ?: return false
+        pendingAdSlots.remove(index)
+
+        displayItems = displayItems.toMutableList().apply { this[index] = StackItem.Ad(ad) }
+        return true
+    }
+
+    /**
+     * Tops the pool back up to AD_POOL_TARGET, fire-and-forget — except a
+     * freshly loaded ad tries [backfillPendingAdSlot] first, so an ad that
+     * lands after [buildDisplayItems] already had to skip a slot still ends
+     * up on screen instead of just sitting in the pool for next time. A
+     * successful backfill calls back in here rather than adding to the pool,
+     * so with more than one pending slot from the same build the pool still
+     * chases back up to target and keeps trying for the rest.
+     */
     private fun refillAdPool() {
         if (PremiumStatus.isPremium()) return
         while (adPool.size + adsInFlight < AD_POOL_TARGET) {
             adsInFlight++
             NativeAdLoader.loadAd(
                 this,
-                onLoaded = { ad -> adsInFlight--; adPool.addLast(ad) },
+                onLoaded = { ad ->
+                    adsInFlight--
+                    if (backfillPendingAdSlot(ad)) refillAdPool() else adPool.addLast(ad)
+                },
                 onFailed = { adsInFlight-- }
             )
         }
