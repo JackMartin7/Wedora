@@ -13,6 +13,10 @@
     <color name="wedora_error">#E23B4E</color>
     <!-- 30% accent, used for the primary button's coloured drop shadow -->
     <color name="wedora_accent_shadow">#4DFA4659</color>
+    <!-- Fixed brand gold, same both modes — marks "already Premium" states
+         (Home's crown icon once isPremium == true) as distinct from the
+         wedora_accent pink used for the upgrade-focused crown. -->
+    <color name="wedora_premium_gold">#E5A93B</color>
 
     <!-- Surfaces -->
     <color name="wedora_bg">#FAF7F7</color>

@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -10,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -104,7 +106,10 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
         }
 
         // Shown to guests too — they're the likeliest upgrade, and the
-        // subscription screen doesn't read any account data.
+        // subscription screen doesn't read any account data. Stays the same
+        // destination for Premium users too: PaymentSubscriptionActivity
+        // itself swaps to a "You're a Premium Member" confirmation instead of
+        // the upsell once it sees isPremium == true.
         binding.btnPremium.setOnClickListener {
             startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
         }
@@ -144,6 +149,23 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
     override fun onStart() {
         super.onStart()
         observeMatches()
+        applyPremiumCrownTint()
+    }
+
+    /**
+     * Gold once the cached status says Premium, the default accent pink
+     * otherwise — a glance-only signal, not an upsell, once already
+     * subscribed. Re-applied on every onStart so flipping isPremium via
+     * Firebase Console mid-session shows correctly the next time Home is
+     * returned to, without needing its own listener here.
+     */
+    private fun applyPremiumCrownTint() {
+        binding.btnPremium.imageTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(
+                this,
+                if (PremiumStatus.isPremium()) R.color.wedora_premium_gold else R.color.wedora_accent
+            )
+        )
     }
 
     override fun onStop() {

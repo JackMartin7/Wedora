@@ -55,6 +55,70 @@
             android:paddingBottom="28dp"
             android:clipToPadding="false">
 
+            <!--
+                Shown instead of everything below once isPremium == true — no
+                pricing cards, no Subscribe button, just a status confirmation.
+                Starts GONE; PaymentSubscriptionActivity toggles this against
+                upgradeSection based on the loaded profile.
+            -->
+            <LinearLayout
+                android:id="@+id/premiumMemberSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_crown"
+                    android:background="@drawable/bg_premium_card"
+                    android:padding="16dp"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/plan_premium_member_title"
+                    android:textColor="@color/wedora_text"
+                    android:textSize="20sp"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="@string/plan_premium_member_subtitle"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="3sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:background="@drawable/bg_card"
+                    android:padding="16dp"
+                    android:gravity="center"
+                    android:text="@string/plan_manage_subscription_note"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="13sp" />
+
+            </LinearLayout>
+
+            <!-- ===== Everything below is the upgrade flow — hidden entirely
+                 once isPremium == true, in favor of premiumMemberSection
+                 above. ===== -->
+            <LinearLayout
+                android:id="@+id/upgradeSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
             <!-- ===== Current plan ===== -->
 
             <LinearLayout
@@ -278,6 +342,8 @@
                 android:textColor="@color/wedora_accent"
                 android:textSize="13sp"
                 android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

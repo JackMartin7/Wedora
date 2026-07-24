@@ -21,5 +21,9 @@ class WedoraApplication : Application() {
         // the process, independent of which Activity — if any — is in front.
         NotificationChannels.createAll(this)
         MatchNotificationWatcher.attach(this)
+
+        // Session-wide cache of isPremium so upgrade-prompt UI across the app
+        // doesn't each run its own Firestore read to decide whether to show.
+        PremiumStatus.attach()
     }
 }

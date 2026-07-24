@@ -520,6 +520,8 @@
     <string name="cd_filter">Filter</string>
 
     <string name="premium_upgrade_title">Upgrade to Premium</string>
+    <string name="premium_member_badge">Premium Member ✨</string>
+    <string name="cd_premium_member">Premium Member</string>
     <string name="premium_banner_likes">Upgrade to Premium to see who liked you</string>
     <string name="premium_banner_guest">Sign up to see who liked you</string>
     <string name="premium_banner_upgrade_action">Upgrade Now</string>
@@ -547,6 +549,9 @@
     <string name="plan_restore_purchase">Already subscribed? Restore Purchase</string>
     <string name="plan_coming_soon_title">Coming Soon</string>
     <string name="plan_coming_soon_message">Premium subscriptions will be available soon. Stay tuned!</string>
+    <string name="plan_premium_member_title">You\'re a Premium Member</string>
+    <string name="plan_premium_member_subtitle">Enjoy unlimited likes, see who liked you, and every other Premium perk.</string>
+    <string name="plan_manage_subscription_note">Contact support to manage your subscription</string>
     <string name="action_ok">OK</string>
 
     <string-array name="premium_features">

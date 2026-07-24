@@ -85,7 +85,9 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         }
 
         binding.btnEditProfile.visibility = View.VISIBLE
-        binding.cardPremium.visibility = View.VISIBLE
+        // Best cached guess up front so there's no upgrade-card flash before
+        // loadProfileDocument's read lands; that read reconciles it below.
+        showPremiumState(PremiumStatus.isPremium())
 
         val user = FirebaseAuth.getInstance().currentUser
         binding.tvProfileName.text = user?.displayName?.takeIf { it.isNotBlank() }
@@ -123,6 +125,9 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 val profile = UserProfile.from(snapshot)
+                // Authoritative value from this screen's own read — reconciles
+                // the cached guess shown at the top of showSignedInUser().
+                showPremiumState(profile.isPremium)
 
                 val line = profile.ageLocationLine(this)
                 if (line == null) {
@@ -159,6 +164,16 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
                 binding.skeletonProfile.root.visibility = View.GONE
                 binding.statsCard.visibility = View.VISIBLE
             }
+    }
+
+    /**
+     * Swaps between the upgrade card and the "Premium Member" badge — never
+     * both, never neither, for a signed-in user. Called once with the cached
+     * guess and again once loadProfileDocument's own read confirms it.
+     */
+    private fun showPremiumState(isPremium: Boolean) {
+        binding.cardPremium.visibility = if (isPremium) View.GONE else View.VISIBLE
+        binding.premiumMemberBadge.visibility = if (isPremium) View.VISIBLE else View.GONE
     }
 
     /**

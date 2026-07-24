@@ -49,6 +49,29 @@ class PaymentSubscriptionActivity : AppCompatActivity() {
         applyPlanSelection()
     }
 
+    /**
+     * Re-applied on every resume, not just onCreate, so flipping isPremium
+     * via Firebase Console while this screen is already open (or returning
+     * to it after that happens elsewhere) reflects immediately — matching
+     * ProfileActivity's own "re-check on resume" convention.
+     */
+    override fun onResume() {
+        super.onResume()
+        applyPremiumState()
+    }
+
+    /**
+     * Reads the session-wide cache rather than its own Firestore fetch — a
+     * stale read here has no real consequence (worst case: the upgrade UI
+     * lingers a moment before the next resume corrects it), unlike the
+     * quota-enforcing paths that keep their own authoritative reads.
+     */
+    private fun applyPremiumState() {
+        val isPremium = PremiumStatus.isPremium()
+        binding.premiumMemberSection.visibility = if (isPremium) View.VISIBLE else View.GONE
+        binding.upgradeSection.visibility = if (isPremium) View.GONE else View.VISIBLE
+    }
+
     private fun buildFeatureList() {
         val inflater = LayoutInflater.from(this)
         resources.getStringArray(R.array.premium_features).forEach { feature ->
