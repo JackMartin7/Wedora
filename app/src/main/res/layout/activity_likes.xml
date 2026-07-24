@@ -255,17 +255,13 @@
     </androidx.core.widget.NestedScrollView>
 
     <!--
-        Guest-only sticky sign-up prompt. Sits outside likesScroll and is
-        anchored straight to bottomNav, so it never moves — the blurred
-        teaser above scrolls underneath it rather than pushing it around,
-        which is the whole point of moving this off the top of the screen:
-        a guest sees the (blurred) content first and this stays a quiet,
-        persistent nudge rather than a wall in front of it. Compact single
-        row, softer pink card (bg_guest_cta_banner, the same token
-        ProfileActivity's own guest CTA uses) rather than the bold gradient
-        premiumBanner above uses for the free-tier upgrade prompt — that one
-        is unchanged and still mid-scroll, since this task is guest-only.
-        Starts GONE.
+        Guest-only sticky sign-up prompt. Same gradient-card design as
+        premiumBanner below it (identical background, crown icon, text and
+        pill styling) — only its position changes: this sits outside
+        likesScroll, anchored straight to bottomNav, so it never moves while
+        the blurred teaser above scrolls underneath it. premiumBanner itself
+        is untouched and stays mid-scroll for the unrelated free-tier
+        upgrade case. Starts GONE.
     -->
     <LinearLayout
         android:id="@+id/guestSignUpBanner"
@@ -275,10 +271,10 @@
         android:layout_marginBottom="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@drawable/bg_guest_cta_banner"
-        android:elevation="4dp"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
+        android:background="@drawable/bg_premium_card"
+        android:elevation="6dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"
@@ -288,32 +284,32 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNav">
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:src="@drawable/ic_sparkle_heart"
-            app:tint="@color/wedora_accent"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_crown"
             android:contentDescription="@null" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="12dp"
             android:text="@string/premium_banner_guest"
-            android:textColor="@color/wedora_text"
-            android:textSize="12.5sp"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2sp"
             android:fontFamily="@font/poppins_medium" />
 
         <TextView
             android:id="@+id/btnGuestSignUpBannerAction"
             android:layout_width="wrap_content"
-            android:layout_height="30dp"
+            android:layout_height="34dp"
             android:layout_marginStart="10dp"
-            android:background="@drawable/bg_distance_pill"
+            android:background="@drawable/bg_badge_on_accent"
             android:gravity="center"
             android:paddingHorizontal="14dp"
             android:text="@string/premium_banner_signup_action"
-            android:textColor="@color/white"
+            android:textColor="@color/wedora_accent"
             android:textSize="12sp"
             android:fontFamily="@font/poppins_semibold" />
 
