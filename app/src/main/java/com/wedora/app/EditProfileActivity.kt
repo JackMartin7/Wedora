@@ -441,16 +441,23 @@ class EditProfileActivity : AppCompatActivity() {
      * shows a toast — the local copy this device's own Profile screen reads
      * is already committed either way. Re-picking and saving again retries
      * this from scratch.
+     *
+     * The Firestore write is NOT gated on isFinishing — Save calls finish()
+     * synchronously right after this fires off, well before the network
+     * round trip completes, so by the time the callback lands the Activity
+     * is routinely already finishing. A Firestore write has no dependency on
+     * the Activity being alive; only the failure Toast (genuinely UI) is
+     * guarded by isFinishing.
      */
     private fun uploadThenSaveUrl(file: File) {
         PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
-            if (!isFinishing && success && url != null) {
+            if (success && url != null) {
                 firestore.collection(UserProfile.COLLECTION).document(uid)
                     .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())
                     .addOnFailureListener { e ->
                         logFirestoreWriteFailure(TAG, "Uploaded photo but failed to save its url", e)
                     }
-            } else if (!success) {
+            } else {
                 Log.w(TAG, "Profile photo upload failed: $error")
                 if (!isFinishing) {
                     Toast.makeText(this, R.string.error_photo_upload_failed, Toast.LENGTH_SHORT).show()

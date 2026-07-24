@@ -127,16 +127,23 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      * of whether other users can see the photo yet. Re-picking retries this
      * from scratch; EditProfileActivity's own upload is the other retry path
      * once setup is finished.
+     *
+     * The Firestore write is NOT gated on isFinishing — Continue/Skip call
+     * finish() synchronously right after this fires off, well before the
+     * network round trip completes, so by the time the callback lands the
+     * Activity is routinely already finishing. A Firestore write has no
+     * dependency on the Activity being alive; only the failure Toast
+     * (genuinely UI) is guarded by isFinishing.
      */
     private fun uploadThenSaveUrl(file: File) {
         PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
-            if (!isFinishing && success && url != null) {
+            if (success && url != null) {
                 firestore.collection(UserProfile.COLLECTION).document(uid)
                     .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())
                     .addOnFailureListener { e ->
                         logFirestoreWriteFailure(TAG, "Uploaded photo but failed to save its url", e)
                     }
-            } else if (!success) {
+            } else {
                 Log.w(TAG, "Profile photo upload failed: $error")
                 if (!isFinishing) {
                     Toast.makeText(this, R.string.error_photo_upload_failed, Toast.LENGTH_SHORT).show()
