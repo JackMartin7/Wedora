@@ -32,7 +32,7 @@ class HomeActivity :
         /** Enough to fill the screen and imply a stack, without scrolling. */
         const val SKELETON_CARDS = 3
 
-        /** A native ad follows every AD_INTERVALth real profile — free users only. */
+        /** A native ad follows every AD_INTERVALth real profile — any non-Premium user, signed-in free or guest. */
         const val AD_INTERVAL = 3
 
         /** How many native ads to keep loaded and ready at once. */
@@ -811,7 +811,7 @@ class HomeActivity :
         binding.skeletonFeed.crossfadeToContent(binding.cardStack)
     }
 
-    // ----- Native ads (free users only) --------------------------------------
+    // ----- Native ads (any non-Premium user — free signed-in or guest) -------
 
     /**
      * Weaves a native ad in after every AD_INTERVALth real profile, using
@@ -823,7 +823,16 @@ class HomeActivity :
      *
      * Premium is checked here, not just at insertion time elsewhere — this is
      * the single point every card the stack ever shows passes through, so
-     * it's the one place that has to get "never for Premium" right.
+     * it's the one place that has to get "never for Premium" right. There is
+     * deliberately no separate guest check: [PremiumStatus.isPremium] is
+     * always false for a guest (see its own doc comment — a guest's
+     * anonymous session has no users/{uid} document and can never be
+     * Premium), so "not Premium" already means "free signed-in or guest"
+     * without needing to ask [GuestPrefs.isGuest] here too. [profiles] itself
+     * is agnostic to where each card came from — including whether Feed.kt's
+     * small-pool fallback (see resolveFeedExclusions) reintroduced it — so
+     * ads are woven in purely by position, the same for a fresh card or a
+     * fallback-recycled one.
      */
     private fun buildDisplayItems(profiles: List<MatchCard>): List<StackItem> {
         if (PremiumStatus.isPremium()) return profiles.map { StackItem.Profile(it) }
