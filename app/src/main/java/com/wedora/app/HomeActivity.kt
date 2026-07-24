@@ -307,7 +307,12 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
                     .filter { it.id != selfUid && it.id !in excludedUids }
                     .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }
 
-                val loaded = candidates.filter { matchesActiveFilters(this, it, myLat, myLon) }
+                // Premium accounts to the front of the stack; otherwise the
+                // order the query returned is left as-is (withPremiumPriority
+                // is a stable sort).
+                val loaded = candidates
+                    .filter { matchesActiveFilters(this, it, myLat, myLon) }
+                    .withPremiumPriority()
 
                 when {
                     // Distinguishes "nobody at all" from "nobody once your

@@ -45,9 +45,21 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         gender = profile.gender,
         myStatus = profile.myStatus,
         lookingFor = profile.lookingFor,
-        lastSeen = profile.lastSeen
+        lastSeen = profile.lastSeen,
+        isPremium = profile.isPremium
     )
 }
+
+/**
+ * Premium accounts sort before non-premium ones. A stable sort — Kotlin's
+ * sortedByDescending guarantees it — so applying this *after* whatever
+ * ordering a feed already has (distance in the discovery feed, Firestore's
+ * returned order in Home's swipe stack) only regroups by tier; the existing
+ * order survives untouched within each tier, which is what "premium sorts
+ * first, otherwise unchanged" means in practice.
+ */
+fun List<MatchCard>.withPremiumPriority(): List<MatchCard> =
+    sortedByDescending { it.isPremium }
 
 /**
  * Whether [card] passes the user's active filters.
@@ -163,6 +175,8 @@ fun loadDiscoveryFeed(
                             // Closest first; un-locatable cards (null distance)
                             // sort to the end rather than jumping to the front.
                             .sortedWith(compareBy(nullsLast()) { it.distanceKm })
+                            // Then Premium accounts to the front of that.
+                            .withPremiumPriority()
                         onResult(cards)
                     }
                     .addOnFailureListener { e ->

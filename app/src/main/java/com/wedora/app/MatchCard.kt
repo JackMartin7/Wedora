@@ -45,7 +45,9 @@ data class MatchCard(
     val myStatus: String?,
     val lookingFor: String?,
     /** For the online-status dot; null on accounts predating presence tracking. */
-    val lastSeen: Date?
+    val lastSeen: Date?,
+    /** This user's own Premium status — see withPremiumPriority() in Feed.kt. */
+    val isPremium: Boolean
 ) {
 
     /**
