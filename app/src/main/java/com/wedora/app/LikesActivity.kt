@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityLikesBinding
 import com.wedora.app.databinding.ItemLikeFeaturedBinding
+import com.wedora.app.databinding.ItemProfileViewerStripLockedBinding
 
 /**
  * The Likes tab: how many people liked you, a locked teaser of the first two,
@@ -38,6 +39,9 @@ class LikesActivity : AppCompatActivity() {
 
         /** Two rows of two tiles each, i.e. four placeholder squares. */
         const val SKELETON_ROWS = 2
+
+        /** Decorative only — see item_profile_viewer_strip_locked.xml. */
+        const val PROFILE_VIEWERS_LOCKED_TEASER_COUNT = 3
     }
 
     private lateinit var binding: ActivityLikesBinding
@@ -146,11 +150,19 @@ class LikesActivity : AppCompatActivity() {
      * access-controlled by Firestore rules (an owner can always read their
      * own viewers), so the gate here is about not fetching or showing
      * something a free account's UI never surfaces anywhere else, not about
-     * enforcing a permission.
+     * enforcing a permission — a free account can still read their own real
+     * profileViews subcollection (firestore.rules allows the owner
+     * regardless of tier); this gate is purely about not surfacing the
+     * feature outside where it's meant to be visible.
+     *
+     * Free: a static locked teaser, always shown (same shape as
+     * ProfileViewersActivity's own free path — see showLockedProfileViewers),
+     * no query needed. Premium: the real list, hidden if there happen to be
+     * zero viewers.
      */
     private fun loadProfileViewersStrip(selfUid: String, isPremium: Boolean) {
         if (!isPremium) {
-            binding.profileViewersSection.visibility = View.GONE
+            showLockedProfileViewers()
             return
         }
 
@@ -160,10 +172,45 @@ class LikesActivity : AppCompatActivity() {
             onResult = { viewers ->
                 binding.profileViewersSection.visibility =
                     if (viewers.isEmpty()) View.GONE else View.VISIBLE
+                binding.rvProfileViewers.visibility = View.VISIBLE
+                binding.profileViewersLockedContainer.visibility = View.GONE
                 profileViewerAdapter.submitList(viewers)
             },
             onError = { binding.profileViewersSection.visibility = View.GONE }
         )
+    }
+
+    /**
+     * Free-tier teaser: a few static blurred-avatar-and-lock tiles, always
+     * shown regardless of whether this account actually has any real
+     * viewers — matching ProfileViewersActivity's own free path, which
+     * shows the same teaser unconditionally rather than querying first to
+     * decide. Tapping any tile (or the row itself) leads where the lock
+     * implies: Payment & Subscription.
+     */
+    private fun showLockedProfileViewers() {
+        binding.profileViewersSection.visibility = View.VISIBLE
+        binding.rvProfileViewers.visibility = View.GONE
+        binding.profileViewersLockedContainer.visibility = View.VISIBLE
+        binding.profileViewersLockedContainer.removeAllViews()
+
+        val openUpgrade = View.OnClickListener {
+            startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+        }
+        binding.profileViewersLockedContainer.setOnClickListener(openUpgrade)
+
+        val inflater = LayoutInflater.from(this)
+        repeat(PROFILE_VIEWERS_LOCKED_TEASER_COUNT) {
+            val tile = ItemProfileViewerStripLockedBinding.inflate(
+                inflater, binding.profileViewersLockedContainer, false
+            )
+            binding.profileViewersLockedContainer.addView(tile.root)
+            tile.root.setOnClickListener(openUpgrade)
+            // Blurred after layout: the pre-31 path rasterises the drawable,
+            // and there are no dimensions to rasterise into before a
+            // measure pass.
+            tile.ivLockedViewerAvatar.post { tile.ivLockedViewerAvatar.applyLockedBlur() }
+        }
     }
 
     private fun loadReceivedLikesAndShow(selfUid: String, isPremium: Boolean) {

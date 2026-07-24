@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A blurred teaser tile for the Likes tab's "Who Viewed Your Profile" strip
+    on a free account — same circular shape as item_likes_matched_user.xml
+    (which this replaces for a free user), plus a small lock badge. Static
+    and decorative like item_profile_viewer_featured.xml/
+    item_like_featured.xml: every avatar is the same neutral placeholder
+    regardless of who's behind it (no photo backend for other users), so
+    blurring a real one would look identical — no data fetch needed.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="72dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="14dp">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivLockedViewerAvatar"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_locked_like"
+        app:strokeColor="@color/wedora_accent"
+        app:strokeWidth="2dp"
+        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:padding="5dp"
+        android:background="@drawable/bg_lock_circle"
+        android:src="@drawable/ic_lock"
+        android:contentDescription="@null"
+        app:layout_constraintTop_toTopOf="@id/ivLockedViewerAvatar"
+        app:layout_constraintBottom_toBottomOf="@id/ivLockedViewerAvatar"
+        app:layout_constraintStart_toStartOf="@id/ivLockedViewerAvatar"
+        app:layout_constraintEnd_toEndOf="@id/ivLockedViewerAvatar" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:text="@string/profile_viewer_locked_name_placeholder"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12sp"
+        app:layout_constraintTop_toBottomOf="@id/ivLockedViewerAvatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

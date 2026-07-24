@@ -122,6 +122,26 @@
             android:scrollbars="none"
             tools:listitem="@layout/item_likes_matched_user" />
 
+        <!-- Free-tier version of the row above: LikesActivity.showLockedProfileViewers
+             fills this with a few static blurred-avatar-and-lock tiles instead
+             of rvProfileViewers' real data — same "no fetch, no real data
+             needed, always shown" shape as ProfileViewersActivity's own free
+             teaser (see that Activity's showTeaser/buildFeaturedTiles).
+             Starts GONE; only one of this or rvProfileViewers is ever visible
+             at a time. -->
+        <LinearLayout
+            android:id="@+id/profileViewersLockedContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="horizontal"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <!-- Separates this section from the likes grid below. -->
         <View
             android:layout_width="match_parent"

@@ -102,6 +102,7 @@
     <string name="likes_title">Likes</string>
     <string name="likes_users_matched_label">Users Matched</string>
     <string name="likes_profile_viewers_label">Who Viewed Your Profile</string>
+    <string name="profile_viewer_locked_name_placeholder">———</string>
 
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
