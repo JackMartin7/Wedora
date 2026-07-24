@@ -137,18 +137,35 @@ fun matchesDistanceFilter(
  * (cards with no distance sort last).
  *
  * Shared by Explore and NearbyList so "who's nearby" has a single definition.
- * [onResult] gets an empty list for a guest, a signed-out user, an own profile
- * that hasn't set who they're interested in, or a genuinely empty feed — the
- * caller decides how to present emptiness. A read failure also yields an empty
- * list rather than an error path, matching how the feed degrades elsewhere.
+ * [onResult] gets an empty list for a signed-out user, an own profile that
+ * hasn't set who they're interested in, or a genuinely empty feed — the
+ * caller decides how to present emptiness. A read failure also yields an
+ * empty list rather than an error path, matching how the feed degrades
+ * elsewhere. A guest is no longer one of those empty cases (see the branch
+ * below) — they have no self document to read, so they skip straight to the
+ * query using [GuestPrefs.guestInterestedIn] instead of a signed-in
+ * `interestedIn` field, with no self id or exclusion set to filter by and no
+ * location to sort or filter distance by.
  */
 fun loadDiscoveryFeed(
     context: Context,
     firestore: FirebaseFirestore,
     onResult: (List<MatchCard>) -> Unit
 ) {
-    val uid = FirebaseAuth.getInstance().currentUser
-        ?.takeUnless { GuestPrefs.isGuest(context) }?.uid
+    if (GuestPrefs.isGuest(context)) {
+        queryDiscoveryFeed(
+            context, firestore,
+            interestedIn = GuestPrefs.guestInterestedIn(context),
+            selfUid = null,
+            excluded = emptySet(),
+            myLat = null,
+            myLon = null,
+            onResult = onResult
+        )
+        return
+    }
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid
     if (uid == null) {
         onResult(emptyList())
         return
@@ -164,29 +181,56 @@ fun loadDiscoveryFeed(
             }
 
             loadFeedExclusions(firestore, uid) { excluded ->
-                firestore.collection(UserProfile.COLLECTION)
-                    .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
-                    .get()
-                    .addOnSuccessListener { snapshot ->
-                        val cards = snapshot.documents
-                            .filter { it.id != uid && it.id !in excluded }
-                            .mapNotNull { it.toMatchCard()?.withDistanceFrom(self.latitude, self.longitude) }
-                            .filter { matchesActiveFilters(context, it, self.latitude, self.longitude) }
-                            // Closest first; un-locatable cards (null distance)
-                            // sort to the end rather than jumping to the front.
-                            .sortedWith(compareBy(nullsLast()) { it.distanceKm })
-                            // Then Premium accounts to the front of that.
-                            .withPremiumPriority()
-                        onResult(cards)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w("WedoraFeed", "Discovery feed query failed", e)
-                        onResult(emptyList())
-                    }
+                queryDiscoveryFeed(
+                    context, firestore, interestedIn, uid, excluded, self.latitude, self.longitude, onResult
+                )
             }
         }
         .addOnFailureListener { e ->
             Log.w("WedoraFeed", "Failed to read own profile for discovery feed", e)
+            onResult(emptyList())
+        }
+}
+
+/**
+ * [interestedIn] null queries every gender (the guest fallback for a
+ * somehow-unset GuestPrefs value); [selfUid] null excludes nobody, since
+ * `it.id != null` is trivially true for every real document id — same
+ * reasoning as HomeActivity.queryMatches' own nullable pair.
+ */
+private fun queryDiscoveryFeed(
+    context: Context,
+    firestore: FirebaseFirestore,
+    interestedIn: String?,
+    selfUid: String?,
+    excluded: Set<String>,
+    myLat: Double?,
+    myLon: Double?,
+    onResult: (List<MatchCard>) -> Unit
+) {
+    val baseQuery = firestore.collection(UserProfile.COLLECTION)
+    val query = if (interestedIn.isNullOrBlank()) {
+        baseQuery
+    } else {
+        baseQuery.whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
+    }
+
+    query
+        .get()
+        .addOnSuccessListener { snapshot ->
+            val cards = snapshot.documents
+                .filter { it.id != selfUid && it.id !in excluded }
+                .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }
+                .filter { matchesActiveFilters(context, it, myLat, myLon) }
+                // Closest first; un-locatable cards (null distance)
+                // sort to the end rather than jumping to the front.
+                .sortedWith(compareBy(nullsLast()) { it.distanceKm })
+                // Then Premium accounts to the front of that.
+                .withPremiumPriority()
+            onResult(cards)
+        }
+        .addOnFailureListener { e ->
+            Log.w("WedoraFeed", "Discovery feed query failed", e)
             onResult(emptyList())
         }
 }

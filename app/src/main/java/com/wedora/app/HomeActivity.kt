@@ -362,11 +362,21 @@ class HomeActivity :
     // ----- Feed loading -----------------------------------------------------
 
     private fun loadMatches() {
+        // No self document, no exclusion sets (nothing a guest has liked,
+        // passed or blocked persists anywhere), no location — a guest sees
+        // the full pool of matching-gender profiles, gated only by
+        // showCards' own daily-view-limit check. Falls back to every gender
+        // if guestInterestedIn is somehow unset (shouldn't happen — the
+        // prompt is required — but querying unfiltered beats showing an
+        // empty feed or crashing over a missing value).
         if (GuestPrefs.isGuest(this)) {
-            showEmptyState(
-                icon = R.drawable.ic_sparkle_heart,
-                title = R.string.empty_home_guest_title,
-                subtitle = R.string.empty_home_guest_subtitle
+            showLoading()
+            queryMatches(
+                interestedIn = GuestPrefs.guestInterestedIn(this),
+                selfUid = null,
+                excludedUids = emptySet(),
+                myLat = null,
+                myLon = null
             )
             return
         }
@@ -414,15 +424,29 @@ class HomeActivity :
             }
     }
 
+    /**
+     * [interestedIn] and [selfUid] are nullable for a guest: null
+     * interestedIn queries every gender rather than narrowing (the
+     * defensive fallback for a somehow-unset GuestPrefs value), and a null
+     * selfUid simply never matches any real document id, so `it.id != null`
+     * is trivially true and excludes nobody — the same "no self to filter
+     * out" a guest already has no exclusion set for.
+     */
     private fun queryMatches(
-        interestedIn: String,
-        selfUid: String,
+        interestedIn: String?,
+        selfUid: String?,
         excludedUids: Set<String>,
         myLat: Double?,
         myLon: Double?
     ) {
-        firestore.collection(UserProfile.COLLECTION)
-            .whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
+        val baseQuery = firestore.collection(UserProfile.COLLECTION)
+        val query = if (interestedIn.isNullOrBlank()) {
+            baseQuery
+        } else {
+            baseQuery.whereEqualTo(UserProfile.FIELD_GENDER, interestedIn)
+        }
+
+        query
             .get()
             .addOnSuccessListener { snapshot ->
                 val candidates = snapshot.documents

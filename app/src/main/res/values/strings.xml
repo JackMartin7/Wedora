@@ -476,8 +476,6 @@
     <string name="empty_home_subtitle">Check back later or adjust your filters</string>
     <string name="empty_home_filtered_title">No one matches these filters</string>
     <string name="empty_home_filtered_subtitle">Try widening your age range or clearing a filter.</string>
-    <string name="empty_home_guest_title">Sign up to start matching</string>
-    <string name="empty_home_guest_subtitle">Create an account to see people near you.</string>
     <string name="empty_home_error_title">Couldn\'t load profiles</string>
     <string name="empty_home_error_subtitle">Check your connection and try again.</string>
     <string name="empty_action_adjust_filters">Adjust Filters</string>
