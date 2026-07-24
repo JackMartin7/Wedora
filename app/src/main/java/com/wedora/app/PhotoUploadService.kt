@@ -35,15 +35,12 @@ object PhotoUploadService {
         "https://lightcoral-elephant-196936.hostingersite.com/wedora/upload.php"
 
     /**
-     * The endpoint's shared secret, Base64-encoded so it isn't a bare grep
-     * hit for the literal string — NOT real security (anyone who decompiles
-     * the APK has it in seconds either way); actual access control has to
-     * live server-side. This is a placeholder value and MUST be replaced
-     * with the real secret's Base64 encoding before uploads will succeed —
-     * see the TODO below.
+     * The endpoint's shared secret (upload.php's SECRET_KEY), Base64-encoded
+     * so it isn't a bare grep hit for the literal string — NOT real security
+     * (anyone who decompiles the APK has it in seconds either way); actual
+     * access control has to live server-side.
      */
-    // TODO: replace with Base64.encodeToString(realSecret.toByteArray(), Base64.NO_WRAP)
-    private const val ENCODED_UPLOAD_KEY = "UkVQTEFDRV9XSVRIX1JFQUxfU0hBUkVEX1NFQ1JFVA=="
+    private const val ENCODED_UPLOAD_KEY = "V2Vkb3JhcGFzc3dvcmRfYWJjMTIzeHl6Nzg5"
 
     private const val CONNECT_TIMEOUT_MS = 15_000
     private const val READ_TIMEOUT_MS = 30_000
