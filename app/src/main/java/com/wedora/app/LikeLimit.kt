@@ -26,6 +26,12 @@ sealed class LikeAttempt {
 /**
  * Records a like, enforcing the free-tier daily cap first.
  *
+ * Checks for an existing match before anything else: the Discover/Explore
+ * fallback (see Feed.kt's resolveFeedExclusions) can now resurface someone
+ * already matched with, and re-liking them is a no-op refresh, not a new
+ * like — it must not cost the free daily allowance. [matchExistsQuery] is the
+ * same sorted-UID lookup already used elsewhere for "are we already matched".
+ *
  * Reads the liker's own profile before writing — unlike [createMatchDocument],
  * which is deliberately a blind write (see its doc comment on why a pre-read
  * there would weaken the match-read rule). That constraint doesn't apply to a
@@ -43,6 +49,32 @@ sealed class LikeAttempt {
  * server-side, and its documented gap.
  */
 fun likeUserRespectingDailyLimit(
+    firestore: FirebaseFirestore,
+    selfUid: String,
+    otherUid: String,
+    onResult: (LikeAttempt) -> Unit
+) {
+    matchExistsQuery(firestore, selfUid, otherUid)
+        .addOnSuccessListener { matchSnapshot ->
+            if (!matchSnapshot.isEmpty) {
+                // Already matched — just the harmless createdAt refresh,
+                // never counted against the daily limit.
+                onResult(LikeAttempt.Started(createMatchDocument(firestore, selfUid, otherUid)))
+                return@addOnSuccessListener
+            }
+            likeNewUserRespectingDailyLimit(firestore, selfUid, otherUid, onResult)
+        }
+        .addOnFailureListener {
+            // Can't confirm whether a match already exists — fail open the
+            // same way the rest of this flow does, straight to the normal
+            // gated path rather than blocking the like over a transient
+            // read error.
+            likeNewUserRespectingDailyLimit(firestore, selfUid, otherUid, onResult)
+        }
+}
+
+/** The original daily-limit-gated flow, for a pair confirmed not yet matched. */
+private fun likeNewUserRespectingDailyLimit(
     firestore: FirebaseFirestore,
     selfUid: String,
     otherUid: String,
