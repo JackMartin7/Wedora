@@ -69,6 +69,13 @@
     <string name="continue_as_guest">Continue as Guest</string>
     <string name="guest_action_blocked">Sign up to use this feature</string>
     <string name="guest_label">Guest</string>
+    <string name="guest_profile_name">Guest User</string>
+    <string name="guest_profile_subtitle">Sign up to unlock your full profile</string>
+    <string name="guest_sign_up_now">Sign Up Now</string>
+    <string name="guest_cta_banner_text">Create an account to like profiles, chat with matches, and get personalized recommendations</string>
+    <string name="guest_stats_locked_toast">Sign up to see your stats</string>
+    <string name="guest_settings_locked_toast">Sign up to access this feature</string>
+    <string name="guest_already_have_account">Already have an account? Log In</string>
 
     <!-- Signed-in user fallbacks (no displayName set on the Firebase account) -->
     <string name="default_greeting_name">there</string>

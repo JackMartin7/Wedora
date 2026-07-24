@@ -81,6 +81,20 @@
                 android:textSize="19sp"
                 android:fontFamily="@font/poppins_semibold" />
 
+            <!-- Guest-only. Starts GONE; shown only for guests, in place of
+                 tvProfileEmail/tvProfileAgeLocation below (neither applies —
+                 a guest has no account data to show a line about). -->
+            <TextView
+                android:id="@+id/tvGuestSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="@string/guest_profile_subtitle"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
             <!-- Real Firebase email; hidden for guests, who have none -->
             <TextView
                 android:id="@+id/tvProfileEmail"
@@ -140,6 +154,23 @@
                 android:fontFamily="@font/poppins_medium" />
 
             <!--
+                Guest-only. Replaces btnEditProfile above (never shown
+                together — a guest has no profile to edit) with a full-width
+                filled CTA rather than the signed-in outline pill, so the
+                one action a guest actually can take reads as the prominent
+                one. Starts GONE; ProfileActivity shows it only for guests.
+            -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnGuestSignUp"
+                style="@style/WedoraPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_marginTop="16dp"
+                android:text="@string/guest_sign_up_now"
+                android:visibility="gone" />
+
+            <!--
                 Stands in for the stats card while Firestore loads. The name,
                 email and photo are not covered: they come from the Auth
                 session and local storage, so they are already on screen and a
@@ -164,87 +195,195 @@
                 android:orientation="horizontal"
                 android:paddingVertical="16dp">
 
-                <LinearLayout
+                <!--
+                    Each column is a FrameLayout, not a plain LinearLayout, so
+                    a guest's lock badge can sit over the corner of its own
+                    column rather than needing a separate overlay pass across
+                    the whole card. The badge and the column's own click
+                    listener are both guest-only, set in ProfileActivity.
+                -->
+                <FrameLayout
+                    android:id="@+id/statColumnMatches"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-                    <TextView
-                        android:id="@+id/tvStatMatches"
-                        android:layout_width="wrap_content"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_placeholder"
-                        tools:text="128"
-                        android:textColor="@color/wedora_text"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/poppins_semibold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/profile_stat_matches_label"
-                        android:textColor="@color/wedora_text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tvStatMatches"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile_stat_placeholder"
+                            tools:text="128"
+                            android:textColor="@color/wedora_text"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/poppins_semibold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/profile_stat_matches_label"
+                            android:textColor="@color/wedora_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/ivStatLockMatches"
+                        android:layout_width="13dp"
+                        android:layout_height="13dp"
+                        android:layout_gravity="top|end"
+                        android:src="@drawable/ic_lock"
+                        app:tint="@color/wedora_text_secondary"
+                        android:contentDescription="@null"
+                        android:visibility="gone" />
+
+                </FrameLayout>
 
                 <View
                     android:layout_width="1dp"
                     android:layout_height="match_parent"
                     android:background="@color/wedora_border" />
 
-                <LinearLayout
+                <FrameLayout
+                    android:id="@+id/statColumnLikes"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-                    <TextView
-                        android:id="@+id/tvStatLikes"
-                        android:layout_width="wrap_content"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_placeholder"
-                        tools:text="342"
-                        android:textColor="@color/wedora_text"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/poppins_semibold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/profile_stat_likes_label"
-                        android:textColor="@color/wedora_text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tvStatLikes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile_stat_placeholder"
+                            tools:text="342"
+                            android:textColor="@color/wedora_text"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/poppins_semibold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/profile_stat_likes_label"
+                            android:textColor="@color/wedora_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/ivStatLockLikes"
+                        android:layout_width="13dp"
+                        android:layout_height="13dp"
+                        android:layout_gravity="top|end"
+                        android:src="@drawable/ic_lock"
+                        app:tint="@color/wedora_text_secondary"
+                        android:contentDescription="@null"
+                        android:visibility="gone" />
+
+                </FrameLayout>
 
                 <View
                     android:layout_width="1dp"
                     android:layout_height="match_parent"
                     android:background="@color/wedora_border" />
 
-                <LinearLayout
+                <FrameLayout
+                    android:id="@+id/statColumnProfile"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/tvStatProfilePercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile_stat_placeholder"
+                            tools:text="86%"
+                            android:textColor="@color/wedora_text"
+                            android:textSize="18sp"
+                            android:fontFamily="@font/poppins_semibold" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/profile_stat_percent_label"
+                            android:textColor="@color/wedora_text_secondary"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/ivStatLockProfile"
+                        android:layout_width="13dp"
+                        android:layout_height="13dp"
+                        android:layout_gravity="top|end"
+                        android:src="@drawable/ic_lock"
+                        app:tint="@color/wedora_text_secondary"
+                        android:contentDescription="@null"
+                        android:visibility="gone" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!--
+                Guest-only CTA banner. Sits directly below the stats card,
+                above the settings list — deliberately flatter and softer
+                than the gradient premium card below (which guests never
+                see: cardPremium/premiumMemberBadge both stay GONE for a
+                guest), since this is an encouraging preview rather than an
+                upsell to someone who's already signed in. Starts GONE;
+                ProfileActivity shows it only for guests.
+            -->
+            <LinearLayout
+                android:id="@+id/guestCtaBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal"
+                android:background="@drawable/bg_guest_cta_banner"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="14dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginTop="1dp"
+                    android:src="@drawable/ic_sparkle_heart"
+                    app:tint="@color/wedora_accent"
+                    android:contentDescription="@null" />
+
+                <!--
+                    Text set in ProfileActivity as a SpannableString — the
+                    body copy plus a trailing clickable "Sign Up" span, so the
+                    link reads inline with the sentence like the design rather
+                    than as a separate button bolted on the end.
+                -->
+                <TextView
+                    android:id="@+id/tvGuestCtaText"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-                    <TextView
-                        android:id="@+id/tvStatProfilePercent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/profile_stat_placeholder"
-                        tools:text="86%"
-                        android:textColor="@color/wedora_text"
-                        android:textSize="18sp"
-                        android:fontFamily="@font/poppins_semibold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/profile_stat_percent_label"
-                        android:textColor="@color/wedora_text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
+                    android:layout_marginStart="10dp"
+                    android:lineSpacingExtra="3sp"
+                    android:textColor="@color/wedora_text"
+                    android:textSize="12.5sp" />
 
             </LinearLayout>
 
@@ -392,6 +531,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
+
+            <!-- Guest-only. Starts GONE; shown only for guests. -->
+            <TextView
+                android:id="@+id/tvGuestLogIn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center"
+                android:paddingVertical="14dp"
+                android:text="@string/guest_already_have_account"
+                android:textColor="@color/wedora_accent"
+                android:textSize="13sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone" />
 
         </LinearLayout>
     </ScrollView>

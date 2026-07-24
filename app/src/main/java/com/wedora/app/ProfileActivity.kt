@@ -1,10 +1,17 @@
 package com.wedora.app
 
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
@@ -30,8 +37,16 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         setUpSettingsRows()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_profile)
 
+        // Re-checked at click time rather than captured once, so this stays
+        // correct even if guest status somehow changes without the Activity
+        // being recreated — greyed out rather than hidden (see showGuestChrome)
+        // matches this screen's whole "preview, not blocked" tone for guests.
         binding.btnHistory.setOnClickListener {
-            startActivity(Intent(this, MatchHistoryActivity::class.java))
+            if (GuestPrefs.isGuest(this)) {
+                toast(getString(R.string.guest_action_blocked))
+            } else {
+                startActivity(Intent(this, MatchHistoryActivity::class.java))
+            }
         }
         binding.btnEditProfile.setOnClickListener {
             startActivity(Intent(this, EditProfileActivity::class.java))
@@ -40,6 +55,63 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         // the same screen from further down the list.
         binding.cardPremium.setOnClickListener {
             startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+        }
+
+        // Guest-only controls. Harmless to wire up unconditionally — both
+        // stay GONE for a signed-in user, so their listeners are simply never
+        // reachable.
+        binding.btnGuestSignUp.setOnClickListener {
+            startActivity(Intent(this, SignUpActivity::class.java))
+        }
+        binding.guestCtaBanner.setOnClickListener {
+            startActivity(Intent(this, SignUpActivity::class.java))
+        }
+        binding.tvGuestCtaText.text = buildGuestCtaText()
+        binding.tvGuestCtaText.movementMethod = LinkMovementMethod.getInstance()
+        binding.tvGuestLogIn.setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
+        // Only a guest's columns carry the lock badge (see setStatsLocked),
+        // but the listener itself re-checks rather than relying on that —
+        // same reasoning as btnHistory above.
+        val guestStatToast = View.OnClickListener {
+            if (GuestPrefs.isGuest(this)) toast(getString(R.string.guest_stats_locked_toast))
+        }
+        binding.statColumnMatches.setOnClickListener(guestStatToast)
+        binding.statColumnLikes.setOnClickListener(guestStatToast)
+        binding.statColumnProfile.setOnClickListener(guestStatToast)
+    }
+
+    /**
+     * The CTA banner's body copy plus a trailing "Sign Up" span that reads
+     * inline with the sentence, tappable on its own in addition to the whole
+     * banner already being clickable — belt and suspenders, same reasoning
+     * as LikesActivity's premium banner having both a click target of its
+     * own and a dedicated action button.
+     */
+    private fun buildGuestCtaText(): SpannableString {
+        val body = getString(R.string.guest_cta_banner_text)
+        val link = getString(R.string.premium_banner_signup_action)
+        val full = "$body  $link"
+        val linkStart = full.length - link.length
+
+        return SpannableString(full).apply {
+            setSpan(
+                object : ClickableSpan() {
+                    override fun onClick(widget: View) {
+                        startActivity(Intent(this@ProfileActivity, SignUpActivity::class.java))
+                    }
+
+                    override fun updateDrawState(ds: TextPaint) {
+                        ds.color = ContextCompat.getColor(this@ProfileActivity, R.color.wedora_accent)
+                        ds.isUnderlineText = false
+                        ds.typeface = Typeface.create(ds.typeface, Typeface.BOLD)
+                    }
+                },
+                linkStart,
+                full.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
         }
     }
 
@@ -66,23 +138,16 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         resetStats()
 
         if (GuestPrefs.isGuest(this)) {
-            binding.tvProfileName.text = getString(R.string.guest_label)
-            binding.tvProfileEmail.visibility = View.GONE
-            binding.tvProfileAgeLocation.visibility = View.GONE
-            // A guest has no Firestore document, so there is nothing for the
-            // editor to load or save — it would open, fail its read and close.
-            binding.btnEditProfile.visibility = View.GONE
-            // Likewise no account to attach a subscription to.
-            binding.cardPremium.visibility = View.GONE
-            binding.tvProfileIntent.visibility = View.GONE
-            // A guest makes no Firestore read, so nothing will ever arrive to
-            // replace a skeleton — show the card's "—" placeholders instead of
-            // a shimmer that never resolves.
-            binding.skeletonProfile.root.stopShimmer()
-            binding.skeletonProfile.root.visibility = View.GONE
-            binding.statsCard.visibility = View.VISIBLE
+            showGuestChrome()
             return
         }
+
+        binding.btnHistory.alpha = 1f
+        binding.tvGuestSubtitle.visibility = View.GONE
+        binding.btnGuestSignUp.visibility = View.GONE
+        binding.guestCtaBanner.visibility = View.GONE
+        binding.tvGuestLogIn.visibility = View.GONE
+        setStatsLocked(false)
 
         binding.btnEditProfile.visibility = View.VISIBLE
         // Best cached guess up front so there's no upgrade-card flash before
@@ -108,6 +173,57 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             loadProfileDocument(it)
             loadMatchStats(it)
         }
+    }
+
+    /**
+     * The whole guest state: a preview of what an account unlocks, not a
+     * locked-out screen. Silhouette photo, no real name/email/location line,
+     * a full-width Sign Up CTA in place of Edit Profile, blurred-style stats
+     * with a lock badge each, the pink CTA banner, and a bottom Log In link
+     * — everything a signed-in user's chrome hides or replaces.
+     */
+    private fun showGuestChrome() {
+        binding.ivProfilePhoto.setImageResource(R.drawable.ic_avatar_placeholder)
+        binding.tvProfileName.text = getString(R.string.guest_profile_name)
+        binding.tvGuestSubtitle.visibility = View.VISIBLE
+        binding.tvProfileEmail.visibility = View.GONE
+        binding.tvProfileAgeLocation.visibility = View.GONE
+        binding.tvProfileIntent.visibility = View.GONE
+
+        // A guest has no Firestore document, so there is nothing for the
+        // editor to load or save — it would open, fail its read and close.
+        // The full-width Sign Up CTA takes its place instead.
+        binding.btnEditProfile.visibility = View.GONE
+        binding.btnGuestSignUp.visibility = View.VISIBLE
+
+        // Likewise no account to attach a subscription to.
+        binding.cardPremium.visibility = View.GONE
+        binding.premiumMemberBadge.visibility = View.GONE
+
+        // Greyed rather than hidden, matching this screen's "preview, not
+        // blocked" tone — the icon signals there's a real history feature
+        // behind sign-up, not that the button doesn't exist.
+        binding.btnHistory.alpha = 0.4f
+
+        // A guest makes no Firestore read, so nothing will ever arrive to
+        // replace a skeleton — show the card's "—" placeholders (already set
+        // by resetStats) with the lock badges instead of a shimmer that never
+        // resolves.
+        binding.skeletonProfile.root.stopShimmer()
+        binding.skeletonProfile.root.visibility = View.GONE
+        binding.statsCard.visibility = View.VISIBLE
+        setStatsLocked(true)
+
+        binding.guestCtaBanner.visibility = View.VISIBLE
+        binding.tvGuestLogIn.visibility = View.VISIBLE
+    }
+
+    /** Toggles the three stat columns' lock badges, guest vs signed-in. */
+    private fun setStatsLocked(locked: Boolean) {
+        val visibility = if (locked) View.VISIBLE else View.GONE
+        binding.ivStatLockMatches.visibility = visibility
+        binding.ivStatLockLikes.visibility = visibility
+        binding.ivStatLockProfile.visibility = visibility
     }
 
     /**
@@ -251,7 +367,18 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         }
     }
 
+    /**
+     * Built once here rather than re-evaluated per resume, same as
+     * btnEditProfile/cardPremium's own click listeners above — guest status
+     * isn't expected to change without this Activity being recreated (signing
+     * up happens on a different screen).
+     *
+     * Dark Mode is the one row excluded from the guest treatment entirely —
+     * it isn't in this list at all, since it's a device preference with its
+     * own switch further up the layout, not account data.
+     */
     private fun setUpSettingsRows() {
+        val isGuest = GuestPrefs.isGuest(this)
         val rows = listOf(
             SettingsRow(R.drawable.ic_account, R.string.settings_account) {
                 startActivity(Intent(this, AccountSettingsActivity::class.java))
@@ -284,8 +411,20 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             val rowBinding = ItemSettingsRowBinding.inflate(inflater, binding.settingsContainer, true)
             rowBinding.ivRowIcon.setImageResource(row.iconRes)
             rowBinding.tvRowLabel.setText(row.labelRes)
-            rowBinding.root.setOnClickListener { row.onClick() }
+            if (isGuest) {
+                rowBinding.root.alpha = 0.5f
+                rowBinding.ivRowChevron.setImageResource(R.drawable.ic_lock)
+                rowBinding.root.setOnClickListener {
+                    toast(getString(R.string.guest_settings_locked_toast))
+                }
+            } else {
+                rowBinding.root.setOnClickListener { row.onClick() }
+            }
         }
+    }
+
+    private fun toast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     /** From [LogoutBottomSheet] once the user confirms. */

@@ -27,7 +27,10 @@
         android:textSize="14sp"
         android:fontFamily="@font/poppins_medium" />
 
+    <!-- Chevron for a signed-in user; ProfileActivity swaps this for a lock
+         icon on a guest's rows instead (see setUpSettingsRows). -->
     <ImageView
+        android:id="@+id/ivRowChevron"
         android:layout_width="20dp"
         android:layout_height="20dp"
         android:src="@drawable/ic_chevron_right"
