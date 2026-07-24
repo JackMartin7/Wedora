@@ -489,8 +489,6 @@
 
     <string name="empty_likes_title">No likes yet</string>
     <string name="empty_likes_subtitle">Keep swiping to get noticed!</string>
-    <string name="empty_likes_guest_title">Sign up to see who liked you</string>
-    <string name="empty_likes_guest_subtitle">Create an account to find out who\'s interested.</string>
 
     <string name="empty_notifications_title">No notifications yet</string>
     <string name="empty_notifications_subtitle">You\'ll be notified when someone likes your profile</string>

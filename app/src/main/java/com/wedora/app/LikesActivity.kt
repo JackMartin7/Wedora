@@ -73,6 +73,12 @@ class LikesActivity : AppCompatActivity() {
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_match)
 
+        val openSignUp = View.OnClickListener {
+            startActivity(Intent(this, SignUpActivity::class.java))
+        }
+        binding.guestSignUpBanner.setOnClickListener(openSignUp)
+        binding.btnGuestSignUpBannerAction.setOnClickListener(openSignUp)
+
         loadLikes()
         loadUsersMatched()
     }
@@ -104,18 +110,11 @@ class LikesActivity : AppCompatActivity() {
 
     private fun loadLikes() {
         if (GuestPrefs.isGuest(this)) {
-            // A guest has no likes to show, but is exactly who the sign-up
-            // prompt is for — so the banner shows even though the list can't.
-            showEmpty(
-                R.drawable.ic_sparkle_heart,
-                R.string.empty_likes_guest_title,
-                R.string.empty_likes_guest_subtitle
-            )
-            showBanner(guest = true)
+            showGuestTeaser()
             return
         }
 
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             showNoLikes()
             return
@@ -193,6 +192,7 @@ class LikesActivity : AppCompatActivity() {
         binding.tvLikeCount.visibility = View.GONE
         binding.featuredContainer.visibility = View.GONE
         binding.premiumBanner.visibility = View.GONE
+        binding.guestSignUpBanner.visibility = View.GONE
         binding.rvLikes.visibility = View.GONE
         binding.skeletonLikes.showSkeleton(R.layout.item_skeleton_like_row, SKELETON_ROWS)
     }
@@ -213,12 +213,12 @@ class LikesActivity : AppCompatActivity() {
         binding.progressLoading.visibility = View.GONE
         binding.emptyState.show(icon, title, subtitle)
 
-        // The scroll container still hosts the banner, so it stays visible for
-        // guests; its inner sections are hidden individually.
+        // Signed-in only now — a guest never reaches this, see showGuestTeaser.
         binding.likesScroll.visibility = View.GONE
         binding.tvLikeCount.visibility = View.GONE
         binding.featuredContainer.visibility = View.GONE
         binding.rvLikes.visibility = View.GONE
+        binding.guestSignUpBanner.visibility = View.GONE
     }
 
     /**
@@ -246,12 +246,13 @@ class LikesActivity : AppCompatActivity() {
             binding.rvLikes.visibility = View.VISIBLE
             adapter.submitList(likes)
             binding.premiumBanner.visibility = View.GONE
+            binding.guestSignUpBanner.visibility = View.GONE
             return
         }
 
         val teasing = likes.size > FEATURED_COUNT
         if (teasing) {
-            showFeatured(likes.take(FEATURED_COUNT))
+            showFeatured(FEATURED_COUNT)
         } else {
             binding.featuredContainer.visibility = View.GONE
             binding.featuredContainer.removeAllViews()
@@ -261,16 +262,52 @@ class LikesActivity : AppCompatActivity() {
         binding.rvLikes.visibility = if (remainder.isEmpty()) View.GONE else View.VISIBLE
         adapter.submitList(remainder)
 
-        showBanner(guest = false)
+        binding.guestSignUpBanner.visibility = View.GONE
+        binding.premiumBanner.visibility = View.VISIBLE
+        val open = View.OnClickListener {
+            startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+        }
+        binding.premiumBanner.setOnClickListener(open)
+        binding.btnBannerAction.setOnClickListener(open)
     }
 
-    /** Builds the locked tiles: equal-width, square, blurred, lock centred. */
-    private fun showFeatured(featured: List<ReceivedLike>) {
+    /**
+     * A guest has no real likes to show — nobody can like an account that
+     * doesn't exist — so instead of the old "sign up" empty-state message
+     * (nothing to scroll past, banner sitting alone at the top) this reuses
+     * the exact same blurred "featured" tiles a free signed-in user with
+     * more than FEATURED_COUNT likes sees, purely as a preview of what the
+     * feature looks like unlocked. The actual ask to sign up moves to
+     * guestSignUpBanner — a quiet, persistent strip pinned above the bottom
+     * nav — rather than sitting in front of the content.
+     */
+    private fun showGuestTeaser() {
+        binding.skeletonLikes.hideSkeleton()
+        binding.progressLoading.visibility = View.GONE
+        binding.emptyState.hide()
+        binding.likesScroll.visibility = View.VISIBLE
+
+        binding.tvLikeCount.visibility = View.GONE
+        binding.rvLikes.visibility = View.GONE
+        binding.premiumBanner.visibility = View.GONE
+        showFeatured(FEATURED_COUNT)
+
+        binding.guestSignUpBanner.visibility = View.VISIBLE
+    }
+
+    /**
+     * Builds the locked tiles: equal-width, square, blurred, lock centred.
+     * No real data needed — every tile is the same neutral blurred
+     * placeholder regardless of who's behind it (see item_like_featured.xml),
+     * so [count] is all a caller has to supply, whether backed by real
+     * likers (showLikes) or nothing at all (showGuestTeaser).
+     */
+    private fun showFeatured(count: Int) {
         binding.featuredContainer.removeAllViews()
         binding.featuredContainer.visibility = View.VISIBLE
 
         val inflater = LayoutInflater.from(this)
-        featured.forEachIndexed { index, _ ->
+        repeat(count) { index ->
             val tile = ItemLikeFeaturedBinding.inflate(
                 inflater, binding.featuredContainer, false
             )
@@ -288,34 +325,16 @@ class LikesActivity : AppCompatActivity() {
             tile.ivFeaturedPhoto.post { tile.ivFeaturedPhoto.applyLockedBlur() }
 
             // Tapping a locked tile leads where the lock implies, not to the
-            // profile it's hiding.
-            tile.root.setOnClickListener { openUpgradeDestination(guest = false) }
+            // profile it's hiding — Sign Up for a guest (there's no premium
+            // to upgrade to without an account first), Payment & Subscription
+            // otherwise.
+            tile.root.setOnClickListener {
+                val destination =
+                    if (GuestPrefs.isGuest(this)) SignUpActivity::class.java
+                    else PaymentSubscriptionActivity::class.java
+                startActivity(Intent(this, destination))
+            }
         }
-    }
-
-    private fun showBanner(guest: Boolean) {
-        binding.premiumBanner.visibility = View.VISIBLE
-        binding.tvBannerText.setText(
-            if (guest) R.string.premium_banner_guest else R.string.premium_banner_likes
-        )
-        binding.btnBannerAction.setText(
-            if (guest) R.string.premium_banner_signup_action
-            else R.string.premium_banner_upgrade_action
-        )
-
-        val open = View.OnClickListener { openUpgradeDestination(guest) }
-        binding.premiumBanner.setOnClickListener(open)
-        binding.btnBannerAction.setOnClickListener(open)
-
-        // For a guest the empty state hides the scroll container, so the banner
-        // would go with it — show the container and hide everything else in it.
-        if (guest) binding.likesScroll.visibility = View.VISIBLE
-    }
-
-    private fun openUpgradeDestination(guest: Boolean) {
-        val destination =
-            if (guest) SignUpActivity::class.java else PaymentSubscriptionActivity::class.java
-        startActivity(Intent(this, destination))
     }
 
     private fun dp(value: Int): Int =
