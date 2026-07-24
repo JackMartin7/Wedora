@@ -21,7 +21,10 @@ import com.wedora.app.databinding.ItemMatchCardBinding
 import com.wedora.app.databinding.ItemNativeAdCardBinding
 import java.util.Calendar
 
-class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
+class HomeActivity :
+    AppCompatActivity(),
+    DailyLimitReachedBottomSheet.Host,
+    GuestProfileLimitBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraMatching"
@@ -107,6 +110,53 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
                 fade = true
             )
         }
+
+        override fun onTopCardChanged(position: Int) {
+            recordGuestProfileViewIfNeeded(displayItems.getOrNull(position))
+        }
+    }
+
+    /**
+     * Guests only — signed-in users, free or Premium, aren't tracked here at
+     * all (this whole function is a no-op for them). Ads never count: they
+     * aren't a profile, and StackItem.Ad simply doesn't match the Profile
+     * branch below.
+     *
+     * The freeze and the sheet fire together rather than the freeze waiting
+     * on "Maybe Later" specifically — the sheet is a modal dialog, so nothing
+     * behind it is reachable anyway until it's dismissed one way or another,
+     * and this way the frozen state is already correct underneath regardless
+     * of which button (or a swipe-down, or a tap outside) closes it.
+     */
+    private fun recordGuestProfileViewIfNeeded(item: StackItem?) {
+        if (!GuestPrefs.isGuest(this) || item !is StackItem.Profile) return
+        val count = GuestPrefs.recordGuestProfileViewed(this)
+        if (count >= GuestPrefs.DAILY_PROFILE_VIEW_LIMIT) {
+            showGuestLimitReached()
+            GuestProfileLimitBottomSheet.show(supportFragmentManager)
+        }
+    }
+
+    /**
+     * The persistent "come back tomorrow" state — reuses the same empty-state
+     * plumbing every other Home state already goes through, just with its own
+     * copy and a Sign Up action instead of Adjust Filters. Guarded at the top
+     * of showCards too, so a guest who already spent today's pool elsewhere
+     * (Explore, or an earlier session today) sees this immediately on load
+     * rather than a fresh stack they'd only lose again on the very next card.
+     */
+    private fun showGuestLimitReached() {
+        showEmptyState(
+            icon = R.drawable.ic_sparkle_heart,
+            title = R.string.guest_limit_empty_title,
+            subtitle = R.string.guest_limit_empty_subtitle,
+            actionLabel = R.string.guest_limit_empty_action,
+            onAction = { startActivity(Intent(this, SignUpActivity::class.java)) }
+        )
+    }
+
+    override fun onSignUpFromGuestLimitRequested() {
+        startActivity(Intent(this, SignUpActivity::class.java))
     }
 
     /**
@@ -666,6 +716,13 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
     }
 
     private fun showCards(loaded: List<MatchCard>) {
+        if (GuestPrefs.isGuest(this) &&
+            GuestPrefs.guestProfilesViewedToday(this) >= GuestPrefs.DAILY_PROFILE_VIEW_LIMIT
+        ) {
+            showGuestLimitReached()
+            return
+        }
+
         displayItems = buildDisplayItems(loaded)
         binding.progressLoading.visibility = View.GONE
         binding.emptyState.hide()

@@ -20,7 +20,7 @@ import com.wedora.app.databinding.ActivityExploreBinding
  * (see [loadDiscoveryFeed]). The strip is a quick glance at the nearest few;
  * the grid is the full list; "See All" opens it as its own scrollable screen.
  */
-class ExploreActivity : AppCompatActivity() {
+class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
 
     private companion object {
         /** How many of the closest people the horizontal strip previews. */
@@ -177,9 +177,9 @@ class ExploreActivity : AppCompatActivity() {
 
     private fun render(cards: List<MatchCard>) {
         binding.progressDiscover.visibility = View.GONE
-        discoverCards = cards
 
         if (cards.isEmpty()) {
+            discoverCards = cards
             showNearbyEmpty()
             showDiscoverEmpty()
             return
@@ -190,9 +190,71 @@ class ExploreActivity : AppCompatActivity() {
         }
         showNearby(nearby)
 
+        // The Nearby strip above isn't part of this cap — only the Discover
+        // grid is, per applyGuestProfileViewLimit's own doc comment — so this
+        // only ever trims what showDiscover / applyDiscoverFilter render, not
+        // showNearby's own list.
+        discoverCards = applyGuestProfileViewLimit(cards)
+        if (discoverCards.isEmpty() && cards.isNotEmpty() && GuestPrefs.isGuest(this)) {
+            showDiscoverGuestLimitReached()
+            return
+        }
+
         // Re-apply any active search rather than always showing the full grid,
         // so a reload (e.g. after Apply Filters) doesn't drop the user's query.
         applyDiscoverFilter(currentQuery())
+    }
+
+    /**
+     * Guests only — signed-in users get the full list back unchanged. Shares
+     * GuestPrefs' single daily pool with Home's swipe stack (same reasoning
+     * as that screen's own onTopCardChanged: "just seeing the card counts"),
+     * so a guest can't dodge Home's cap by switching to Explore instead.
+     *
+     * Only the Discover grid is capped, not the Nearby strip above it — the
+     * strip previews the same closest few people the grid would show anyway,
+     * and gating it too would mean a guest at the daily limit sees an empty
+     * Explore screen top to bottom rather than a normal strip with a frozen
+     * grid underneath. Scoped this way for now; revisit if Nearby turns out
+     * to be a real bypass in practice.
+     *
+     * Truncated once here at load, not counted incrementally per grid tile —
+     * rvDiscover has nested scrolling disabled inside a NestedScrollView, so
+     * GridLayoutManager lays out every item at once rather than binding them
+     * lazily as the user scrolls, meaning "count on bind" would spend the
+     * whole day's pool the instant the screen opens either way. Deciding the
+     * cut once, up front, against what's already loaded produces the same
+     * result without pretending this is a scroll-driven reveal it isn't.
+     */
+    private fun applyGuestProfileViewLimit(cards: List<MatchCard>): List<MatchCard> {
+        if (!GuestPrefs.isGuest(this)) return cards
+
+        val remaining = GuestPrefs.DAILY_PROFILE_VIEW_LIMIT - GuestPrefs.guestProfilesViewedToday(this)
+        if (remaining <= 0) return emptyList()
+
+        val allowed = cards.take(remaining)
+        var newTotal = GuestPrefs.guestProfilesViewedToday(this)
+        repeat(allowed.size) { newTotal = GuestPrefs.recordGuestProfileViewed(this) }
+        if (newTotal >= GuestPrefs.DAILY_PROFILE_VIEW_LIMIT) {
+            GuestProfileLimitBottomSheet.show(supportFragmentManager)
+        }
+        return allowed
+    }
+
+    private fun showDiscoverGuestLimitReached() {
+        binding.rvDiscover.visibility = View.GONE
+        discoverAdapter.submitList(emptyList())
+        binding.discoverEmpty.show(
+            R.drawable.ic_sparkle_heart,
+            R.string.guest_limit_empty_title,
+            R.string.guest_limit_empty_subtitle,
+            R.string.guest_limit_empty_action,
+            onAction = { startActivity(Intent(this, SignUpActivity::class.java)) }
+        )
+    }
+
+    override fun onSignUpFromGuestLimitRequested() {
+        startActivity(Intent(this, SignUpActivity::class.java))
     }
 
     private fun showLoading() {

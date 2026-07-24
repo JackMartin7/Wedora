@@ -42,6 +42,18 @@ class SwipeCardStackView @JvmOverloads constructor(
         fun onSwipedLeft(position: Int)
         /** Fired once the last card has been swiped away. */
         fun onEmptied()
+
+        /**
+         * Fired whenever [position] becomes the top (frontmost, visible) card
+         * — once for the very first card in [renderInitialStack], and again
+         * each time [promoteAfterSwipe] moves the peek into that spot. This is
+         * NOT the same as [onBindCard]: a card is bound once, while it's still
+         * the peek, and promoted to top later without being re-bound — so
+         * anything that means "the user is now looking at this card" (as
+         * opposed to "this card's view now exists somewhere in the stack")
+         * belongs here instead. Default no-op since most listeners don't care.
+         */
+        fun onTopCardChanged(position: Int) {}
     }
 
     private companion object {
@@ -158,6 +170,7 @@ class SwipeCardStackView @JvmOverloads constructor(
             addView(top)
             resetCardTransforms(top)
         }
+        listener?.onTopCardChanged(topPosition)
 
         cascadeIn()
     }
@@ -200,6 +213,9 @@ class SwipeCardStackView @JvmOverloads constructor(
                 .setInterpolator(OvershootInterpolator(PROMOTE_TENSION))
                 .setDuration(PROMOTE_MS)
                 .start()
+            // topPosition is already incremented (see flingOff, which does so
+            // before calling this) so it correctly names the promoted card.
+            listener?.onTopCardChanged(topPosition)
         }
 
         val nextPeekPosition = topPosition + 1

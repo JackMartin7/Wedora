@@ -503,6 +503,13 @@
     <string name="daily_limit_sheet_title">Daily Limit Reached</string>
     <string name="daily_limit_sheet_upgrade">Upgrade Now</string>
     <string name="daily_limit_sheet_maybe_later">Maybe Later</string>
+
+    <!-- Guest daily profile-view limit -->
+    <string name="guest_limit_sheet_title">You\'ve seen today\'s free profiles!</string>
+    <string name="guest_limit_sheet_subtitle">Sign up to keep discovering new people every day</string>
+    <string name="guest_limit_empty_title">You\'ve reached today\'s limit</string>
+    <string name="guest_limit_empty_subtitle">Come back tomorrow, or sign up for unlimited browsing.</string>
+    <string name="guest_limit_empty_action">Sign Up</string>
     <string name="like_limit_sheet_subtitle">You\'ve used all 10 likes today. Upgrade to Premium for unlimited likes!</string>
     <string name="message_limit_sheet_subtitle">You\'ve used all 10 messages today. Upgrade to Premium for unlimited messages!</string>
 
