@@ -146,10 +146,18 @@ object MatchNotificationWatcher {
         val isGenuinelyNewMessage = newMessage != null &&
             newMessage.senderId == otherUid &&
             newMessage.sentAt != previousMessage?.sentAt
-        if (isGenuinelyNewMessage && ActiveChatTracker.openThreadUid != otherUid) {
-            val text = newMessage?.text.orEmpty()
-            resolveDisplayName(otherUid) { name ->
-                AppNotifications.notifyNewMessage(appContext, match.id, otherUid, name ?: otherUid, text)
+        if (isGenuinelyNewMessage) {
+            val threadOpen = ActiveChatTracker.openThreadUid == otherUid
+            Log.d(
+                TAG,
+                "New message detected on match ${match.id} from $otherUid " +
+                    "(threadCurrentlyOpen=$threadOpen)"
+            )
+            if (!threadOpen) {
+                val text = newMessage?.text.orEmpty()
+                resolveDisplayName(otherUid) { name ->
+                    AppNotifications.notifyNewMessage(appContext, match.id, otherUid, name ?: otherUid, text)
+                }
             }
         }
     }

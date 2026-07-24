@@ -1,8 +1,13 @@
 package com.wedora.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.wedora.app.databinding.ActivityNotificationsSettingsBinding
 import com.wedora.app.databinding.ItemNotificationToggleBinding
 
@@ -13,10 +18,24 @@ import com.wedora.app.databinding.ItemNotificationToggleBinding
  *
  * Rows are built from [NotificationPrefs.Toggle] rather than laid out one by
  * one, so a row can't exist without a stored key behind it (or the reverse).
+ *
+ * Also asks for POST_NOTIFICATIONS here (API 33+) if it isn't granted yet.
+ * ProfileStepPermissionsActivity is the primary place for that, but it only
+ * runs for a fresh signup passing through the setup steps in order —
+ * AuthRouting sends any account that already has an age on file (every
+ * pre-existing account, and anyone who resumes mid-flow after that step)
+ * straight past it, so they'd otherwise never be asked at all. Visiting this
+ * screen is itself a clear, deliberate signal of wanting notification
+ * control, and Android's own permission request throttles a repeat prompt
+ * after a prior denial on its own, so this doesn't need its own "already
+ * asked" guard to avoid nagging.
  */
 class NotificationsSettingsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNotificationsSettingsBinding
+
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,6 +44,16 @@ class NotificationsSettingsActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { finish() }
         buildToggleRows()
+        requestNotificationPermissionIfNeeded()
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     private fun buildToggleRows() {

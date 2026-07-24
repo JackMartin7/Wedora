@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -21,6 +22,8 @@ import androidx.core.app.NotificationManagerCompat
  */
 object AppNotifications {
 
+    private const val TAG = "WedoraNotify"
+
     /**
      * Distinct id ranges per category so a match/like/message about the same
      * matchId can't silently overwrite one another's notification — while a
@@ -32,7 +35,10 @@ object AppNotifications {
     private const val ID_OFFSET_MESSAGE = 2
 
     fun notifyNewMatch(context: Context, matchId: String, otherUid: String, otherName: String) {
-        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) return
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) {
+            Log.d(TAG, "Skipping new-match notification for $matchId: category disabled in Settings")
+            return
+        }
 
         val intent = ProfileDetailActivity.intent(context, otherUid)
         show(
@@ -47,7 +53,10 @@ object AppNotifications {
 
     /** Deliberately vague — who liked isn't named, matching the Likes tab's blurred teaser. */
     fun notifyNewLike(context: Context, matchId: String) {
-        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.LIKES)) return
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.LIKES)) {
+            Log.d(TAG, "Skipping new-like notification for $matchId: category disabled in Settings")
+            return
+        }
 
         show(
             context = context,
@@ -66,7 +75,10 @@ object AppNotifications {
         senderName: String,
         messageText: String
     ) {
-        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.MESSAGES)) return
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.MESSAGES)) {
+            Log.d(TAG, "Skipping new-message notification for $matchId: category disabled in Settings")
+            return
+        }
 
         val intent = ChatThreadActivity.intent(context, otherUid, senderName)
         show(
@@ -88,6 +100,14 @@ object AppNotifications {
      * app doesn't declare parentActivityName anywhere, so it wouldn't produce
      * a real back stack, just an extra layer of indirection over what
      * PendingIntent.getActivity already does directly.
+     *
+     * Two independent gates, both checked and logged separately: the runtime
+     * POST_NOTIFICATIONS permission (API 33+ only — there's no such grant
+     * below it) and NotificationManagerCompat.areNotificationsEnabled(),
+     * which is the *only* signal on pre-33 devices (no runtime permission
+     * exists there at all) and also catches a 33+ user who disabled
+     * notifications for the app from system Settings after granting the
+     * permission.
      */
     private fun show(
         context: Context,
@@ -101,6 +121,11 @@ object AppNotifications {
             ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED
         ) {
+            Log.d(TAG, "Not posting to $channelId: POST_NOTIFICATIONS not granted")
+            return
+        }
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            Log.d(TAG, "Not posting to $channelId: notifications disabled for the app in system Settings")
             return
         }
 
@@ -121,6 +146,7 @@ object AppNotifications {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
+        Log.d(TAG, "Posting to $channelId: \"$title\" / \"$text\"")
         NotificationManagerCompat.from(context).notify(notificationId, notification)
     }
 }
