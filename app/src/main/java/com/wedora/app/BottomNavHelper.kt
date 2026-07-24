@@ -17,19 +17,18 @@ import com.google.firebase.firestore.ListenerRegistration
  * is tapped, and keeps the Likes/Chats badges live for as long as this screen
  * is in front.
  *
- * Chats and Profile are account-only regardless of which tab you tap them
- * from, so guests are redirected to sign-up instead of navigating — this is
- * the single place that gate is enforced for tab navigation. (HomeActivity
- * separately handles its own card actions, which is a different concern from
- * tab switching.)
+ * Chats is account-only — a guest has no matches to message, so there's
+ * nothing there to preview — and guests are redirected to sign-up instead of
+ * navigating to it. Profile is NOT gated here: it has its own guest state
+ * (see ProfileActivity.showGuestChrome) that's a preview, not a dead end, so
+ * guests navigate to it like any other tab.
  */
 fun AppCompatActivity.setUpWedoraBottomNav(bottomNav: BottomNavigationView, activeTabId: Int) {
     bottomNav.selectedItemId = activeTabId
     bottomNav.setOnItemSelectedListener { item ->
         if (item.itemId == activeTabId) return@setOnItemSelectedListener true
 
-        val isGuestGatedTab = item.itemId == R.id.nav_chats || item.itemId == R.id.nav_profile
-        if (isGuestGatedTab && GuestPrefs.isGuest(this)) {
+        if (item.itemId == R.id.nav_chats && GuestPrefs.isGuest(this)) {
             Toast.makeText(this, R.string.guest_action_blocked, Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, SignUpActivity::class.java))
             return@setOnItemSelectedListener false

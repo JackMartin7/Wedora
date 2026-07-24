@@ -168,15 +168,11 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
         // Home on top of the first, leaving a duplicate underneath running its
         // own listeners. Profile carries the bottom nav, so it's still one tap
         // back to the feed.
-        // Guests are gated the same way the Profile tab gates them. Profile is
-        // account-only however you reach it, so a second route to it can't be
-        // the one that skips the check.
+        // Not guest-gated, matching the bottom nav's own Profile tab
+        // (see setUpWedoraBottomNav) — Profile has its own guest state now,
+        // so a guest tapping their avatar/name sees that preview rather than
+        // being bounced to Sign Up before ever reaching it.
         binding.greetingContainer.setOnClickListener {
-            if (GuestPrefs.isGuest(this)) {
-                toast(getString(R.string.guest_action_blocked))
-                startActivity(Intent(this, SignUpActivity::class.java))
-                return@setOnClickListener
-            }
             startActivity(Intent(this, ProfileActivity::class.java))
             finish()
             // Profile is a bottom-nav peer, so this matches how the tab bar
