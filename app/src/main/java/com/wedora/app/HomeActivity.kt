@@ -608,6 +608,14 @@ class HomeActivity :
      * Nothing is awaited. The card has already gone, and a failed write only
      * means the profile can reappear in a later session — not worth
      * interrupting a run of swipes with an error.
+     *
+     * Not guest-gated, unlike likeUser/openChatWith: passing needs no
+     * account, it's just "don't show me this again" — which for a guest
+     * already means nothing gets recorded (no exclusion set persists
+     * without a uid) and the card simply moves on, exactly the browsing
+     * behavior a left swipe is supposed to have. Redirecting to Sign Up on
+     * every pass would break guest browsing entirely rather than explain
+     * an unexpected no-op, since nothing here was actually unexpected.
      */
     private fun recordPass(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -615,7 +623,11 @@ class HomeActivity :
     }
 
     private fun likeUser(card: MatchCard) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        if (selfUid == null) {
+            if (GuestPrefs.isGuest(this)) redirectGuestToSignUp(R.string.guest_like_blocked)
+            return
+        }
 
         // Not optimistic here the way the rest of this function used to be:
         // the daily-limit check needs a read before anything is written, so
@@ -665,7 +677,11 @@ class HomeActivity :
     private fun openChatWith(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid
         if (selfUid == null) {
-            toast(getString(R.string.error_match_failed))
+            if (GuestPrefs.isGuest(this)) {
+                redirectGuestToSignUp(R.string.guest_chat_blocked)
+            } else {
+                toast(getString(R.string.error_match_failed))
+            }
             return
         }
 
@@ -837,5 +853,17 @@ class HomeActivity :
 
     private fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Toast-then-navigate, the same shape every other guest-gated action in
+     * the app already uses (see BottomNavHelper's Chats gate and
+     * ProfileActivity's locked settings rows) — a guest tapping something
+     * account-only sees why, then lands on Sign Up rather than the tap
+     * silently doing nothing.
+     */
+    private fun redirectGuestToSignUp(@StringRes message: Int) {
+        toast(getString(message))
+        startActivity(Intent(this, SignUpActivity::class.java))
     }
 }

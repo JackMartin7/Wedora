@@ -40,12 +40,13 @@ object GuestPrefs {
     /**
      * How many distinct profiles a guest can view per calendar day, across
      * Home's swipe stack and Explore's Discover grid combined — one shared
-     * pool, not five each, so a guest can't dodge the cap by switching tabs.
+     * pool, not this many on each screen, so a guest can't dodge the cap by
+     * switching tabs.
      * There's no Firestore account to track this against, so — unlike the
      * signed-in like/message limits in LikeLimit.kt/MessageLimit.kt — it
      * lives entirely in this device-local SharedPreferences file.
      */
-    const val DAILY_PROFILE_VIEW_LIMIT = 5
+    const val DAILY_PROFILE_VIEW_LIMIT = 25
 
     fun isGuest(context: Context): Boolean =
         prefs(context).getBoolean(KEY_IS_GUEST, false)

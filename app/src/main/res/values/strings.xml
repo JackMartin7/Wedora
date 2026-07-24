@@ -68,6 +68,8 @@
     <!-- Guest mode -->
     <string name="continue_as_guest">Continue as Guest</string>
     <string name="guest_action_blocked">Sign up to use this feature</string>
+    <string name="guest_like_blocked">Sign up to like profiles</string>
+    <string name="guest_chat_blocked">Sign up to message people</string>
     <string name="guest_label">Guest</string>
     <!-- %1$s is the zero-padded guest number, e.g. "Guest 001" — see GuestPrefs.guestDisplayName. -->
     <string name="guest_numbered_label">Guest %1$s</string>
