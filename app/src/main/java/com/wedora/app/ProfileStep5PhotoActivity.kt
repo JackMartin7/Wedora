@@ -36,7 +36,9 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
             if (uri != null) savePickedPhoto(uri)
         }
 
-    override val stepNumber = 5
+    // Visual step number only — class name and its own string resources
+    // (step5_title/step5_subtitle) stay as-is.
+    override val stepNumber = 6
     override val titleRes = R.string.step5_title
     override val subtitleRes = R.string.step5_subtitle
     override val contentLayoutRes = R.layout.view_step_photo

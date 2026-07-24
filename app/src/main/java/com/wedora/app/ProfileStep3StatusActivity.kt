@@ -58,5 +58,5 @@ class ProfileStep3StatusActivity : ProfileStepActivity() {
         UserProfile.FIELD_LOOKING_FOR to chipsLookingFor.selectedOption()
     )
 
-    override fun nextStep(): Class<*> = ProfileStep4DetailsActivity::class.java
+    override fun nextStep(): Class<*> = ProfileStepPermissionsActivity::class.java
 }

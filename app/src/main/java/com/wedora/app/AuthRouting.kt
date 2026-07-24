@@ -51,9 +51,15 @@ fun resolveSignedInDestination(
  * gap rather than its latest — a user missing both gender and age should be
  * asked for gender first, the same order a new account sees.
  *
- * Step 5 is deliberately absent. The photo is optional and device-local, so
- * gating on it would send anyone who skipped it back to the same screen on
- * every launch, with no way to satisfy a check that has nothing to read.
+ * Two steps are deliberately absent. The photo (ProfileStep5PhotoActivity) is
+ * optional and device-local, so gating on it would send anyone who skipped it
+ * back to the same screen on every launch, with no way to satisfy a check
+ * that has nothing to read. The permissions primer
+ * (ProfileStepPermissionsActivity) writes nothing to the profile at all —
+ * there's no field to check even if it were the returning-user experience
+ * this gate is for, and it isn't: it belongs only to a fresh signup passing
+ * through the steps in order, not to someone resuming a partially-completed
+ * one. A returning user with an age on file goes straight past it.
  */
 private fun nextSetupStepFor(profile: UserProfile): Class<*> = when {
     profile.displayName.isNullOrBlank() -> ProfileStep1NameActivity::class.java

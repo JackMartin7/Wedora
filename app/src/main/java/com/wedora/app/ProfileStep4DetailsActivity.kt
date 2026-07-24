@@ -49,7 +49,9 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
             if (granted) detectLocation() else showManualLocationMode()
         }
 
-    override val stepNumber = 4
+    // Visual step number only — class name and its own string resources
+    // (step4_title/step4_subtitle) stay as-is; see the comment on those.
+    override val stepNumber = 5
     override val titleRes = R.string.step4_title
     override val subtitleRes = R.string.step4_subtitle
     override val contentLayoutRes = R.layout.view_step_details

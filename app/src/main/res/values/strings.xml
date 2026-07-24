@@ -116,7 +116,7 @@
     <string name="delete_chats_sheet_subtitle">These conversations will be removed from your Chats list. The other person will still see them.</string>
     <string name="delete_chats_sheet_confirm">Delete</string>
 
-    <!-- Progressive profile setup (5 steps after first verified login) -->
+    <!-- Progressive profile setup (6 steps after first verified login) -->
     <string name="step_counter_format">Step %1$d of %2$d</string>
     <string name="step_skip">Skip for now</string>
 
@@ -129,11 +129,27 @@
     <string name="step3_title">Your relationship status</string>
     <string name="step3_subtitle">Be honest — it helps find the right match</string>
 
+    <!-- Step names below stay tied to their class (ProfileStep4DetailsActivity,
+         ProfileStep5PhotoActivity) rather than their current visual step
+         number — ProfileStepPermissionsActivity now runs between step 3 and
+         these, so both moved to steps 5 and 6, but renaming the resources
+         themselves would be pure churn for no visible difference. -->
     <string name="step4_title">A bit more about you</string>
     <string name="step4_subtitle">Almost done!</string>
 
     <string name="step5_title">Add your best photo</string>
     <string name="step5_subtitle">Profiles with photos get 3x more matches</string>
+
+    <!-- Permissions primer (step 4 of 6) -->
+    <string name="step_permissions_title">Stay in the loop</string>
+    <string name="step_permissions_subtitle">Enable these so Wedora can find your matches and keep you updated</string>
+    <string name="permissions_location_title">Location Access</string>
+    <string name="permissions_location_desc">Find matches near you and see distance to potential partners</string>
+    <string name="permissions_notifications_title">Notifications</string>
+    <string name="permissions_notifications_desc">Get notified when someone likes you, matches with you, or sends a message</string>
+    <string name="permissions_enable_action">Enable</string>
+    <string name="permissions_footer_note">You can change these anytime in Settings</string>
+    <string name="cd_permission_granted">Granted</string>
 
     <!-- Shared by the setup steps and the profile editor -->
     <string name="label_age">Age</string>

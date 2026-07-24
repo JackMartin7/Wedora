@@ -33,7 +33,7 @@ abstract class ProfileStepActivity : AppCompatActivity() {
         const val TAG = "WedoraProfileStep"
 
         /** Denominator for the progress indicator and the "Step n of N" label. */
-        const val TOTAL_STEPS = 5
+        const val TOTAL_STEPS = 6
     }
 
     protected lateinit var binding: ActivityProfileStepBinding

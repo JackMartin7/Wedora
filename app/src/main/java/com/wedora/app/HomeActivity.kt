@@ -1,9 +1,6 @@
 package com.wedora.app
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -13,7 +10,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -91,14 +87,6 @@ class HomeActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * The result itself needs no handling: whichever way the user answers,
-     * MatchNotificationWatcher just checks the permission at post-time (see
-     * AppNotifications.show), so nothing here has to react to it directly.
-     */
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
@@ -108,7 +96,6 @@ class HomeActivity : AppCompatActivity() {
         showSignedInUser()
         loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
-        requestNotificationPermissionIfNeeded()
 
         binding.btnDarkMode.setOnClickListener { toggleDarkMode() }
 
@@ -151,27 +138,6 @@ class HomeActivity : AppCompatActivity() {
             // moves between the two rather than sliding as though it were a
             // level deeper.
             applyLateralTransition()
-        }
-    }
-
-    /**
-     * Home is the first authenticated screen after login/signup, so it's
-     * where the local-notification permission is asked for once. Below API
-     * 33 the permission doesn't exist — POST_NOTIFICATIONS is a no-op there
-     * and notifications just work without asking. Skipped for guests: there's
-     * no signed-in account for MatchNotificationWatcher to attach to, so
-     * there would be nothing to notify about yet anyway.
-     */
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        if (GuestPrefs.isGuest(this)) return
-        if (NotificationPrefs.hasAskedSystemPermission(this)) return
-
-        NotificationPrefs.markAskedSystemPermission(this)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 

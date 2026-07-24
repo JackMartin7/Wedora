@@ -75,22 +75,6 @@ object NotificationPrefs {
         prefs(context).edit().putBoolean(toggle.key, enabled).apply()
     }
 
-    private const val KEY_ASKED_SYSTEM_PERMISSION = "notif_asked_system_permission"
-
-    /**
-     * Whether the OS POST_NOTIFICATIONS prompt has already been shown once.
-     * Separate from the category toggles above, which are this app's own
-     * preferences UI — this tracks the one-time system dialog instead, so
-     * HomeActivity doesn't re-trigger it (a no-op after the first decision
-     * anyway, but there's no reason to keep calling it).
-     */
-    fun hasAskedSystemPermission(context: Context): Boolean =
-        prefs(context).getBoolean(KEY_ASKED_SYSTEM_PERMISSION, false)
-
-    fun markAskedSystemPermission(context: Context) {
-        prefs(context).edit().putBoolean(KEY_ASKED_SYSTEM_PERMISSION, true).apply()
-    }
-
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 }
