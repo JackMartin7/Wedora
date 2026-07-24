@@ -51,6 +51,10 @@ class LikesActivity : AppCompatActivity() {
         startActivity(ProfileDetailActivity.intent(this, user.otherUserId))
     }
 
+    private val profileViewerAdapter = ProfileViewerStripAdapter { viewer ->
+        startActivity(ProfileDetailActivity.intent(this, viewer.viewerUid))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLikesBinding.inflate(layoutInflater)
@@ -62,6 +66,10 @@ class LikesActivity : AppCompatActivity() {
         binding.rvUsersMatched.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         binding.rvUsersMatched.adapter = matchedUserAdapter
+
+        binding.rvProfileViewers.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvProfileViewers.adapter = profileViewerAdapter
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_match)
 
@@ -116,17 +124,47 @@ class LikesActivity : AppCompatActivity() {
         showLoading()
         // Own premium status first — showLikes needs it to decide whether to
         // blur at all, so it has to be known before the likes list renders,
-        // not fetched alongside it.
+        // not fetched alongside it. The same read also gates the "Who Viewed
+        // Your Profile" strip below, rather than each running its own.
         firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
             .addOnSuccessListener { snapshot ->
-                loadReceivedLikesAndShow(selfUid, UserProfile.from(snapshot).isPremium)
+                val isPremium = UserProfile.from(snapshot).isPremium
+                loadReceivedLikesAndShow(selfUid, isPremium)
+                loadProfileViewersStrip(selfUid, isPremium)
             }
             .addOnFailureListener {
                 // Can't confirm premium — fail closed to the free (blurred)
                 // experience rather than risk unblurring for a status that
-                // couldn't be verified.
+                // couldn't be verified. profileViewersSection stays hidden,
+                // its XML default, for the same reason.
                 loadReceivedLikesAndShow(selfUid, isPremium = false)
             }
+    }
+
+    /**
+     * Free users never reach the query at all — same reasoning as
+     * ProfileViewNotificationWatcher's own isPremium gate: this data isn't
+     * access-controlled by Firestore rules (an owner can always read their
+     * own viewers), so the gate here is about not fetching or showing
+     * something a free account's UI never surfaces anywhere else, not about
+     * enforcing a permission.
+     */
+    private fun loadProfileViewersStrip(selfUid: String, isPremium: Boolean) {
+        if (!isPremium) {
+            binding.profileViewersSection.visibility = View.GONE
+            return
+        }
+
+        loadProfileViewers(
+            firestore,
+            selfUid,
+            onResult = { viewers ->
+                binding.profileViewersSection.visibility =
+                    if (viewers.isEmpty()) View.GONE else View.VISIBLE
+                profileViewerAdapter.submitList(viewers)
+            },
+            onError = { binding.profileViewersSection.visibility = View.GONE }
+        )
     }
 
     private fun loadReceivedLikesAndShow(selfUid: String, isPremium: Boolean) {

@@ -87,6 +87,7 @@
     <!-- Likes tab (who liked you, as a photo grid) -->
     <string name="likes_title">Likes</string>
     <string name="likes_users_matched_label">Users Matched</string>
+    <string name="likes_profile_viewers_label">Who Viewed Your Profile</string>
 
     <!-- Notifications -->
     <string name="notifications_title">Notifications</string>
