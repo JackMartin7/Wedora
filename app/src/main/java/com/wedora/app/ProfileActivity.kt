@@ -401,7 +401,11 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             SettingsRow(R.drawable.ic_policy, R.string.settings_privacy_policy) {
                 startActivity(Intent(this, PrivacyPolicyActivity::class.java))
             },
-            SettingsRow(R.drawable.ic_logout, R.string.settings_logout) {
+            // guestEnabled: leaving guest mode needs no account, so this is
+            // the one row a guest can actually use — see showGuestChrome's
+            // own bottom Log In link for the parallel "leave guest mode"
+            // route that doesn't require opening the settings list at all.
+            SettingsRow(R.drawable.ic_logout, R.string.settings_logout, guestEnabled = true) {
                 LogoutBottomSheet().show(supportFragmentManager, "logout")
             }
         )
@@ -411,7 +415,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             val rowBinding = ItemSettingsRowBinding.inflate(inflater, binding.settingsContainer, true)
             rowBinding.ivRowIcon.setImageResource(row.iconRes)
             rowBinding.tvRowLabel.setText(row.labelRes)
-            if (isGuest) {
+            if (isGuest && !row.guestEnabled) {
                 rowBinding.root.alpha = 0.5f
                 rowBinding.ivRowChevron.setImageResource(R.drawable.ic_lock)
                 rowBinding.root.setOnClickListener {
