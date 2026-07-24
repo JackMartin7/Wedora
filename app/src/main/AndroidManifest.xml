@@ -40,17 +40,29 @@
             android:name=".OnboardingActivity"
             android:exported="false" />
 
+        <!-- adjustResize: without it (the previous state), the ScrollView +
+             EditText-as-first-focusable-view combination this screen uses —
+             the same shape every other text-input screen below already
+             declares this for — left the very first tap on etEmail
+             swallowed by the window's keyboard pan/resize negotiation
+             instead of reaching it as a focus click; a second tap on a
+             different field worked because the window had since settled. -->
         <activity
             android:name=".LoginActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".GuestGenderPromptActivity"
             android:exported="false" />
 
+        <!-- adjustResize — see LoginActivity's own comment; identical layout
+             shape (ScrollView, etEmail the first focusable view), identical
+             bug. -->
         <activity
             android:name=".SignUpActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ForgotPasswordActivity"
