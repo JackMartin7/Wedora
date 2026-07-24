@@ -17,7 +17,7 @@ import com.wedora.app.databinding.ActivityHomeBinding
 import com.wedora.app.databinding.ItemMatchCardBinding
 import java.util.Calendar
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraMatching"
@@ -466,16 +466,33 @@ class HomeActivity : AppCompatActivity() {
     private fun likeUser(card: MatchCard) {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        // Optimistic: the card has already swiped away, so there's no heart to
-        // update — just record the like and write it. No success toast: the
-        // card leaving is the feedback.
-        likedUserIds.add(card.id)
-        createMatchDocument(firestore, selfUid, card.id)
-            .addOnFailureListener { e ->
-                logFirestoreWriteFailure(TAG, "Failed to like ${card.id}", e)
-                likedUserIds.remove(card.id)
-                toast(getString(R.string.error_match_failed))
+        // Not optimistic here the way the rest of this function used to be:
+        // the daily-limit check needs a read before anything is written, so
+        // likedUserIds/the card's departure only reflect a like that's
+        // actually going through. The card has already swiped away by the
+        // time this runs regardless — that's gesture feedback, not a promise
+        // the like succeeded.
+        likeUserRespectingDailyLimit(firestore, selfUid, card.id) { attempt ->
+            when (attempt) {
+                is LikeAttempt.DailyLimitReached -> showDailyLimitReachedSheet()
+                is LikeAttempt.Started -> {
+                    likedUserIds.add(card.id)
+                    attempt.task.addOnFailureListener { e ->
+                        logFirestoreWriteFailure(TAG, "Failed to like ${card.id}", e)
+                        likedUserIds.remove(card.id)
+                        toast(getString(R.string.error_match_failed))
+                    }
+                }
             }
+        }
+    }
+
+    private fun showDailyLimitReachedSheet() {
+        DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+    }
+
+    override fun onUpgradeFromLikeLimitRequested() {
+        startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
     private fun unlikeInPlace(card: MatchCard, heartButton: ImageButton) {
@@ -505,16 +522,21 @@ class HomeActivity : AppCompatActivity() {
             .addOnSuccessListener { snapshot ->
                 if (!snapshot.isEmpty) {
                     openChatThread(card)
-                } else {
-                    createMatchDocument(firestore, selfUid, card.id)
-                        .addOnSuccessListener {
-                            likedUserIds.add(card.id)
-                            openChatThread(card)
-                        }
-                        .addOnFailureListener { e ->
-                            logFirestoreWriteFailure(TAG, "Failed to create match before chat", e)
-                            toast(getString(R.string.error_match_failed))
-                        }
+                    return@addOnSuccessListener
+                }
+                likeUserRespectingDailyLimit(firestore, selfUid, card.id) { attempt ->
+                    when (attempt) {
+                        is LikeAttempt.DailyLimitReached -> showDailyLimitReachedSheet()
+                        is LikeAttempt.Started -> attempt.task
+                            .addOnSuccessListener {
+                                likedUserIds.add(card.id)
+                                openChatThread(card)
+                            }
+                            .addOnFailureListener { e ->
+                                logFirestoreWriteFailure(TAG, "Failed to create match before chat", e)
+                                toast(getString(R.string.error_match_failed))
+                            }
+                    }
                 }
             }
             .addOnFailureListener { e ->

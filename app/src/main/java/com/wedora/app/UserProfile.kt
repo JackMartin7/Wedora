@@ -80,7 +80,22 @@ data class UserProfile(
      * transition (see PresenceTracker). Null for anyone who predates presence or
      * whose server timestamp hasn't resolved yet; consumers show nothing then.
      */
-    val lastSeen: Date?
+    val lastSeen: Date?,
+    /**
+     * Whether this account has Premium. Absent/false is free — the default
+     * for every account, since there is no purchase flow yet.
+     *
+     * There is currently no in-app way to become Premium. Grant it by hand:
+     * Firebase Console → Firestore → users/{uid} → set isPremium to the
+     * boolean `true`. firestore.rules blocks a user from setting this on
+     * their own document (see isPremiumUnchanged there), so this is the only
+     * way it's ever set — Console/Admin SDK writes aren't subject to rules.
+     */
+    val isPremium: Boolean,
+    /** How many likes this user has given on [likesGivenDate]. Free tier only. */
+    val likesGivenToday: Int,
+    /** "yyyy-MM-dd", device-local calendar day the count above is for. */
+    val likesGivenDate: String?
 ) {
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
@@ -105,6 +120,9 @@ data class UserProfile(
         const val FIELD_MY_STATUS = "myStatus"
         const val FIELD_LOOKING_FOR = "lookingFor"
         const val FIELD_LAST_SEEN = "lastSeen"
+        const val FIELD_IS_PREMIUM = "isPremium"
+        const val FIELD_LIKES_GIVEN_TODAY = "likesGivenToday"
+        const val FIELD_LIKES_GIVEN_DATE = "likesGivenDate"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -131,7 +149,10 @@ data class UserProfile(
             myStatus = snapshot.getString(FIELD_MY_STATUS),
             lookingFor = snapshot.getString(FIELD_LOOKING_FOR),
             // Null while a just-written serverTimestamp is still pending.
-            lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate()
+            lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate(),
+            isPremium = snapshot.getBoolean(FIELD_IS_PREMIUM) ?: false,
+            likesGivenToday = snapshot.getLong(FIELD_LIKES_GIVEN_TODAY)?.toInt() ?: 0,
+            likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE)
         )
     }
 }

@@ -476,6 +476,11 @@
     <string name="empty_blocked_error_subtitle">Check your connection and try again.</string>
 
     <!-- Bottom-sheet confirmations -->
+    <string name="like_limit_sheet_title">Daily Limit Reached</string>
+    <string name="like_limit_sheet_subtitle">You\'ve used all 10 likes today. Upgrade to Premium for unlimited likes!</string>
+    <string name="like_limit_sheet_upgrade">Upgrade Now</string>
+    <string name="like_limit_sheet_maybe_later">Maybe Later</string>
+
     <string name="logout_sheet_title">Log Out?</string>
     <string name="logout_sheet_subtitle">Are you sure you want to log out of your Wedora account?</string>
     <string name="delete_sheet_title">Delete Account?</string>

@@ -47,39 +47,44 @@ fun matchExistsQuery(
         .limit(1)
         .get()
 
+/**
+ * The write [createMatchDocument] and the daily-limit-aware like path both
+ * need — pulled out so the gated version (see LikeLimit.kt) can fold it into
+ * its own batch instead of duplicating it.
+ */
+internal fun matchDataFor(selfUid: String, otherUid: String): Map<String, Any> = mapOf(
+    // Sorted, so both participants write the byte-identical array.
+    //
+    // This is what made mutual likes fail. The document ID is sorted, so
+    // the second person to like lands on the document the first one
+    // created — a merge, i.e. an update. Written in caller order this
+    // array arrived reversed ([B, A] over a stored [A, B]), and the rules'
+    // "participants can never change" check is an order-sensitive list
+    // comparison, so it rejected every like-back with PERMISSION_DENIED.
+    Match.FIELD_USERS to listOf(selfUid, otherUid).sorted(),
+    Match.FIELD_CREATED_AT to FieldValue.serverTimestamp(),
+    // Adds the caller to the set of people who have liked. arrayUnion is
+    // commutative and idempotent, so a like-back adds the second person
+    // without disturbing the first, and re-liking is a no-op.
+    //
+    // This replaces the scalar likedBy, which held only one UID: the
+    // second liker overwrote it, flipping the like's attribution. That
+    // silently broke the like-back case even once the write was permitted
+    // — the first liker's heart reverted to grey, they could no longer
+    // unlike (the delete rule keyed off likedBy), and because the
+    // recipient had already marked the like seen, neither side was
+    // notified that it was now mutual.
+    Match.FIELD_LIKED_USERS to FieldValue.arrayUnion(selfUid)
+)
+
 fun createMatchDocument(
     firestore: FirebaseFirestore,
     selfUid: String,
     otherUid: String
-): Task<Void> {
-    val matchData = mapOf(
-        // Sorted, so both participants write the byte-identical array.
-        //
-        // This is what made mutual likes fail. The document ID is sorted, so
-        // the second person to like lands on the document the first one
-        // created — a merge, i.e. an update. Written in caller order this
-        // array arrived reversed ([B, A] over a stored [A, B]), and the rules'
-        // "participants can never change" check is an order-sensitive list
-        // comparison, so it rejected every like-back with PERMISSION_DENIED.
-        Match.FIELD_USERS to listOf(selfUid, otherUid).sorted(),
-        Match.FIELD_CREATED_AT to FieldValue.serverTimestamp(),
-        // Adds the caller to the set of people who have liked. arrayUnion is
-        // commutative and idempotent, so a like-back adds the second person
-        // without disturbing the first, and re-liking is a no-op.
-        //
-        // This replaces the scalar likedBy, which held only one UID: the
-        // second liker overwrote it, flipping the like's attribution. That
-        // silently broke the like-back case even once the write was permitted
-        // — the first liker's heart reverted to grey, they could no longer
-        // unlike (the delete rule keyed off likedBy), and because the
-        // recipient had already marked the like seen, neither side was
-        // notified that it was now mutual.
-        Match.FIELD_LIKED_USERS to FieldValue.arrayUnion(selfUid)
-    )
-    return firestore.collection(Match.COLLECTION)
+): Task<Void> =
+    firestore.collection(Match.COLLECTION)
         .document(Match.idFor(selfUid, otherUid))
-        .set(matchData, SetOptions.merge())
-}
+        .set(matchDataFor(selfUid, otherUid), SetOptions.merge())
 
 /**
  * Logs a failed Firestore write with its error code, rather than leaving only

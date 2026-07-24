@@ -19,7 +19,7 @@ import com.wedora.app.databinding.ActivityProfileDetailBinding
  * than passing the already-loaded card fields through the Intent — one source
  * of truth, and the detail view can't show a stale copy of the feed's data.
  */
-class ProfileDetailActivity : AppCompatActivity() {
+class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraMatching"
@@ -187,12 +187,23 @@ class ProfileDetailActivity : AppCompatActivity() {
         val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
         applyLikeState(true) // optimistic
-        createMatchDocument(firestore, selfUid, userId)
-            .addOnFailureListener { e ->
-                logFirestoreWriteFailure(TAG, "Failed to like $userId", e)
-                applyLikeState(false)
-                toast(getString(R.string.error_match_failed))
+        likeUserRespectingDailyLimit(firestore, selfUid, userId) { attempt ->
+            when (attempt) {
+                is LikeAttempt.DailyLimitReached -> {
+                    applyLikeState(false)
+                    DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+                }
+                is LikeAttempt.Started -> attempt.task.addOnFailureListener { e ->
+                    logFirestoreWriteFailure(TAG, "Failed to like $userId", e)
+                    applyLikeState(false)
+                    toast(getString(R.string.error_match_failed))
+                }
             }
+        }
+    }
+
+    override fun onUpgradeFromLikeLimitRequested() {
+        startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
     /** Red heart -> delete the match, go grey. */
@@ -225,13 +236,21 @@ class ProfileDetailActivity : AppCompatActivity() {
         }
 
         binding.btnMessage.isEnabled = false
-        createMatchDocument(firestore, selfUid, userId)
-            .addOnSuccessListener { openChatThread() }
-            .addOnFailureListener { e ->
-                logFirestoreWriteFailure(TAG, "Failed to create match before chat with $userId", e)
-                binding.btnMessage.isEnabled = true
-                toast(getString(R.string.error_match_failed))
+        likeUserRespectingDailyLimit(firestore, selfUid, userId) { attempt ->
+            when (attempt) {
+                is LikeAttempt.DailyLimitReached -> {
+                    binding.btnMessage.isEnabled = true
+                    DailyLimitReachedBottomSheet().show(supportFragmentManager, "daily_limit_reached")
+                }
+                is LikeAttempt.Started -> attempt.task
+                    .addOnSuccessListener { openChatThread() }
+                    .addOnFailureListener { e ->
+                        logFirestoreWriteFailure(TAG, "Failed to create match before chat with $userId", e)
+                        binding.btnMessage.isEnabled = true
+                        toast(getString(R.string.error_match_failed))
+                    }
             }
+        }
     }
 
     private fun openChatThread() {

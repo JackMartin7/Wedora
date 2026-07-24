@@ -23,6 +23,9 @@ abstract class ConfirmBottomSheet : WedoraBottomSheetDialog() {
     @get:StringRes protected abstract val subtitleRes: Int
     @get:StringRes protected abstract val primaryLabelRes: Int
 
+    /** "Cancel" fits every existing sheet; override only where the copy differs. */
+    @get:StringRes protected open val secondaryLabelRes: Int = R.string.action_cancel
+
     /** Runs when the primary button is tapped; the sheet dismisses afterwards. */
     protected abstract fun onPrimary()
 
@@ -38,6 +41,7 @@ abstract class ConfirmBottomSheet : WedoraBottomSheetDialog() {
         b.tvSheetTitle.setText(titleRes)
         b.tvSheetSubtitle.setText(subtitleRes)
         b.btnSheetPrimary.setText(primaryLabelRes)
+        b.btnSheetSecondary.setText(secondaryLabelRes)
 
         b.btnSheetPrimary.addPressScale()
         b.btnSheetPrimary.setOnClickListener {

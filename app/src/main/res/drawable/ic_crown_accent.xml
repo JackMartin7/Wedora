@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Crown for Premium-related bottom sheets, sitting on the light-pink icon
+     disc (bg_sheet_icon_circle) — accent-filled, not white like ic_crown,
+     which is meant for the gradient card and would be invisible here. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_accent"
+        android:pathData="M3,8 L7,12 L12,5 L17,12 L21,8 L19.5,19 L4.5,19 Z" />
+</vector>
