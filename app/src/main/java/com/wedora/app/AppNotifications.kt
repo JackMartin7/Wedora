@@ -12,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
 /**
- * Builds and shows this app's three local-notification categories.
+ * Builds and shows this app's local-notification categories.
  *
  * Every function here re-reads [NotificationPrefs] at call time rather than
  * once when [MatchNotificationWatcher] starts — so switching a toggle off in
@@ -33,6 +33,7 @@ object AppNotifications {
     private const val ID_OFFSET_MATCH = 0
     private const val ID_OFFSET_LIKE = 1
     private const val ID_OFFSET_MESSAGE = 2
+    private const val ID_OFFSET_PROFILE_VIEW = 3
 
     fun notifyNewMatch(context: Context, matchId: String, otherUid: String, otherName: String) {
         if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) {
@@ -88,6 +89,27 @@ object AppNotifications {
             title = senderName,
             text = messageText,
             contentIntent = intent
+        )
+    }
+
+    /**
+     * Deliberately vague — who viewed isn't named, matching notifyNewLike's
+     * own reasoning: it drives someone to open Profile Viewers to find out,
+     * rather than settling their curiosity from the notification shade.
+     */
+    fun notifyProfileView(context: Context, viewerUid: String) {
+        if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.PROFILE_VIEWS)) {
+            Log.d(TAG, "Skipping profile-view notification for $viewerUid: category disabled in Settings")
+            return
+        }
+
+        show(
+            context = context,
+            channelId = NotificationChannels.PROFILE_VIEWS,
+            notificationId = idFor(viewerUid, ID_OFFSET_PROFILE_VIEW),
+            title = context.getString(R.string.notif_profile_view_title),
+            text = context.getString(R.string.notif_profile_view_body),
+            contentIntent = Intent(context, ProfileViewersActivity::class.java)
         )
     }
 

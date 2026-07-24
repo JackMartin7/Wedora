@@ -408,6 +408,8 @@
     <string name="notif_messages_caption">When a match sends you a message.</string>
     <string name="notif_likes">Likes</string>
     <string name="notif_likes_caption">When someone likes your profile.</string>
+    <string name="notif_profile_views">Profile Views</string>
+    <string name="notif_profile_views_caption">When someone views your profile. Premium only.</string>
     <string name="notif_app_updates">App updates</string>
     <string name="notif_app_updates_caption">New features and important changes.</string>
     <string name="notif_promotions">Promotions</string>
@@ -417,12 +419,15 @@
     <string name="notif_channel_matches_name">New Matches</string>
     <string name="notif_channel_messages_name">Messages</string>
     <string name="notif_channel_likes_name">Likes</string>
+    <string name="notif_channel_profile_views_name">Profile Views</string>
 
     <!-- Local notification content -->
     <string name="notif_new_match_title">New Match! 🎉</string>
     <string name="notif_new_match_body">You matched with %1$s</string>
     <string name="notif_new_like_title">Someone liked your profile! ❤️</string>
     <string name="notif_new_like_body">Open Wedora to see who it could be.</string>
+    <string name="notif_profile_view_title">Someone viewed your profile 👀</string>
+    <string name="notif_profile_view_body">Open Wedora to see who\'s been checking you out.</string>
 
     <!-- Help Center -->
     <string name="help_center_title">Help Center</string>

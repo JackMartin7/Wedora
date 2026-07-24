@@ -12,12 +12,13 @@ import androidx.annotation.StringRes
  * deletion (see clearAllWedoraData).
  *
  * NEW_MATCHES, MESSAGES and LIKES are read live by
- * [MatchNotificationWatcher] before every local notification it considers
- * showing — these are process-local only, since there's no push delivery yet,
- * so they can only ever fire while the app itself is running (see that
- * class's doc for what that does and doesn't cover). APP_UPDATES and
- * PROMOTIONS have no trigger source at all yet, local or server-side — see
- * the TODO in [NotificationsSettingsActivity].
+ * [MatchNotificationWatcher], and PROFILE_VIEWS by
+ * [ProfileViewNotificationWatcher], before every local notification either
+ * considers showing — these are process-local only, since there's no push
+ * delivery yet, so they can only ever fire while the app itself is running
+ * (see each class's doc for what that does and doesn't cover). APP_UPDATES
+ * and PROMOTIONS have no trigger source at all yet, local or server-side —
+ * see the TODO in [NotificationsSettingsActivity].
  *
  * The toggles are an enum rather than five pairs of getters and setters, so
  * the screen can build itself from the list and adding a category is a
@@ -57,6 +58,10 @@ object NotificationPrefs {
         LIKES(
             "notif_likes", true,
             R.string.notif_likes, R.string.notif_likes_caption
+        ),
+        PROFILE_VIEWS(
+            "notif_profile_views", true,
+            R.string.notif_profile_views, R.string.notif_profile_views_caption
         ),
         APP_UPDATES(
             "notif_app_updates", true,

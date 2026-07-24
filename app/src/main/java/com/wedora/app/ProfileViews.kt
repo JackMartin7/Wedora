@@ -15,8 +15,9 @@ private const val TAG = "WedoraProfileViews"
 /** Firestore caps whereIn values, so profile lookups go out in chunks. */
 private const val WHERE_IN_CHUNK = 10
 
-private const val COLLECTION = "profileViews"
-private const val SUBCOLLECTION_VIEWERS = "viewers"
+// internal, not private: ProfileViewNotificationWatcher needs the same path.
+internal const val PROFILE_VIEWS_COLLECTION = "profileViews"
+internal const val PROFILE_VIEWS_SUBCOLLECTION_VIEWERS = "viewers"
 private const val FIELD_VIEWED_AT = "viewedAt"
 
 /** Someone who viewed the current user's profile, resolved to their name and presence. */
@@ -43,8 +44,8 @@ data class ProfileViewer(
 fun recordProfileView(firestore: FirebaseFirestore, viewedUid: String, viewerUid: String) {
     if (viewedUid == viewerUid) return
 
-    firestore.collection(COLLECTION).document(viewedUid)
-        .collection(SUBCOLLECTION_VIEWERS).document(viewerUid)
+    firestore.collection(PROFILE_VIEWS_COLLECTION).document(viewedUid)
+        .collection(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS).document(viewerUid)
         .set(mapOf(FIELD_VIEWED_AT to FieldValue.serverTimestamp()), SetOptions.merge())
         .addOnFailureListener { e -> Log.w(TAG, "Failed to record profile view", e) }
 }
@@ -67,8 +68,8 @@ fun loadProfileViewers(
     onResult: (List<ProfileViewer>) -> Unit,
     onError: () -> Unit
 ) {
-    firestore.collection(COLLECTION).document(selfUid)
-        .collection(SUBCOLLECTION_VIEWERS)
+    firestore.collection(PROFILE_VIEWS_COLLECTION).document(selfUid)
+        .collection(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS)
         .get()
         .addOnSuccessListener { snapshot ->
             val viewedAtByUid = snapshot.documents.associate { it.id to it.getTimestamp(FIELD_VIEWED_AT) }
