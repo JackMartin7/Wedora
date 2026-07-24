@@ -64,6 +64,19 @@ fun loadPassedUsersQuery(firestore: FirebaseFirestore, selfUid: String): Task<Qu
         .get()
 
 /**
+ * Everyone the feed should leave out, split by how absolute that exclusion
+ * is: [blocked] must never be shown under any circumstance, while [all]
+ * (blocked + already passed + already liked) is the normal, stricter set
+ * the feed prefers — except when the fallback pool it'd leave behind is too
+ * small, at which point a caller falls back to [blocked] alone (see
+ * [Feed.kt]'s resolveFeedExclusions). [blocked] is always a subset of [all].
+ */
+data class FeedExclusions(
+    val blocked: Set<String>,
+    val all: Set<String>
+)
+
+/**
  * Everyone the feed should leave out: blocked, already passed, and already
  * liked.
  *
@@ -80,7 +93,7 @@ fun loadPassedUsersQuery(firestore: FirebaseFirestore, selfUid: String): Task<Qu
 fun loadFeedExclusions(
     firestore: FirebaseFirestore,
     selfUid: String,
-    onResult: (Set<String>) -> Unit
+    onResult: (FeedExclusions) -> Unit
 ) {
     val blocked = firestore.collection(Moderation.BLOCKS_COLLECTION)
         .document(selfUid)
@@ -97,9 +110,10 @@ fun loadFeedExclusions(
     // the other two, which is what a combined success-only task would do.
     Tasks.whenAllComplete(blocked, passed, liked)
         .addOnSuccessListener {
-            val exclusions = mutableSetOf<String>()
+            val blockedIds = blocked.resultOrNull()?.documents?.map { it.id }?.toSet().orEmpty()
 
-            blocked.resultOrNull()?.documents?.forEach { exclusions.add(it.id) }
+            val exclusions = mutableSetOf<String>()
+            exclusions.addAll(blockedIds)
             passed.resultOrNull()?.documents?.forEach { exclusions.add(it.id) }
 
             // A match document exists as soon as either side likes, so only the
@@ -111,7 +125,7 @@ fun loadFeedExclusions(
                 ?.mapNotNull { it.otherUserId(selfUid) }
                 ?.let { exclusions.addAll(it) }
 
-            onResult(exclusions)
+            onResult(FeedExclusions(blocked = blockedIds, all = exclusions))
         }
 }
 

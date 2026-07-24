@@ -73,12 +73,14 @@ class HomeActivity :
     /**
      * UIDs the user has liked, kept updated by the match listener.
      *
-     * Already-liked people are now excluded from the feed by
-     * [loadFeedExclusions], so in the normal case no card is ever bound for
-     * one and the filled heart doesn't appear. This isn't dead weight though:
-     * the exclusion read fails *open*, so a network failure can still put a
-     * liked person on screen — and when that happens the heart should be red
-     * and unlike-in-place should work, which is what this set drives.
+     * Already-liked people are normally excluded from the feed by
+     * [loadFeedExclusions], so in the common case no card is ever bound for
+     * one and the filled heart doesn't appear. Two things put one on screen
+     * anyway: the exclusion read fails *open* on a network failure, and — by
+     * design — [resolveFeedExclusions]'s small-pool fallback deliberately
+     * reintroduces already-liked people rather than showing a hard empty
+     * state. Either way the heart should be red and unlike-in-place should
+     * work, which is what this set drives.
      */
     private val likedUserIds = mutableSetOf<String>()
 
@@ -374,7 +376,7 @@ class HomeActivity :
             queryMatches(
                 interestedIn = GuestPrefs.guestInterestedIn(this),
                 selfUid = null,
-                excludedUids = emptySet(),
+                exclusions = FeedExclusions(blocked = emptySet(), all = emptySet()),
                 myLat = null,
                 myLon = null
             )
@@ -409,8 +411,8 @@ class HomeActivity :
                     // before the feed query and filtered client-side — the
                     // same reasoning as the self filter: no composite index,
                     // and the sets are small.
-                    loadFeedExclusions(firestore, uid) { excluded ->
-                        queryMatches(interestedIn, uid, excluded, self.latitude, self.longitude)
+                    loadFeedExclusions(firestore, uid) { exclusions ->
+                        queryMatches(interestedIn, uid, exclusions, self.latitude, self.longitude)
                     }
                 }
             }
@@ -431,11 +433,16 @@ class HomeActivity :
      * selfUid simply never matches any real document id, so `it.id != null`
      * is trivially true and excludes nobody — the same "no self to filter
      * out" a guest already has no exclusion set for.
+     *
+     * [exclusions] is resolved via [resolveFeedExclusions] — the same shared
+     * fallback Explore/Nearby use (see Feed.kt), so a small user base
+     * reintroduces passed/already-liked profiles here too rather than each
+     * screen deciding independently. Blocked users are never reintroduced.
      */
     private fun queryMatches(
         interestedIn: String?,
         selfUid: String?,
-        excludedUids: Set<String>,
+        exclusions: FeedExclusions,
         myLat: Double?,
         myLon: Double?
     ) {
@@ -449,6 +456,7 @@ class HomeActivity :
         query
             .get()
             .addOnSuccessListener { snapshot ->
+                val excludedUids = resolveFeedExclusions(snapshot.documents, selfUid, exclusions)
                 val candidates = snapshot.documents
                     .filter { it.id != selfUid && it.id !in excludedUids }
                     .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }

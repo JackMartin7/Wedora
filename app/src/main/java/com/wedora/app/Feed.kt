@@ -132,9 +132,42 @@ fun matchesDistanceFilter(
 }
 
 /**
+ * Below this many candidates, the primary (blocked+passed+liked excluded)
+ * pool is considered too small to be worth showing on its own — a small user
+ * base would otherwise hit a hard empty state almost immediately. See
+ * [resolveFeedExclusions].
+ */
+private const val FALLBACK_MIN_RESULTS = 3
+
+/**
+ * Which exclusion set to actually filter [documents] by.
+ *
+ * Normally [exclusions].all (blocked, passed, and already-liked/matched
+ * users) — but if fewer than [FALLBACK_MIN_RESULTS] documents would survive
+ * that, only [exclusions].blocked is used instead: passed and already-liked
+ * users are reintroduced rather than the feed going hard-empty, which a small
+ * user base would otherwise hit almost immediately. Blocked users are
+ * excluded either way — that exclusion is a safety feature, not a discovery
+ * limit, and there is no path here that reintroduces them.
+ *
+ * Shared by [queryDiscoveryFeed] (Explore/Nearby) and HomeActivity's own
+ * query so both screens fall back identically rather than each screen
+ * deciding independently.
+ */
+fun resolveFeedExclusions(
+    documents: List<DocumentSnapshot>,
+    selfUid: String?,
+    exclusions: FeedExclusions
+): Set<String> {
+    val primaryCount = documents.count { it.id != selfUid && it.id !in exclusions.all }
+    return if (primaryCount >= FALLBACK_MIN_RESULTS) exclusions.all else exclusions.blocked
+}
+
+/**
  * Loads the discovery feed as distance-sorted cards — opposite gender, minus
- * everyone blocked/passed/liked, passing the active filters, closest first
- * (cards with no distance sort last).
+ * everyone blocked (and, pool permitting, passed/liked too — see
+ * [resolveFeedExclusions]), passing the active filters, closest first (cards
+ * with no distance sort last).
  *
  * Shared by Explore and NearbyList so "who's nearby" has a single definition.
  * [onResult] gets an empty list for a signed-out user, an own profile that
@@ -157,7 +190,7 @@ fun loadDiscoveryFeed(
             context, firestore,
             interestedIn = GuestPrefs.guestInterestedIn(context),
             selfUid = null,
-            excluded = emptySet(),
+            exclusions = FeedExclusions(blocked = emptySet(), all = emptySet()),
             myLat = null,
             myLon = null,
             onResult = onResult
@@ -180,9 +213,9 @@ fun loadDiscoveryFeed(
                 return@addOnSuccessListener
             }
 
-            loadFeedExclusions(firestore, uid) { excluded ->
+            loadFeedExclusions(firestore, uid) { exclusions ->
                 queryDiscoveryFeed(
-                    context, firestore, interestedIn, uid, excluded, self.latitude, self.longitude, onResult
+                    context, firestore, interestedIn, uid, exclusions, self.latitude, self.longitude, onResult
                 )
             }
         }
@@ -203,7 +236,7 @@ private fun queryDiscoveryFeed(
     firestore: FirebaseFirestore,
     interestedIn: String?,
     selfUid: String?,
-    excluded: Set<String>,
+    exclusions: FeedExclusions,
     myLat: Double?,
     myLon: Double?,
     onResult: (List<MatchCard>) -> Unit
@@ -218,6 +251,7 @@ private fun queryDiscoveryFeed(
     query
         .get()
         .addOnSuccessListener { snapshot ->
+            val excluded = resolveFeedExclusions(snapshot.documents, selfUid, exclusions)
             val cards = snapshot.documents
                 .filter { it.id != selfUid && it.id !in excluded }
                 .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }
