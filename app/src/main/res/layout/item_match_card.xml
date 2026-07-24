@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     A single match card:
-      mini profile row  ->  full-width photo (~330dp)  ->  action row  ->  bio
+      mini profile row  ->  photo (fills remaining space)  ->  action row  ->  bio
+
+    Root fills the full height SwipeCardStackView gives it (that container is
+    itself constrained to fill the space between the top bar and bottom nav
+    in activity_home.xml) rather than wrap_content, so the card doesn't leave
+    empty space below it on tall screens. The photo is the one flexible
+    piece — 0dp height + weight so it absorbs whatever's left over after the
+    other, naturally wrap_content, rows are measured — everything else keeps
+    its natural size the way a fixed-height photo already did.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:layout_marginHorizontal="16dp"
     android:layout_marginBottom="20dp"
@@ -85,9 +93,14 @@
     </RelativeLayout>
 
     <!-- ===== Photo + swipe stamps ===== -->
+    <!-- 0dp + weight: the one part of the card that stretches, so the photo
+         (still centerCrop, so it fills any resulting height without
+         distorting) fills whatever room the fixed-height rows above and
+         below leave rather than sitting at a constant 330dp. -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="330dp">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivCardPhoto"

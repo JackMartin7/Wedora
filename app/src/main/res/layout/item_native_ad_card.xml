@@ -3,7 +3,9 @@
     A native ad card in the Home swipe stack — free users only, woven in
     every AD_INTERVAL real profiles (see HomeActivity.buildDisplayItems).
     Same outer dimensions and shape as item_match_card.xml so it sits in the
-    stack without a visible seam.
+    stack without a visible seam — including its match_parent root and
+    0dp/weight media area, so an ad card fills the stack exactly as tall as a
+    profile card does rather than leaving empty space below it.
 
     NativeAdView has to be the actual root, not nested inside another
     ViewGroup — the Google Mobile Ads SDK's impression/click tracking is
@@ -15,7 +17,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:layout_marginHorizontal="16dp"
     android:layout_marginBottom="20dp"
     android:padding="12dp"
@@ -23,13 +25,14 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <!-- ===== Media + Ad badge + dismiss ===== -->
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="330dp">
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
             <com.google.android.gms.ads.nativead.MediaView
                 android:id="@+id/adMedia"
