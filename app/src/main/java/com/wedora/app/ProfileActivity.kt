@@ -247,6 +247,9 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             SettingsRow(R.drawable.ic_privacy, R.string.settings_privacy) {
                 startActivity(Intent(this, PrivacySafetyActivity::class.java))
             },
+            SettingsRow(R.drawable.ic_eye, R.string.settings_profile_viewers) {
+                startActivity(Intent(this, ProfileViewersActivity::class.java))
+            },
             SettingsRow(R.drawable.ic_help, R.string.settings_help) {
                 startActivity(Intent(this, HelpCenterActivity::class.java))
             },

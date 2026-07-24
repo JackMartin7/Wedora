@@ -86,6 +86,20 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
         loadProfile()
         checkLikeState()
         observePresence()
+        recordThisView()
+    }
+
+    /**
+     * Records that the signed-in user viewed this profile — skipped for a
+     * guest (no stable UID worth recording, matching how the rest of the app
+     * treats guest identity) and, inside recordProfileView itself, for
+     * viewing your own profile.
+     */
+    private fun recordThisView() {
+        FirebaseAuth.getInstance().currentUser
+            ?.takeUnless { GuestPrefs.isGuest(this) }
+            ?.uid
+            ?.let { selfUid -> recordProfileView(firestore, userId, selfUid) }
     }
 
     /**

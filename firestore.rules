@@ -279,5 +279,17 @@ service cloud.firestore {
     match /passes/{userId}/passedUsers/{passedUid} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // One view record per unique viewer. The viewer can only ever write their
+    // own entry — recordProfileView always writes as the signed-in user, never
+    // on anyone else's behalf — and only the profile owner can read the list
+    // of who viewed them. A viewer can't read this back to confirm their own
+    // view landed; nothing in the app needs that, and opening read access to
+    // the viewer too would let anyone enumerate who's been looking at a given
+    // profile.
+    match /profileViews/{viewedUid}/viewers/{viewerUid} {
+      allow read: if request.auth != null && request.auth.uid == viewedUid;
+      allow write: if request.auth != null && request.auth.uid == viewerUid;
+    }
   }
 }

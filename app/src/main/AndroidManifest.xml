@@ -131,6 +131,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".ProfileViewersActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".EmailVerificationActivity"
             android:exported="false" />
 

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A blurred teaser tile for "Who Viewed My Profile" on a free account —
+    same shape as item_like_featured.xml. Static/decorative, not tied to a
+    real viewer: every avatar is the same neutral placeholder regardless of
+    who it is (no photo backend for other users), so blurring a real one
+    would look identical to this — no data fetch needed for the teaser.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivFeaturedViewerPhoto"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_locked_like"
+        app:shapeAppearanceOverlay="@style/WedoraCardImage"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="10dp"
+        android:background="@drawable/bg_lock_circle"
+        android:src="@drawable/ic_lock"
+        android:contentDescription="@null"
+        app:layout_constraintTop_toTopOf="@id/ivFeaturedViewerPhoto"
+        app:layout_constraintBottom_toBottomOf="@id/ivFeaturedViewerPhoto"
+        app:layout_constraintStart_toStartOf="@id/ivFeaturedViewerPhoto"
+        app:layout_constraintEnd_toEndOf="@id/ivFeaturedViewerPhoto" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
