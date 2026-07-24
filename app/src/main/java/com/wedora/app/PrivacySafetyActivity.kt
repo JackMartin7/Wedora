@@ -43,7 +43,7 @@ class PrivacySafetyActivity : AppCompatActivity() {
         binding = ActivityPrivacySafetyBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val uid = FirebaseAuth.getInstance().realUid
         if (uid == null) {
             Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
             finish()

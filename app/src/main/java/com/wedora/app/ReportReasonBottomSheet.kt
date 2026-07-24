@@ -57,7 +57,7 @@ class ReportReasonBottomSheet : WedoraBottomSheetDialog() {
     }
 
     private fun submit(reason: String) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
         val context = requireContext().applicationContext
         submitReport(FirebaseFirestore.getInstance(), selfUid, targetUid, reason)
             .addOnSuccessListener {

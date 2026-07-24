@@ -54,7 +54,10 @@ object MatchNotificationWatcher {
     private val knownMatches = mutableMapOf<String, Match>()
 
     private val authListener = FirebaseAuth.AuthStateListener { auth ->
-        val uid = auth.currentUser?.uid
+        // realUid, not currentUser?.uid: a guest's anonymous session (see
+        // LoginActivity.continueAsGuest) has no matches and never will, so
+        // there's nothing for this watcher to do for one.
+        val uid = auth.realUid
         if (uid == null) stop() else start(uid)
     }
 

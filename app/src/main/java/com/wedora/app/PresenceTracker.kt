@@ -30,7 +30,11 @@ object PresenceTracker : DefaultLifecycleObserver {
     override fun onStop(owner: LifecycleOwner) = touch()
 
     private fun touch() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        // realUid, not currentUser?.uid: a guest's anonymous session has no
+        // users/{uid} document to update at all (guests never go through
+        // profile setup), so this would just fail on every foreground/
+        // background transition instead of being skipped outright.
+        val uid = FirebaseAuth.getInstance().realUid ?: return
         FirebaseFirestore.getInstance()
             .collection(UserProfile.COLLECTION)
             .document(uid)

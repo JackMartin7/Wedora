@@ -462,6 +462,9 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
 
     /** From [LogoutBottomSheet] once the user confirms. */
     override fun onLogoutConfirmed() {
+        // Already correct for a guest with no changes needed: signOut() ends
+        // whatever Firebase session exists, anonymous (see
+        // LoginActivity.continueAsGuest) or real, the same way.
         FirebaseAuth.getInstance().signOut()
         GuestPrefs.clearGuest(this)
         startActivity(

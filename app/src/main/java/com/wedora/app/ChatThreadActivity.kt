@@ -64,7 +64,7 @@ class ChatThreadActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Hos
         setContentView(binding.root)
 
         val otherUserId = intent.getStringExtra(EXTRA_OTHER_USER_ID)
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val uid = FirebaseAuth.getInstance().realUid
         if (otherUserId.isNullOrBlank() || uid == null) {
             Log.w(TAG, "Missing other user id or no signed-in user")
             Toast.makeText(this, R.string.error_chat_load_failed, Toast.LENGTH_LONG).show()

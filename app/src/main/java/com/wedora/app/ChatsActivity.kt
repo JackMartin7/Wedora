@@ -137,7 +137,7 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
      * write is exactly the case where nothing changed.
      */
     override fun onDeleteChatsConfirmed() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
         val matchIds = adapter.selectedMatchIds()
         val previousPreviews = allPreviews
 

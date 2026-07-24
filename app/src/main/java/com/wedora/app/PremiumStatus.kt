@@ -34,7 +34,10 @@ object PremiumStatus {
     private var cachedIsPremium: Boolean = false
 
     private val authListener = FirebaseAuth.AuthStateListener { auth ->
-        val uid = auth.currentUser?.uid
+        // realUid, not currentUser?.uid: a guest's anonymous session (see
+        // LoginActivity.continueAsGuest) has no users/{uid} document and can
+        // never be Premium, so there's nothing for this cache to watch.
+        val uid = auth.realUid
         if (uid == null) stop() else start(uid)
     }
 

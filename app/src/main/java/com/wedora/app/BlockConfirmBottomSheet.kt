@@ -32,7 +32,7 @@ class BlockConfirmBottomSheet : ConfirmBottomSheet() {
     override val primaryLabelRes = R.string.block_confirm_button
 
     override fun onPrimary() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
         val targetUid = requireArguments().getString(ARG_TARGET_UID).orEmpty()
         // Captured before the base dismisses this sheet — the async callback
         // below can't reach them once it's detached.

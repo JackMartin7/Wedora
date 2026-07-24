@@ -90,7 +90,7 @@ class FilterActivity : AppCompatActivity() {
         binding.progressLookingFor.visibility = View.VISIBLE
         binding.chipsLookingForFilter.visibility = View.GONE
 
-        val uid = auth.currentUser?.uid
+        val uid = auth.realUid
         if (uid == null) {
             showIntentChips()
             return

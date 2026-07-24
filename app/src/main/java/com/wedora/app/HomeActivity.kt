@@ -618,12 +618,12 @@ class HomeActivity :
      * an unexpected no-op, since nothing here was actually unexpected.
      */
     private fun recordPass(card: MatchCard) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
         passUser(firestore, selfUid, card.id)
     }
 
     private fun likeUser(card: MatchCard) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             if (GuestPrefs.isGuest(this)) redirectGuestToSignUp(R.string.guest_like_blocked)
             return
@@ -659,7 +659,7 @@ class HomeActivity :
     }
 
     private fun unlikeInPlace(card: MatchCard, heartButton: ImageButton) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
 
         // Optimistic grey; revert if the delete fails (e.g. offline).
         likedUserIds.remove(card.id)
@@ -675,7 +675,7 @@ class HomeActivity :
     }
 
     private fun openChatWith(card: MatchCard) {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             if (GuestPrefs.isGuest(this)) {
                 redirectGuestToSignUp(R.string.guest_chat_blocked)

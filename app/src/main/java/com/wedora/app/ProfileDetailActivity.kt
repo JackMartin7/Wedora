@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -155,7 +156,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
      * deletable by this user.
      */
     private fun checkLikeState() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             applyLikeState(false)
             return
@@ -196,9 +197,18 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
         }
     }
 
-    /** Grey heart -> create the match, go red. No toast: the heart is feedback. */
+    /**
+     * Grey heart -> create the match, go red. No toast for a signed-in
+     * failure: the heart is feedback. A guest gets a toast, since for them
+     * there's no heart-state change to serve as feedback at all — realUid is
+     * null before the write is even attempted, not after it fails.
+     */
     private fun likeUser() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid
+        if (selfUid == null) {
+            if (GuestPrefs.isGuest(this)) redirectGuestToSignUp(R.string.guest_like_blocked)
+            return
+        }
 
         applyLikeState(true) // optimistic
         likeUserRespectingDailyLimit(firestore, selfUid, userId) { attempt ->
@@ -222,7 +232,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
 
     /** Red heart -> delete the match, go grey. */
     private fun unlikeUser() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val selfUid = FirebaseAuth.getInstance().realUid ?: return
 
         applyLikeState(false) // optimistic
         deleteMatchDocument(firestore, selfUid, userId)
@@ -238,9 +248,13 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
      * first, then open. Both reuse the same match write as the heart.
      */
     private fun messageUser() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
-            toast(getString(R.string.error_match_failed))
+            if (GuestPrefs.isGuest(this)) {
+                redirectGuestToSignUp(R.string.guest_chat_blocked)
+            } else {
+                toast(getString(R.string.error_match_failed))
+            }
             return
         }
 
@@ -319,5 +333,16 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
 
     private fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Toast-then-navigate, the same shape HomeActivity's own guest gates use
+     * (see its own doc comment on redirectGuestToSignUp) — a guest reaching
+     * this screen via a feed card tap and hitting Like or Message sees why,
+     * then lands on Sign Up rather than the tap silently doing nothing.
+     */
+    private fun redirectGuestToSignUp(@StringRes message: Int) {
+        toast(getString(message))
+        startActivity(Intent(this, SignUpActivity::class.java))
     }
 }

@@ -42,7 +42,7 @@ class NotificationsActivity : AppCompatActivity() {
     }
 
     private fun loadNotifications() {
-        val selfUid = FirebaseAuth.getInstance().currentUser?.uid
+        val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
             showNotifications(emptyList())
             return

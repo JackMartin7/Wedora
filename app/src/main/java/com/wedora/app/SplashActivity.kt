@@ -65,10 +65,22 @@ class SplashActivity : AppCompatActivity() {
             // A persisted session goes straight into the app. Unverified
             // accounts deliberately fall through to Login, which is where the
             // "verify your email" prompt and its resend action live.
-            user != null && user.isEmailVerified ->
+            //
+            // !user.isAnonymous is explicit rather than relied-on-implicitly:
+            // an anonymous guest session's isEmailVerified is also always
+            // false (there's no email to verify), so this condition would
+            // already exclude guests without it — but leaving that
+            // incidental would mean a guest silently starting to route
+            // through the real-account profile-completion steps the moment
+            // Firebase ever changed that default. Guests are routed by the
+            // GuestPrefs branch below instead.
+            user != null && !user.isAnonymous && user.isEmailVerified ->
                 resolveSignedInDestination(firestore, user.uid) { setDestination(it) }
 
             // A guest who reopened the app stays a guest — no bounce to Login.
+            // Their anonymous Firebase session (see LoginActivity.continueAsGuest)
+            // already persisted across the restart same as a real one would;
+            // this is what actually routes them, not the branch above.
             GuestPrefs.isGuest(this) ->
                 setDestination(HomeActivity::class.java)
 
