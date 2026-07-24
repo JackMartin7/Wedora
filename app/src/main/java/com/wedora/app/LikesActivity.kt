@@ -23,11 +23,10 @@ import com.wedora.app.databinding.ItemLikeFeaturedBinding
  * marks those likes seen, so reaching them from the tab clears the Home badge
  * just as opening the bell does.
  *
- * The teaser is presentation only. Every liker is still readable from
- * Firestore by this user — the security rules can't distinguish a free account
- * from a premium one, since nothing records that yet. Blurring two tiles is a
- * prompt to upgrade, not an access control, and it shouldn't be described as
- * one until entitlements exist server-side.
+ * The teaser is presentation only, for a free account. Every liker is still
+ * readable from Firestore by this user regardless of [UserProfile.isPremium]
+ * — likes aren't access-controlled by tier, only their presentation is.
+ * Blurring two tiles is a prompt to upgrade, not an access control.
  */
 class LikesActivity : AppCompatActivity() {
 
@@ -115,11 +114,27 @@ class LikesActivity : AppCompatActivity() {
         }
 
         showLoading()
+        // Own premium status first — showLikes needs it to decide whether to
+        // blur at all, so it has to be known before the likes list renders,
+        // not fetched alongside it.
+        firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
+            .addOnSuccessListener { snapshot ->
+                loadReceivedLikesAndShow(selfUid, UserProfile.from(snapshot).isPremium)
+            }
+            .addOnFailureListener {
+                // Can't confirm premium — fail closed to the free (blurred)
+                // experience rather than risk unblurring for a status that
+                // couldn't be verified.
+                loadReceivedLikesAndShow(selfUid, isPremium = false)
+            }
+    }
+
+    private fun loadReceivedLikesAndShow(selfUid: String, isPremium: Boolean) {
         loadReceivedLikes(
             firestore,
             selfUid,
             onResult = { likes, unseenMatchIds ->
-                if (likes.isEmpty()) showNoLikes() else showLikes(likes)
+                if (likes.isEmpty()) showNoLikes() else showLikes(likes, isPremium)
                 // Marks seen even when the display list is empty but unseen ids
                 // exist (all likers' profiles were missing), so the badge still
                 // clears.
@@ -169,12 +184,15 @@ class LikesActivity : AppCompatActivity() {
     }
 
     /**
-     * With two or more likers the first [FEATURED_COUNT] are shown locked and
-     * the remainder fill the grid. With one, the teaser is skipped entirely and
-     * that single liker is shown plainly — blurring a list of one leaves the
-     * screen looking broken rather than tantalising.
+     * Premium: every liker shown plainly in the grid — no teaser, no lock, no
+     * upgrade banner, since there's nothing left to upgrade to.
+     *
+     * Free, with two or more likers: the first [FEATURED_COUNT] are shown
+     * locked and the remainder fill the grid. With one, the teaser is skipped
+     * entirely and that single liker is shown plainly — blurring a list of
+     * one leaves the screen looking broken rather than tantalising.
      */
-    private fun showLikes(likes: List<ReceivedLike>) {
+    private fun showLikes(likes: List<ReceivedLike>, isPremium: Boolean) {
         binding.progressLoading.visibility = View.GONE
         binding.emptyState.hide()
         binding.likesScroll.visibility = View.VISIBLE
@@ -183,6 +201,15 @@ class LikesActivity : AppCompatActivity() {
         binding.tvLikeCount.visibility = View.VISIBLE
         binding.tvLikeCount.text =
             resources.getQuantityString(R.plurals.likes_count, likes.size, likes.size)
+
+        if (isPremium) {
+            binding.featuredContainer.visibility = View.GONE
+            binding.featuredContainer.removeAllViews()
+            binding.rvLikes.visibility = View.VISIBLE
+            adapter.submitList(likes)
+            binding.premiumBanner.visibility = View.GONE
+            return
+        }
 
         val teasing = likes.size > FEATURED_COUNT
         if (teasing) {
