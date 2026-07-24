@@ -33,7 +33,7 @@ class HomeActivity :
         const val SKELETON_CARDS = 3
 
         /** A native ad follows every AD_INTERVALth real profile — free users only. */
-        const val AD_INTERVAL = 5
+        const val AD_INTERVAL = 3
 
         /** How many native ads to keep loaded and ready at once. */
         const val AD_POOL_TARGET = 2
