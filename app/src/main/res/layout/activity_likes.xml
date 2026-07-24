@@ -207,19 +207,22 @@
                 tools:visibility="visible" />
 
             <!-- Upgrade banner. Copy and destination differ for guests, so
-                 both are set in code. -->
+                 both are set in code. Sizing matches activity_profile.xml's
+                 cardPremium (same gradient card, same feature family) rather
+                 than this screen's own original wrap_content/16dp/14sp
+                 dimensions. -->
             <LinearLayout
                 android:id="@+id/premiumBanner"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="72dp"
                 android:layout_marginHorizontal="20dp"
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:background="@drawable/bg_premium_card"
                 android:elevation="6dp"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="14dp"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="12dp"
                 android:clickable="true"
                 android:focusable="true"
                 android:visibility="gone"
@@ -238,9 +241,11 @@
                     android:layout_weight="1"
                     android:layout_marginStart="12dp"
                     android:textColor="@color/white"
-                    android:textSize="14sp"
+                    android:textSize="17sp"
                     android:lineSpacingExtra="2sp"
                     android:fontFamily="@font/poppins_medium"
+                    android:maxLines="2"
+                    android:ellipsize="end"
                     tools:text="Upgrade to Premium to see who liked you" />
 
                 <TextView
@@ -252,7 +257,7 @@
                     android:gravity="center"
                     android:paddingHorizontal="14dp"
                     android:textColor="@color/wedora_accent"
-                    android:textSize="12sp"
+                    android:textSize="14sp"
                     android:fontFamily="@font/poppins_semibold"
                     tools:text="Upgrade Now" />
 
