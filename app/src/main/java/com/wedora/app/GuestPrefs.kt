@@ -4,6 +4,7 @@ import android.content.Context
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.random.Random
 
 /**
  * Tracks whether the user chose "Continue as Guest" and is therefore browsing
@@ -19,8 +20,20 @@ object GuestPrefs {
 
     private const val PREFS_NAME = "wedora_prefs"
     private const val KEY_IS_GUEST = "is_guest"
+    private const val KEY_GUEST_NUMBER = "guest_number"
     private const val KEY_PROFILES_VIEWED_TODAY = "guest_profiles_viewed_today"
     private const val KEY_PROFILES_VIEWED_DATE = "guest_profiles_viewed_date"
+
+    /**
+     * Range for a freshly generated guest number — wide enough that two
+     * guests on two different devices picking the same one in the same
+     * stretch of time is unlikely, without needing a backend counter (guests
+     * have no Firebase Auth session at all, so there's no safe, rule-gated
+     * way to increment a shared Firestore counter for them). Per-device
+     * unique, not globally unique — see [guestDisplayName]'s doc comment.
+     */
+    private const val GUEST_NUMBER_MIN = 1
+    private const val GUEST_NUMBER_MAX = 999_999
 
     /**
      * How many distinct profiles a guest can view per calendar day, across
@@ -35,17 +48,57 @@ object GuestPrefs {
     fun isGuest(context: Context): Boolean =
         prefs(context).getBoolean(KEY_IS_GUEST, false)
 
+    /**
+     * Assigns a guest number the first time this device goes guest, and
+     * leaves an existing one untouched on every call after that — so if this
+     * somehow runs again for a guest who's already mid-session (there's no
+     * legitimate path back to "Continue as Guest" without clearGuest running
+     * first, but this guards it regardless), their number can't appear to
+     * change out from under them.
+     */
     fun setGuest(context: Context) {
-        prefs(context).edit().putBoolean(KEY_IS_GUEST, true).apply()
+        val p = prefs(context)
+        val editor = p.edit().putBoolean(KEY_IS_GUEST, true)
+        if (!p.contains(KEY_GUEST_NUMBER)) {
+            editor.putInt(KEY_GUEST_NUMBER, Random.nextInt(GUEST_NUMBER_MIN, GUEST_NUMBER_MAX + 1))
+        }
+        editor.apply()
     }
 
-    /** Call after a successful sign-up/sign-in so the account is no longer gated. */
+    /**
+     * Call after a successful sign-up/sign-in so the account is no longer
+     * gated. Also drops the guest number and view-count state — a real
+     * account doesn't need either, and a later "Continue as Guest" on the
+     * same device (after logging out again) starts a genuinely new guest
+     * identity rather than resuming the old one.
+     */
     fun clearGuest(context: Context) {
-        prefs(context).edit().putBoolean(KEY_IS_GUEST, false).apply()
         prefs(context).edit()
+            .putBoolean(KEY_IS_GUEST, false)
+            .remove(KEY_GUEST_NUMBER)
             .remove(KEY_PROFILES_VIEWED_TODAY)
             .remove(KEY_PROFILES_VIEWED_DATE)
             .apply()
+    }
+
+    /**
+     * "Guest 001", growing past three digits naturally rather than truncating
+     * (see [GUEST_NUMBER_MAX]) — this is the one display name every guest
+     * screen should use instead of a bare "Guest", so a returning guest
+     * recognizes their own session across visits. Per-device unique, not
+     * globally unique: there's no backend counter behind it (see
+     * GUEST_NUMBER_MIN/MAX's own doc comment), so two different devices can
+     * in principle land on the same number. Falls back to the pre-numbered
+     * "Guest" label in the practically-impossible case this is read before
+     * [setGuest] has ever run for this device.
+     */
+    fun guestDisplayName(context: Context): String {
+        val number = prefs(context).getInt(KEY_GUEST_NUMBER, 0)
+        return if (number == 0) {
+            context.getString(R.string.guest_label)
+        } else {
+            context.getString(R.string.guest_numbered_label, number.toString().padStart(3, '0'))
+        }
     }
 
     /**

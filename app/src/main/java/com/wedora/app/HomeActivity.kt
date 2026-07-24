@@ -349,7 +349,7 @@ class HomeActivity :
 
     private fun showSignedInUser() {
         if (GuestPrefs.isGuest(this)) {
-            binding.tvUserName.text = getString(R.string.guest_label)
+            binding.tvUserName.text = GuestPrefs.guestDisplayName(this)
             return
         }
 

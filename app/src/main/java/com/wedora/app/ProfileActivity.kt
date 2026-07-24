@@ -184,7 +184,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
      */
     private fun showGuestChrome() {
         binding.ivProfilePhoto.setImageResource(R.drawable.ic_avatar_placeholder)
-        binding.tvProfileName.text = getString(R.string.guest_profile_name)
+        binding.tvProfileName.text = GuestPrefs.guestDisplayName(this)
         binding.tvGuestSubtitle.visibility = View.VISIBLE
         binding.tvProfileEmail.visibility = View.GONE
         binding.tvProfileAgeLocation.visibility = View.GONE
