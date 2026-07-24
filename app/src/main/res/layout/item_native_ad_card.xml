@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A native ad card in the Home swipe stack — free users only, woven in
+    every AD_INTERVAL real profiles (see HomeActivity.buildDisplayItems).
+    Same outer dimensions and shape as item_match_card.xml so it sits in the
+    stack without a visible seam.
+
+    NativeAdView has to be the actual root, not nested inside another
+    ViewGroup — the Google Mobile Ads SDK's impression/click tracking is
+    wired through headlineView/bodyView/mediaView/callToActionView being
+    descendants of this exact view (see HomeActivity.bindAdCard).
+-->
+<com.google.android.gms.ads.nativead.NativeAdView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="20dp"
+    android:padding="12dp"
+    android:background="@drawable/bg_card">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- ===== Media + Ad badge + dismiss ===== -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="330dp">
+
+            <com.google.android.gms.ads.nativead.MediaView
+                android:id="@+id/adMedia"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Required by AdMob policy: must stay visible and legible
+                 whenever the ad renders — never remove or hide this view. -->
+            <TextView
+                android:id="@+id/tvAdBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|start"
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_badge_basic"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="3dp"
+                android:text="@string/native_ad_badge"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="10sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <!-- The only action-row control an ad card gets — like and chat
+                 don't apply to an ad. Swiping still works too, same as every
+                 other card; this is just the tap alternative. -->
+            <ImageButton
+                android:id="@+id/btnAdDismiss"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="6dp"
+                android:padding="6dp"
+                android:background="@drawable/bg_icon_button"
+                android:src="@drawable/ic_close"
+                app:tint="@color/wedora_text_secondary"
+                android:contentDescription="@string/cd_dismiss" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvAdHeadline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="17sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Sponsored headline goes here" />
+
+        <TextView
+            android:id="@+id/tvAdBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:lineSpacingExtra="4sp"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="13sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="A short description of what's being advertised appears here." />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnAdCta"
+            style="@style/WedoraPrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            tools:text="Install Now" />
+
+    </LinearLayout>
+
+</com.google.android.gms.ads.nativead.NativeAdView>

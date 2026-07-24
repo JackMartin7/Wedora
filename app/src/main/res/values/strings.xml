@@ -99,6 +99,7 @@
     <string name="notification_time_weeks">%1$dw ago</string>
     <string name="cd_avatar">Profile photo</string>
     <string name="cd_dismiss">Dismiss</string>
+    <string name="native_ad_badge">Ad</string>
     <string name="cd_more">More options</string>
     <string name="cd_like">Like</string>
     <string name="cd_pass">Pass</string>

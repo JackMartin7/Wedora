@@ -2,6 +2,7 @@ package com.wedora.app
 
 import android.app.Application
 import androidx.lifecycle.ProcessLifecycleOwner
+import com.google.android.gms.ads.MobileAds
 
 class WedoraApplication : Application() {
 
@@ -28,5 +29,10 @@ class WedoraApplication : Application() {
         // Session-wide cache of isPremium so upgrade-prompt UI across the app
         // doesn't each run its own Firestore read to decide whether to show.
         PremiumStatus.attach()
+
+        // Native ads in Home's swipe stack (free users only). Init is
+        // fire-and-forget — the SDK queues ad requests made before it
+        // finishes, so nothing has to wait on the completion callback.
+        MobileAds.initialize(this)
     }
 }

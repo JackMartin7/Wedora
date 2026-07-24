@@ -57,4 +57,8 @@ dependencies {
 
     // Fused location provider, for city-level location detection on Complete Profile
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    // Native ads in the Home swipe stack (free users only) — see
+    // NativeAdLoader.kt for the test-vs-real ad unit ID setup.
+    implementation("com.google.android.gms:play-services-ads:23.3.0")
 }

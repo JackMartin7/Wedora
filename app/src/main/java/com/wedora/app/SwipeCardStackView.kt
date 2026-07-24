@@ -70,7 +70,8 @@ class SwipeCardStackView @JvmOverloads constructor(
         const val CASCADE_STAGGER_MS = 70L
     }
 
-    private var itemLayoutRes = 0
+    /** Which layout to inflate for a given position — not every card is the same type. */
+    private var layoutResFor: (Int) -> Int = { 0 }
     private var itemCount = 0
     private var topPosition = 0
     private var listener: Listener? = null
@@ -86,9 +87,16 @@ class SwipeCardStackView @JvmOverloads constructor(
     private var dragging = false
     private var animating = false
 
-    /** (Re)initialises the stack from position 0 with [count] items. */
-    fun setup(itemLayoutRes: Int, count: Int, listener: Listener) {
-        this.itemLayoutRes = itemLayoutRes
+    /**
+     * (Re)initialises the stack from position 0 with [count] items.
+     *
+     * [layoutResFor] is queried per position rather than fixed to one layout,
+     * so mixed content — e.g. Home's native ad cards woven between profile
+     * cards — inflates the right view for each slot without the stack itself
+     * knowing anything about what a "profile" or an "ad" is.
+     */
+    fun setup(layoutResFor: (Int) -> Int, count: Int, listener: Listener) {
+        this.layoutResFor = layoutResFor
         this.listener = listener
         this.itemCount = count
         this.topPosition = 0
@@ -131,13 +139,13 @@ class SwipeCardStackView @JvmOverloads constructor(
 
     // ----- Stack composition ------------------------------------------------
 
-    private fun inflateCard(): View =
-        LayoutInflater.from(context).inflate(itemLayoutRes, this, false)
+    private fun inflateCard(position: Int): View =
+        LayoutInflater.from(context).inflate(layoutResFor(position), this, false)
 
     private fun renderInitialStack() {
         // Peek added first so it sits behind the top card.
         if (topPosition + 1 < itemCount) {
-            peekCard = inflateCard().also { peek ->
+            peekCard = inflateCard(topPosition + 1).also { peek ->
                 listener?.onBindCard(peek, topPosition + 1)
                 peek.scaleX = PEEK_SCALE
                 peek.scaleY = PEEK_SCALE
@@ -145,7 +153,7 @@ class SwipeCardStackView @JvmOverloads constructor(
                 addView(peek)
             }
         }
-        topCard = inflateCard().also { top ->
+        topCard = inflateCard(topPosition).also { top ->
             listener?.onBindCard(top, topPosition)
             addView(top)
             resetCardTransforms(top)
@@ -196,7 +204,7 @@ class SwipeCardStackView @JvmOverloads constructor(
 
         val nextPeekPosition = topPosition + 1
         if (topCard != null && nextPeekPosition < itemCount) {
-            peekCard = inflateCard().also { peek ->
+            peekCard = inflateCard(nextPeekPosition).also { peek ->
                 listener?.onBindCard(peek, nextPeekPosition)
                 peek.scaleX = PEEK_SCALE
                 peek.scaleY = PEEK_SCALE

@@ -12,11 +12,13 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.wedora.app.databinding.ActivityHomeBinding
 import com.wedora.app.databinding.ItemMatchCardBinding
+import com.wedora.app.databinding.ItemNativeAdCardBinding
 import java.util.Calendar
 
 class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
@@ -26,6 +28,18 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
         /** Enough to fill the screen and imply a stack, without scrolling. */
         const val SKELETON_CARDS = 3
+
+        /** A native ad follows every AD_INTERVALth real profile — free users only. */
+        const val AD_INTERVAL = 5
+
+        /** How many native ads to keep loaded and ready at once. */
+        const val AD_POOL_TARGET = 2
+    }
+
+    /** One slot in the swipe stack — either a real profile or a native ad. */
+    private sealed class StackItem {
+        data class Profile(val card: MatchCard) : StackItem()
+        data class Ad(val ad: NativeAd) : StackItem()
     }
 
     private lateinit var binding: ActivityHomeBinding
@@ -34,8 +48,24 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
     /** Live view of the user's matches; drives the badge and the liked hearts. */
     private var matchesListener: ListenerRegistration? = null
 
-    /** The feed, in swipe order. Bound into the card stack by position. */
-    private var cards: List<MatchCard> = emptyList()
+    /**
+     * The feed, in swipe order — a mix of real profiles and (for free users)
+     * native ads woven in every AD_INTERVAL profiles. Bound into the card
+     * stack by position; only StackItem.Profile entries ever reach
+     * likeUser/recordPass, so an ad never touches matching logic.
+     */
+    private var displayItems: List<StackItem> = emptyList()
+
+    /**
+     * Loaded-and-ready native ads, refilled as they're consumed so there are
+     * always up to AD_POOL_TARGET ahead of where the stack needs them next.
+     * buildDisplayItems only ever draws from what's already here — never
+     * waits on a fresh load — so a slow or failed ad request never delays or
+     * blocks the swipe flow; it just means fewer ad slots get filled this
+     * pass (see buildDisplayItems).
+     */
+    private val adPool = ArrayDeque<NativeAd>()
+    private var adsInFlight = 0
 
     /**
      * UIDs the user has liked, kept updated by the match listener.
@@ -51,15 +81,19 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
     private val stackListener = object : SwipeCardStackView.Listener {
         override fun onBindCard(cardView: View, position: Int) {
-            cards.getOrNull(position)?.let { bindCard(cardView, it) }
+            when (val item = displayItems.getOrNull(position)) {
+                is StackItem.Profile -> bindCard(cardView, item.card)
+                is StackItem.Ad -> bindAdCard(cardView, item.ad)
+                null -> Unit
+            }
         }
 
         override fun onSwipedRight(position: Int) {
-            cards.getOrNull(position)?.let { likeUser(it) }
+            (displayItems.getOrNull(position) as? StackItem.Profile)?.let { likeUser(it.card) }
         }
 
         override fun onSwipedLeft(position: Int) {
-            cards.getOrNull(position)?.let { recordPass(it) }
+            (displayItems.getOrNull(position) as? StackItem.Profile)?.let { recordPass(it.card) }
         }
 
         override fun onEmptied() {
@@ -96,6 +130,12 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
 
         showGreeting()
         showSignedInUser()
+        // Kicked off before loadMatches's own network round trip, so by the
+        // time showCards actually needs an ad, one is very likely already
+        // sitting in the pool — this is what "preload ahead" means in
+        // buildDisplayItems. No-ops for a Premium user beyond this one queued
+        // request, since refillAdPool re-checks isPremium on every call.
+        refillAdPool()
         loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
 
@@ -172,6 +212,20 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
         matchesListener?.remove()
         matchesListener = null
         super.onStop()
+    }
+
+    /**
+     * Native ads hold on to their own resources (creative assets, click
+     * tracking) until explicitly released — everything ever loaded, whether
+     * currently shown, still waiting in the pool, or an in-flight request
+     * that lands after this point, needs destroy() so it doesn't leak past
+     * this Activity.
+     */
+    override fun onDestroy() {
+        displayItems.forEach { item -> (item as? StackItem.Ad)?.ad?.destroy() }
+        adPool.forEach { it.destroy() }
+        adPool.clear()
+        super.onDestroy()
     }
 
     /**
@@ -616,14 +670,86 @@ class HomeActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
     }
 
     private fun showCards(loaded: List<MatchCard>) {
-        cards = loaded
+        displayItems = buildDisplayItems(loaded)
         binding.progressLoading.visibility = View.GONE
         binding.emptyState.hide()
 
         // Set up before the crossfade so the first card is bound and drawn as
         // it fades in, rather than appearing a frame later.
-        binding.cardStack.setup(R.layout.item_match_card, loaded.size, stackListener)
+        binding.cardStack.setup(
+            layoutResFor = { position ->
+                if (displayItems.getOrNull(position) is StackItem.Ad) R.layout.item_native_ad_card
+                else R.layout.item_match_card
+            },
+            count = displayItems.size,
+            listener = stackListener
+        )
         binding.skeletonFeed.crossfadeToContent(binding.cardStack)
+    }
+
+    // ----- Native ads (free users only) --------------------------------------
+
+    /**
+     * Weaves a native ad in after every AD_INTERVALth real profile, using
+     * only whatever's already sitting in [adPool] — never waiting on a fresh
+     * load. If the pool is empty when a slot comes up (nothing preloaded yet,
+     * or a run of failed loads), that slot is simply skipped: no gap, no
+     * broken card, the next real profile follows immediately. A later reload
+     * (e.g. applying filters) gets another chance once the pool has refilled.
+     *
+     * Premium is checked here, not just at insertion time elsewhere — this is
+     * the single point every card the stack ever shows passes through, so
+     * it's the one place that has to get "never for Premium" right.
+     */
+    private fun buildDisplayItems(profiles: List<MatchCard>): List<StackItem> {
+        if (PremiumStatus.isPremium()) return profiles.map { StackItem.Profile(it) }
+
+        val items = mutableListOf<StackItem>()
+        profiles.forEachIndexed { index, card ->
+            items += StackItem.Profile(card)
+            if ((index + 1) % AD_INTERVAL == 0) {
+                adPool.removeFirstOrNull()?.let { ad ->
+                    items += StackItem.Ad(ad)
+                    refillAdPool()
+                }
+            }
+        }
+        return items
+    }
+
+    /** Tops the pool back up to AD_POOL_TARGET, fire-and-forget. */
+    private fun refillAdPool() {
+        if (PremiumStatus.isPremium()) return
+        while (adPool.size + adsInFlight < AD_POOL_TARGET) {
+            adsInFlight++
+            NativeAdLoader.loadAd(
+                this,
+                onLoaded = { ad -> adsInFlight--; adPool.addLast(ad) },
+                onFailed = { adsInFlight-- }
+            )
+        }
+    }
+
+    private fun bindAdCard(cardView: View, ad: NativeAd) {
+        val b = ItemNativeAdCardBinding.bind(cardView)
+        val adView = b.root
+
+        b.tvAdHeadline.text = ad.headline
+        b.tvAdBody.text = ad.body
+        b.tvAdBody.visibility = if (ad.body.isNullOrBlank()) View.GONE else View.VISIBLE
+        b.btnAdCta.text = ad.callToAction
+        b.btnAdCta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
+
+        adView.headlineView = b.tvAdHeadline
+        adView.bodyView = b.tvAdBody
+        adView.callToActionView = b.btnAdCta
+        adView.mediaView = b.adMedia
+        adView.setNativeAd(ad)
+
+        // The only tap-to-dismiss control an ad card gets; swiping already
+        // works on any card regardless of content, since SwipeCardStackView
+        // drags whatever's on top without knowing what it is.
+        b.btnAdDismiss.setOnClickListener { binding.cardStack.swipeLeft() }
     }
 
     private fun toggleDarkMode() {

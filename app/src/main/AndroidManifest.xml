@@ -17,6 +17,15 @@
         android:theme="@style/Theme.Wedora"
         android:supportsRtl="true">
 
+        <!--
+            Google's public test App ID — shows test ads only, never real
+            revenue, safe to ship during development. See NativeAdLoader.kt
+            for the full swap-to-real-IDs checklist before release.
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
+
         <activity
             android:name=".SplashActivity"
             android:exported="true"
