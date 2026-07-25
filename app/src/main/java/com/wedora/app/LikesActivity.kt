@@ -384,6 +384,9 @@ class LikesActivity : AppCompatActivity() {
 
     // ----- Native ads (free signed-in users only — see class doc comment for guest access) ---
 
+    // TODO: Ad insertion not confirmed working on-device as of 2026-07-25 —
+    // revisit once there's a larger real user base to test against properly.
+
     /**
      * Weaves a native ad in after every real like [FirstTwoThenFourAdGap]
      * says gets one, using only whatever's already sitting in [adPool] —
