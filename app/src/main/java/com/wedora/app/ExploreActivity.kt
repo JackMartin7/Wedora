@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityExploreBinding
 
@@ -44,6 +45,26 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
      * the [MatchCard]s and not the display-only [DiscoverProfile]s.
      */
     private var discoverCards: List<MatchCard> = emptyList()
+
+    /**
+     * Loaded-and-ready native ads for the Discover grid — same shared
+     * implementation HomeActivity's swipe stack uses (see [NativeAdPool]),
+     * a separate instance since each screen manages its own display list.
+     */
+    private val adPool = NativeAdPool(this)
+
+    /**
+     * Positions in the grid where [buildDiscoverGridItems] wanted to insert
+     * an ad but [adPool] was empty at that moment — a Profile ended up there
+     * instead, the same race HomeActivity's swipe stack guards against (see
+     * its own doc comment on the equivalent field). Backfilled by
+     * [backfillPendingAdSlot] once an ad finishes loading. Unlike the swipe
+     * stack, there's no "already bound, don't touch it" restriction on which
+     * index is eligible — DiscoverAdapter is a real ListAdapter/RecyclerView,
+     * so re-submitting the list safely re-binds whichever position changed
+     * type, on screen or not.
+     */
+    private val pendingAdSlots = mutableListOf<Int>()
 
     /**
      * Only reloads on RESULT_OK — i.e. Apply — matching Home. Backing out of the
@@ -97,6 +118,13 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
             startActivity(Intent(this, NearbyListActivity::class.java))
         }
 
+        // Kicked off before loadFeed's own network round trip — same
+        // "preload ahead" reasoning as HomeActivity's swipe stack, so an ad
+        // is very likely already sitting in the pool by the time the grid
+        // actually needs one. No-ops for a Premium user, since
+        // NativeAdPool.refill re-checks isPremium on every call.
+        adPool.refill { ad -> backfillPendingAdSlot(ad) }
+
         // While the search bar is open, back collapses it rather than leaving
         // the tab.
         onBackPressedDispatcher.addCallback(this) {
@@ -109,6 +137,18 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
         }
 
         loadFeed()
+    }
+
+    /**
+     * Native ads hold on to their own resources until explicitly released —
+     * everything ever loaded, whether currently shown in the grid or still
+     * waiting in the pool, needs destroy() so it doesn't leak past this
+     * Activity. Same reasoning as HomeActivity.onDestroy.
+     */
+    override fun onDestroy() {
+        discoverAdapter.currentList.forEach { item -> (item as? DiscoverGridItem.Ad)?.ad?.destroy() }
+        adPool.destroyAll()
+        super.onDestroy()
     }
 
     // ----- Search -----------------------------------------------------------
@@ -180,12 +220,23 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
 
     // ----- Feed -------------------------------------------------------------
 
+    /**
+     * Whether it's still safe to touch views or start a Glide/native-ad load
+     * on this Activity instance. Toggling dark/light mode recreates the
+     * Activity, and [loadDiscoveryFeed]'s one-shot Firestore read has no way
+     * to be cancelled once in flight — same class of bug HomeActivity's
+     * feed load had (see its own isUsable doc comment), applied here
+     * proactively rather than waiting to hit the identical crash.
+     */
+    private fun isUsable(): Boolean = !isFinishing && !isDestroyed
+
     private fun loadFeed() {
         showLoading()
         loadDiscoveryFeed(this, firestore) { cards -> render(cards) }
     }
 
     private fun render(cards: List<MatchCard>) {
+        if (!isUsable()) return
         binding.progressDiscover.visibility = View.GONE
 
         if (cards.isEmpty()) {
@@ -291,7 +342,58 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
     private fun showDiscover(profiles: List<DiscoverProfile>) {
         binding.discoverEmpty.root.visibility = View.GONE
         binding.rvDiscover.visibility = View.VISIBLE
-        discoverAdapter.submitList(profiles)
+        discoverAdapter.submitList(buildDiscoverGridItems(profiles))
+    }
+
+    // ----- Native ads (any non-Premium user — free signed-in or guest) -------
+
+    /**
+     * Weaves a native ad in after every AD_INTERVALth profile, using only
+     * whatever's already sitting in [adPool] — never waiting on a fresh
+     * load. If the pool is empty when a slot comes up, that slot is recorded
+     * in [pendingAdSlots] rather than lost outright, and [backfillPendingAdSlot]
+     * converts it to an ad in place once one finishes loading. Same shape as
+     * HomeActivity.buildDisplayItems — see that function's own doc comment
+     * for the full reasoning, identical here.
+     */
+    private fun buildDiscoverGridItems(profiles: List<DiscoverProfile>): List<DiscoverGridItem> {
+        if (PremiumStatus.isPremium()) return profiles.map { DiscoverGridItem.Profile(it) }
+
+        pendingAdSlots.clear()
+        val items = mutableListOf<DiscoverGridItem>()
+        profiles.forEachIndexed { index, profile ->
+            items += DiscoverGridItem.Profile(profile)
+            if ((index + 1) % AD_INTERVAL == 0) {
+                adPool.poll()?.let { ad ->
+                    items += DiscoverGridItem.Ad(ad)
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
+                } ?: run {
+                    pendingAdSlots += items.size
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
+                }
+            }
+        }
+        return items
+    }
+
+    /**
+     * Converts the earliest still-pending entry in [pendingAdSlots] into
+     * [ad], now that it's finished loading. Unlike HomeActivity's swipe-stack
+     * equivalent, no position is off-limits: DiscoverAdapter is a real
+     * ListAdapter, so re-submitting the list safely re-binds whichever
+     * position changed type regardless of scroll position. Returns whether
+     * [ad] was used this way, so [adPool] knows whether to fall back to
+     * pooling it instead (see [NativeAdPool.refill]).
+     */
+    private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
+        val currentItems = discoverAdapter.currentList
+        val index = pendingAdSlots.firstOrNull { it < currentItems.size } ?: return false
+        pendingAdSlots.remove(index)
+
+        discoverAdapter.submitList(
+            currentItems.toMutableList().apply { this[index] = DiscoverGridItem.Ad(ad) }
+        )
+        return true
     }
 
     private fun showDiscoverEmpty() {

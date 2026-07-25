@@ -6,7 +6,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.nativead.NativeAd
 import com.wedora.app.databinding.ItemDiscoverGridBinding
+import com.wedora.app.databinding.ItemNativeAdGridBinding
 
 /**
  * A browsable profile in the Explore "Discover" grid. [meta] is the pre-built
@@ -19,15 +21,39 @@ data class DiscoverProfile(
     val photoUrl: String?
 )
 
-/** 2-column grid of discoverable profiles, mirroring the Likes grid. */
+/**
+ * One tile in the grid — either a real profile or (for non-Premium users) a
+ * native ad, woven in every [AD_INTERVAL] profiles by ExploreActivity, the
+ * same cadence and shared [NativeAdPool] HomeActivity's swipe stack uses.
+ */
+sealed class DiscoverGridItem {
+    data class Profile(val profile: DiscoverProfile) : DiscoverGridItem()
+    data class Ad(val ad: NativeAd) : DiscoverGridItem()
+}
+
+/**
+ * 2-column grid of discoverable profiles (and, interleaved, ads), mirroring
+ * the Likes grid's tile style. Every tile — profile or ad — is the same 1:1
+ * square footprint, so no custom span logic is needed for the ad type.
+ */
 class DiscoverAdapter(
     private val onClick: (DiscoverProfile) -> Unit = {}
-) : ListAdapter<DiscoverProfile, DiscoverAdapter.DiscoverViewHolder>(DIFF) {
+) : ListAdapter<DiscoverGridItem, RecyclerView.ViewHolder>(DIFF) {
 
     private companion object {
-        val DIFF = object : DiffUtil.ItemCallback<DiscoverProfile>() {
-            override fun areItemsTheSame(a: DiscoverProfile, b: DiscoverProfile) = a.userId == b.userId
-            override fun areContentsTheSame(a: DiscoverProfile, b: DiscoverProfile) = a == b
+        const val VIEW_TYPE_PROFILE = 0
+        const val VIEW_TYPE_AD = 1
+
+        val DIFF = object : DiffUtil.ItemCallback<DiscoverGridItem>() {
+            override fun areItemsTheSame(a: DiscoverGridItem, b: DiscoverGridItem): Boolean =
+                when {
+                    a is DiscoverGridItem.Profile && b is DiscoverGridItem.Profile ->
+                        a.profile.userId == b.profile.userId
+                    a is DiscoverGridItem.Ad && b is DiscoverGridItem.Ad -> a.ad === b.ad
+                    else -> false
+                }
+
+            override fun areContentsTheSame(a: DiscoverGridItem, b: DiscoverGridItem) = a == b
         }
     }
 
@@ -50,14 +76,40 @@ class DiscoverAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DiscoverViewHolder {
-        val binding = ItemDiscoverGridBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return DiscoverViewHolder(binding)
+    inner class AdViewHolder(
+        private val binding: ItemNativeAdGridBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(ad: NativeAd) = with(binding) {
+            tvAdHeadline.text = ad.headline
+            tvAdCta.text = ad.callToAction
+            tvAdCta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
+
+            root.headlineView = tvAdHeadline
+            root.callToActionView = tvAdCta
+            root.mediaView = adMedia
+            root.setNativeAd(ad)
+        }
     }
 
-    override fun onBindViewHolder(holder: DiscoverViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is DiscoverGridItem.Profile -> VIEW_TYPE_PROFILE
+        is DiscoverGridItem.Ad -> VIEW_TYPE_AD
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == VIEW_TYPE_AD) {
+            AdViewHolder(ItemNativeAdGridBinding.inflate(inflater, parent, false))
+        } else {
+            DiscoverViewHolder(ItemDiscoverGridBinding.inflate(inflater, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is DiscoverGridItem.Profile -> (holder as DiscoverViewHolder).bind(item.profile)
+            is DiscoverGridItem.Ad -> (holder as AdViewHolder).bind(item.ad)
+        }
     }
 }

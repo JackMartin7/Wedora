@@ -31,12 +31,6 @@ class HomeActivity :
 
         /** Enough to fill the screen and imply a stack, without scrolling. */
         const val SKELETON_CARDS = 3
-
-        /** A native ad follows every AD_INTERVALth real profile — any non-Premium user, signed-in free or guest. */
-        const val AD_INTERVAL = 3
-
-        /** How many native ads to keep loaded and ready at once. */
-        const val AD_POOL_TARGET = 2
     }
 
     /** One slot in the swipe stack — either a real profile or a native ad. */
@@ -70,14 +64,14 @@ class HomeActivity :
 
     /**
      * Loaded-and-ready native ads, refilled as they're consumed so there are
-     * always up to AD_POOL_TARGET ahead of where the stack needs them next.
-     * buildDisplayItems only ever draws from what's already here — never
-     * waits on a fresh load — so a slow or failed ad request never delays or
-     * blocks the swipe flow; it just means fewer ad slots get filled this
-     * pass (see buildDisplayItems).
+     * always some ahead of where the stack needs them next. buildDisplayItems
+     * only ever draws from what's already here — never waits on a fresh
+     * load — so a slow or failed ad request never delays or blocks the swipe
+     * flow; it just means fewer ad slots get filled this pass (see
+     * buildDisplayItems). Shared implementation with ExploreActivity's own
+     * pool — see [NativeAdPool].
      */
-    private val adPool = ArrayDeque<NativeAd>()
-    private var adsInFlight = 0
+    private val adPool = NativeAdPool(this)
 
     /**
      * Positions in [displayItems] where [buildDisplayItems] wanted to insert
@@ -230,8 +224,8 @@ class HomeActivity :
         // time showCards actually needs an ad, one is very likely already
         // sitting in the pool — this is what "preload ahead" means in
         // buildDisplayItems. No-ops for a Premium user beyond this one queued
-        // request, since refillAdPool re-checks isPremium on every call.
-        refillAdPool()
+        // request, since NativeAdPool.refill re-checks isPremium on every call.
+        adPool.refill { ad -> backfillPendingAdSlot(ad) }
         loadMatches()
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_home)
         setUpExitConfirmOnBackPress {
@@ -323,8 +317,7 @@ class HomeActivity :
      */
     override fun onDestroy() {
         displayItems.forEach { item -> (item as? StackItem.Ad)?.ad?.destroy() }
-        adPool.forEach { it.destroy() }
-        adPool.clear()
+        adPool.destroyAll()
         super.onDestroy()
     }
 
@@ -898,16 +891,16 @@ class HomeActivity :
         profiles.forEachIndexed { index, card ->
             items += StackItem.Profile(card)
             if ((index + 1) % AD_INTERVAL == 0) {
-                adPool.removeFirstOrNull()?.let { ad ->
+                adPool.poll()?.let { ad ->
                     items += StackItem.Ad(ad)
-                    refillAdPool()
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
                 } ?: run {
                     // items.size right now is exactly the index the next
                     // profile (appended on the following iteration) will
                     // land at — that's the position backfillPendingAdSlot
                     // converts once an ad is ready.
                     pendingAdSlots += items.size
-                    refillAdPool()
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
                 }
             }
         }
@@ -930,8 +923,8 @@ class HomeActivity :
      * safe to change type on; it simply renders correctly as an ad whenever
      * the stack actually reaches it.
      *
-     * Returns whether [ad] was used this way, so [refillAdPool] knows
-     * whether to fall back to adding it to [adPool] instead.
+     * Returns whether [ad] was used this way, so [adPool] knows whether to
+     * fall back to pooling it instead (see [NativeAdPool.refill]).
      */
     private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
         val firstUntouchedIndex = currentStackPosition + 2
@@ -941,30 +934,6 @@ class HomeActivity :
 
         displayItems = displayItems.toMutableList().apply { this[index] = StackItem.Ad(ad) }
         return true
-    }
-
-    /**
-     * Tops the pool back up to AD_POOL_TARGET, fire-and-forget — except a
-     * freshly loaded ad tries [backfillPendingAdSlot] first, so an ad that
-     * lands after [buildDisplayItems] already had to skip a slot still ends
-     * up on screen instead of just sitting in the pool for next time. A
-     * successful backfill calls back in here rather than adding to the pool,
-     * so with more than one pending slot from the same build the pool still
-     * chases back up to target and keeps trying for the rest.
-     */
-    private fun refillAdPool() {
-        if (PremiumStatus.isPremium()) return
-        while (adPool.size + adsInFlight < AD_POOL_TARGET) {
-            adsInFlight++
-            NativeAdLoader.loadAd(
-                this,
-                onLoaded = { ad ->
-                    adsInFlight--
-                    if (backfillPendingAdSlot(ad)) refillAdPool() else adPool.addLast(ad)
-                },
-                onFailed = { adsInFlight-- }
-            )
-        }
     }
 
     private fun bindAdCard(cardView: View, ad: NativeAd) {

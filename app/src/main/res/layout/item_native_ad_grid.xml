@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One ad tile in the Explore Discover grid — same square-photo-with-overlay
+    footprint as item_discover_grid.xml's real profile tiles (1:1 media,
+    bottom scrim, overlaid text), so it sits in the grid without a visible
+    seam. NativeAdView has to be the actual root, not nested inside another
+    ViewGroup — the Google Mobile Ads SDK's impression/click tracking is
+    wired through headlineView/mediaView/callToActionView being descendants
+    of this exact view (see DiscoverAdapter.bindAdCard). Everything else is
+    nested inside one ConstraintLayout child so the same ratio/scrim/overlay
+    approach item_discover_grid.xml uses still works — NativeAdView itself is
+    a plain FrameLayout and doesn't support layout_constraintDimensionRatio
+    directly.
+-->
+<com.google.android.gms.ads.nativead.NativeAdView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.gms.ads.nativead.MediaView
+            android:id="@+id/adMedia"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <View
+            android:id="@+id/scrim"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_photo_scrim"
+            app:layout_constraintStart_toStartOf="@id/adMedia"
+            app:layout_constraintEnd_toEndOf="@id/adMedia"
+            app:layout_constraintBottom_toBottomOf="@id/adMedia"
+            app:layout_constraintTop_toTopOf="@id/adMedia"
+            app:layout_constraintVertical_bias="1"
+            app:layout_constraintHeight_percent="0.45" />
+
+        <!-- Required by AdMob policy: must stay visible and legible
+             whenever the ad renders — never remove or hide this view. -->
+        <TextView
+            android:id="@+id/tvAdBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:background="@drawable/bg_badge_basic"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="@string/native_ad_badge"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="9sp"
+            android:fontFamily="@font/poppins_semibold"
+            app:layout_constraintTop_toTopOf="@id/adMedia"
+            app:layout_constraintStart_toStartOf="@id/adMedia" />
+
+        <TextView
+            android:id="@+id/tvAdHeadline"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginBottom="2dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_semibold"
+            app:layout_constraintStart_toStartOf="@id/adMedia"
+            app:layout_constraintEnd_toEndOf="@id/adMedia"
+            app:layout_constraintBottom_toTopOf="@id/tvAdCta"
+            tools:text="Sponsored headline" />
+
+        <!-- The ad's call-to-action — the whole tile is the click target via
+             NativeAdView.callToActionView, so this reads as tappable the
+             same way tvDiscoverMeta reads as informational on a real tile,
+             without needing a full-size button in a square this small. -->
+        <TextView
+            android:id="@+id/tvAdCta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="10dp"
+            android:layout_marginBottom="10dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="#D9FFFFFF"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins_semibold"
+            app:layout_constraintStart_toStartOf="@id/adMedia"
+            app:layout_constraintEnd_toEndOf="@id/adMedia"
+            app:layout_constraintBottom_toBottomOf="@id/adMedia"
+            tools:text="Install Now" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.gms.ads.nativead.NativeAdView>
