@@ -13,6 +13,11 @@
     <color name="wedora_error">#E23B4E</color>
     <!-- 30% accent, used for the primary button's coloured drop shadow -->
     <color name="wedora_accent_shadow">#4DFA4659</color>
+    <!-- WhatsApp-style read-receipt blue for the double checkmark once the
+         recipient's lastReadAt has caught up to a sent message. Fixed in
+         both modes, like the other brand colours here — it's a recognisable
+         status colour, not a themed surface. -->
+    <color name="wedora_read_receipt">#4FC3F7</color>
     <!-- Fixed brand gold, same both modes — marks "already Premium" states
          (Home's crown icon once isPremium == true) as distinct from the
          wedora_accent pink used for the upgrade-focused crown. -->

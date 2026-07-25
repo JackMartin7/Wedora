@@ -17,12 +17,21 @@ import java.util.Locale
  * its timestamp, and under NONE that field reads back null — which would sort
  * the message to the wrong end of the thread until the server confirmed it.
  * ESTIMATE fills in a local approximation so ordering stays stable.
+ *
+ * [pending] mirrors the snapshot's own hasPendingWrites — true while this
+ * message is still only the local echo of a write Firestore hasn't
+ * acknowledged yet. MessageAdapter uses it to show a single checkmark before
+ * the server confirms and a double one after, so it needs the listener that
+ * builds these to run with MetadataChanges.INCLUDES — otherwise the
+ * pending-to-confirmed transition never re-fires the snapshot and the
+ * checkmark would silently stick on single.
  */
 data class Message(
     val id: String,
     val senderId: String,
     val text: String,
-    val sentAt: Timestamp?
+    val sentAt: Timestamp?,
+    val pending: Boolean = false
 ) {
     companion object {
         const val FIELD_SENDER_ID = "senderId"
@@ -39,7 +48,8 @@ data class Message(
                 sentAt = snapshot.getTimestamp(
                     FIELD_SENT_AT,
                     DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
-                )
+                ),
+                pending = snapshot.metadata.hasPendingWrites()
             )
         }
     }

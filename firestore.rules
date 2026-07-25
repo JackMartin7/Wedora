@@ -156,6 +156,20 @@ service cloud.firestore {
                  request.resource.data.get(field, []));
       }
 
+      // Read receipts: lastReadAt is a map keyed by UID (`{uid}: timestamp`),
+      // not a list, so it can't reuse onlySelfIn as-is. Same "self only"
+      // intent though — a caller may only add or overwrite THEIR OWN key.
+      // diff().affectedKeys() is the top-level keys that were added, removed
+      // or changed between the stored map and the incoming one; requiring
+      // that set to contain nothing but the caller's own UID blocks them
+      // from ever writing (or clearing) the other participant's read time.
+      function lastReadAtChangeIsSelfOnly() {
+        return request.resource.data.get('lastReadAt', {})
+            .diff(resource.data.get('lastReadAt', {}))
+            .affectedKeys()
+            .hasOnly([request.auth.uid]);
+      }
+
       // hiddenBy is NOT symmetric like onlySelfIn, on purpose. A caller may
       // only ever ADD their own UID — "delete for me" — never force the chat
       // hidden for the other participant. But either UID may be REMOVED:
@@ -190,11 +204,16 @@ service cloud.firestore {
       // opening a thread zeroes unreadCount. All of these are member updates
       // that leave users/likedUsers/seenBy alone and only ever add themselves
       // to hiddenBy, so they pass here without a separate rule.
+      //
+      // lastReadAt (read receipts) is checked the same self-only way as
+      // likedUsers/seenBy, just via lastReadAtChangeIsSelfOnly() since it's a
+      // map rather than a list — see that function's own comment.
       allow update: if isMember()
           && participantsUnchanged()
           && onlySelfIn('likedUsers')
           && onlySelfIn('seenBy')
-          && hiddenByAdditionsAreSelfOnly();
+          && hiddenByAdditionsAreSelfOnly()
+          && lastReadAtChangeIsSelfOnly();
 
       // Only someone who actually liked can delete the match (an unlike). The
       // recipient can dismiss it from their view via seenBy, but can't erase a

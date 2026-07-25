@@ -264,6 +264,17 @@ data class Match(
         const val LM_UNREAD_COUNT = "unreadCount"
 
         /**
+         * Per-participant read receipts — `{ "{uid}": serverTimestamp() }` —
+         * written by whichever participant most recently had the thread
+         * open. A message is "read" by its recipient once this value for
+         * them is >= the message's own sentAt; see MessageAdapter.
+         */
+        const val FIELD_LAST_READ_AT = "lastReadAt"
+
+        /** Dotted path for updating a single participant's read receipt. */
+        fun pathLastReadAt(uid: String) = "$FIELD_LAST_READ_AT.$uid"
+
+        /**
          * Dotted paths for updating individual lastMessage keys. Firestore's
          * varargs update() treats a dot as a nested-field separator and creates
          * the parent map if it's absent, so the first message on a match works

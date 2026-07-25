@@ -12,6 +12,8 @@
     <color name="wedora_success">#3FB56E</color>
     <color name="wedora_error">#E23B4E</color>
     <color name="wedora_accent_shadow">#4DFA4659</color>
+    <!-- Same value as light mode — see that file's comment. -->
+    <color name="wedora_read_receipt">#4FC3F7</color>
     <color name="wedora_premium_gold">#E5A93B</color>
     <!-- Was left at the light-mode value (#FFDADE) — a bug, not a deliberate
          "fixed both modes" choice like wedora_warning_bg: wedora_text on an

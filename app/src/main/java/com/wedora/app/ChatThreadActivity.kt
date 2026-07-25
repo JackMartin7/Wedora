@@ -12,8 +12,10 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.wedora.app.databinding.ActivityChatThreadBinding
 import java.util.Date
@@ -80,6 +82,13 @@ class ChatThreadActivity :
     /** Live view of the other user's presence, so the status updates in place. */
     private var statusListener: ListenerRegistration? = null
 
+    /**
+     * Live view of the match doc's lastReadAt map, so the other person's
+     * checkmarks flip from grey to blue the moment they open this thread —
+     * no reopen needed. See observeReadReceipts.
+     */
+    private var readReceiptListener: ListenerRegistration? = null
+
     private lateinit var adapter: MessageAdapter
 
     /**
@@ -128,6 +137,8 @@ class ChatThreadActivity :
 
         observeMessages()
         observeOtherUserStatus()
+        observeReadReceipts()
+        markThreadOpened()
         applyMessagingGate()
     }
 
@@ -225,6 +236,35 @@ class ChatThreadActivity :
             }
     }
 
+    /**
+     * Live listener on the match doc itself (not the messages subcollection)
+     * for the other participant's lastReadAt — the piece that lets a sent
+     * bubble's checkmark turn blue while this screen is already open,
+     * without waiting for a new message or a reopen. Fails open, same as
+     * observeOtherUserStatus: a read error just leaves checkmarks grey.
+     */
+    private fun observeReadReceipts() {
+        readReceiptListener = matchDocument()
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) {
+                    if (error != null) Log.w(TAG, "Read receipt listener failed", error)
+                    return@addSnapshotListener
+                }
+                adapter.updateReadReceipt(snapshot.getTimestamp(Match.pathLastReadAt(otherUid)))
+            }
+    }
+
+    /**
+     * Marks this conversation read for [selfUid] the moment the thread is
+     * opened, independent of whatever markReadIfIncoming does per-message —
+     * so a thread with no new incoming message still records that this user
+     * looked at it just now.
+     */
+    private fun markThreadOpened() {
+        matchDocument().update(Match.pathLastReadAt(selfUid), FieldValue.serverTimestamp())
+            .addOnFailureListener { e -> Log.w(TAG, "Failed to mark thread opened", e) }
+    }
+
     private fun renderStatus(lastSeen: Date?) {
         val label = OnlineStatus.format(lastSeen)
         if (label == null) {
@@ -302,7 +342,12 @@ class ChatThreadActivity :
     private fun observeMessages() {
         messagesListener = messagesCollection()
             .orderBy(Message.FIELD_SENT_AT, Query.Direction.ASCENDING)
-            .addSnapshotListener { snapshot, error ->
+            // INCLUDES, not the default: a just-sent message's own snapshot
+            // update — hasPendingWrites flipping false once Firestore
+            // confirms it — is a metadata-only change. Without this, that
+            // transition never re-fires the listener and MessageAdapter's
+            // single checkmark would never advance to double.
+            .addSnapshotListener(MetadataChanges.INCLUDES) { snapshot, error ->
                 if (error != null) {
                     Log.w(TAG, "Message listener failed", error)
                     Toast.makeText(this, R.string.error_chat_load_failed, Toast.LENGTH_LONG).show()
@@ -382,16 +427,19 @@ class ChatThreadActivity :
     }
 
     /**
-     * Clears this user's unread count once they've actually seen the messages.
+     * Clears this user's unread count and bumps their read receipt once
+     * they've actually seen the messages.
      *
      * Only when the newest message came from the *other* person. The counter is
      * shared and always refers to whoever didn't send last, so zeroing it after
-     * sending would wipe the other side's badge instead of this user's.
+     * sending would wipe the other side's badge instead of this user's — and
+     * likewise there's nothing of theirs to mark read if they sent last.
      *
      * Driven off the message list rather than a separate read of the match doc:
      * the listener already knows who sent last, and it fires both on open and
      * when a message arrives while the thread is in view — so a chat read live
-     * stays read.
+     * stays read, and the other person's checkmarks turn blue without them
+     * needing to reopen this thread either.
      */
     private fun markReadIfIncoming(messages: List<Message>) {
         val newest = messages.lastOrNull() ?: return
@@ -399,8 +447,10 @@ class ChatThreadActivity :
         if (newest.id == lastReadMessageId) return
 
         lastReadMessageId = newest.id
-        matchDocument().update(Match.PATH_LM_UNREAD_COUNT, 0L)
-            .addOnFailureListener { e -> Log.w(TAG, "Failed to clear unread count", e) }
+        matchDocument().update(
+            Match.PATH_LM_UNREAD_COUNT, 0L,
+            Match.pathLastReadAt(selfUid), FieldValue.serverTimestamp()
+        ).addOnFailureListener { e -> Log.w(TAG, "Failed to clear unread count", e) }
     }
 
     /**
@@ -451,6 +501,7 @@ class ChatThreadActivity :
     override fun onDestroy() {
         messagesListener?.remove()
         statusListener?.remove()
+        readReceiptListener?.remove()
         super.onDestroy()
     }
 }
