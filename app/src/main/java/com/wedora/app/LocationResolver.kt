@@ -114,6 +114,65 @@ class LocationResolver(private val context: Context) {
             }
     }
 
+    /**
+     * Forward-geocodes a typed "[city], [country]" into approximate
+     * coordinates — the inverse of [resolve]. Backs manual location entry
+     * (declined/unavailable GPS, or simply typed by choice) so distance can
+     * still be computed for that user instead of only for someone who used
+     * device location. Needs no location permission: this is a places
+     * lookup, not a device fix, so callers may use it regardless of whether
+     * ACCESS_COARSE_LOCATION was ever granted.
+     */
+    fun resolveCoordinates(
+        city: String,
+        country: String,
+        onSuccess: (lat: Double, lon: Double) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        if (!Geocoder.isPresent()) {
+            Log.w(TAG, "No geocoder backend on this device")
+            onFailure()
+            return
+        }
+
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val query = "$city, $country"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            geocoder.getFromLocationName(query, 1, object : Geocoder.GeocodeListener {
+                override fun onGeocode(addresses: MutableList<Address>) {
+                    deliverCoordinates(addresses.firstOrNull(), onSuccess, onFailure)
+                }
+
+                override fun onError(errorMessage: String?) {
+                    Log.w(TAG, "Forward geocoder error: $errorMessage")
+                    mainHandler.post { onFailure() }
+                }
+            })
+        } else {
+            geocodeExecutor.execute {
+                val address = try {
+                    @Suppress("DEPRECATION")
+                    geocoder.getFromLocationName(query, 1)?.firstOrNull()
+                } catch (e: IOException) {
+                    Log.w(TAG, "Forward geocode failed", e)
+                    null
+                }
+                deliverCoordinates(address, onSuccess, onFailure)
+            }
+        }
+    }
+
+    private fun deliverCoordinates(
+        address: Address?,
+        onSuccess: (lat: Double, lon: Double) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        mainHandler.post {
+            if (address == null) onFailure() else onSuccess(address.latitude, address.longitude)
+        }
+    }
+
     private fun reverseGeocode(
         location: Location,
         onSuccess: (Place) -> Unit,

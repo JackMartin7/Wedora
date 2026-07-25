@@ -2,6 +2,8 @@ package com.wedora.app
 
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -33,6 +35,11 @@ import java.io.IOException
  * separate file and tracked by [photoChanged], which counts towards enabling
  * Save exactly like an edited field. Nothing the rest of the app reads changes
  * until Save, so leaving without saving discards the pick.
+ *
+ * Editing city/country is plain text, with no GPS re-detection — but an edit
+ * is still forward-geocoded in the background (see [scheduleManualGeocode])
+ * so distance keeps working off an approximate fix rather than losing
+ * coordinates outright the moment someone corrects a typo in their city.
  */
 class EditProfileActivity : AppCompatActivity() {
 
@@ -49,6 +56,9 @@ class EditProfileActivity : AppCompatActivity() {
          * [LocalProfilePrefs] points at, which is only overwritten on Save.
          */
         const val STAGED_PHOTO_FILENAME = "profile_photos/staging_edit.jpg"
+
+        /** How long edited city/country typing must settle before geocoding it. */
+        const val GEOCODE_DEBOUNCE_MS = 600L
     }
 
     private lateinit var binding: ActivityEditProfileBinding
@@ -78,6 +88,23 @@ class EditProfileActivity : AppCompatActivity() {
 
     /** The staged file backing [photoChanged]; deleted if the user leaves. */
     private var stagedPhotoFile: File? = null
+
+    private val locationResolver by lazy { LocationResolver(this) }
+
+    /**
+     * Forward-geocoded coordinates for a city/country the user has actually
+     * edited away from [loaded] — see [scheduleManualGeocode]. Null until a
+     * resolve lands, on failure, or once the fields are back to matching
+     * [loaded] (nothing new to resolve; the original coordinates, if any,
+     * are still valid — see the geocode watcher in onCreate).
+     */
+    private var manualCoords: Pair<Double, Double>? = null
+
+    private val geocodeHandler = Handler(Looper.getMainLooper())
+    private var geocodeRunnable: Runnable? = null
+
+    /** Same stale-result guard as ProfileStep4DetailsActivity's own token. */
+    private var geocodeToken = 0
 
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -114,6 +141,26 @@ class EditProfileActivity : AppCompatActivity() {
             updateBioCounter()
             updateSaveEnabled()
         })
+
+        // Separate from `watcher` above: only fires a geocode once city or
+        // country actually diverges from `loaded`, so populate()'s initial
+        // setText (which merely mirrors `loaded`) never triggers one, and
+        // typing back to the original value cancels a pending one rather than
+        // resolving coordinates nothing needs.
+        val geocodeWatcher = SimpleWatcher {
+            val original = loaded
+            val changed = original != null &&
+                (enteredCity() != original.city.orEmpty().trim() ||
+                    enteredCountry() != original.country.orEmpty().trim())
+            if (changed) {
+                scheduleManualGeocode()
+            } else {
+                geocodeRunnable?.let { geocodeHandler.removeCallbacks(it) }
+                manualCoords = null
+            }
+        }
+        binding.etCity.addTextChangedListener(geocodeWatcher)
+        binding.etCountry.addTextChangedListener(geocodeWatcher)
 
         binding.ivEditPhoto.loadLocalProfilePhoto(this, uid)
         restoreOrClearStagedPhoto(savedInstanceState != null)
@@ -250,6 +297,31 @@ class EditProfileActivity : AppCompatActivity() {
 
     // ----- Change detection -----------------------------------------------
 
+    /**
+     * Debounced forward-geocode of the edited city/country into
+     * [manualCoords], mirroring ProfileStep4DetailsActivity's own — see that
+     * class's doc comment for why this needs no location permission.
+     */
+    private fun scheduleManualGeocode() {
+        geocodeRunnable?.let { geocodeHandler.removeCallbacks(it) }
+        manualCoords = null
+
+        val city = enteredCity()
+        val country = enteredCountry()
+        if (city.isEmpty() || country.isEmpty()) return
+
+        val token = ++geocodeToken
+        val runnable = Runnable {
+            locationResolver.resolveCoordinates(
+                city, country,
+                onSuccess = { lat, lon -> if (token == geocodeToken) manualCoords = lat to lon },
+                onFailure = { Log.i(TAG, "Could not forward-geocode edited city/country") }
+            )
+        }
+        geocodeRunnable = runnable
+        geocodeHandler.postDelayed(runnable, GEOCODE_DEBOUNCE_MS)
+    }
+
     private fun enteredName() = binding.etName.text.toString().trim()
     private fun enteredCity() = binding.etCity.text.toString().trim()
     private fun enteredCountry() = binding.etCountry.text.toString().trim()
@@ -300,17 +372,25 @@ class EditProfileActivity : AppCompatActivity() {
             changes[UserProfile.FIELD_COUNTRY] = country
         }
 
-        // This screen only edits the city/country by hand — it has no location
-        // re-detection — so any change here means the typed place no longer
-        // matches whatever coordinates were stored. Clear them rather than leave
-        // a stale fix pointing at the old city; distance then falls open for
-        // this user until they re-detect in the setup step. delete() is a no-op
-        // when there were none to begin with.
+        // This screen edits city/country by hand rather than re-detecting via
+        // GPS, so any change here means the typed place no longer matches
+        // whatever coordinates were stored. The geocode watcher in onCreate
+        // forward-geocodes the new text as it's typed, so if that settled in
+        // time [manualCoords] has an approximate replacement; otherwise the
+        // stale fix is cleared rather than left pointing at the old city, and
+        // distance falls open for this user until a later edit resolves.
+        // delete() is a no-op when there were none to begin with.
         if (changes.containsKey(UserProfile.FIELD_CITY) ||
             changes.containsKey(UserProfile.FIELD_COUNTRY)
         ) {
-            changes[UserProfile.FIELD_LATITUDE] = FieldValue.delete()
-            changes[UserProfile.FIELD_LONGITUDE] = FieldValue.delete()
+            val coords = manualCoords
+            if (coords != null) {
+                changes[UserProfile.FIELD_LATITUDE] = coords.first
+                changes[UserProfile.FIELD_LONGITUDE] = coords.second
+            } else {
+                changes[UserProfile.FIELD_LATITUDE] = FieldValue.delete()
+                changes[UserProfile.FIELD_LONGITUDE] = FieldValue.delete()
+            }
         }
 
         val gender = genderControl.selected?.firestoreValue

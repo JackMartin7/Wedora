@@ -2,6 +2,8 @@ package com.wedora.app
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -21,6 +23,13 @@ import com.google.firebase.firestore.FieldValue
  * denied — or detection legitimately fails (no last-known fix, no geocoder
  * backend) — it falls back to manual City/Country. Every failure path lands on
  * manual entry, so there is deliberately no way to get stuck.
+ *
+ * Manual entry still gets coordinates when possible: once city/country settle
+ * (debounced — see [scheduleManualGeocode]), they're forward-geocoded via
+ * [LocationResolver.resolveCoordinates] into an approximate [manualCoords],
+ * which [stepUpdates] uses when there's no GPS-detected fix. This needs no
+ * location permission, so it applies equally whether the user declined it or
+ * simply prefers typing their city.
  */
 class ProfileStep4DetailsActivity : ProfileStepActivity() {
 
@@ -30,6 +39,9 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
 
         /** Upper sanity bound, to reject typos like "999". */
         const val MAX_AGE = 120
+
+        /** How long manual city/country typing must settle before geocoding it. */
+        const val GEOCODE_DEBOUNCE_MS = 600L
     }
 
     private lateinit var etAge: EditText
@@ -43,6 +55,25 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
 
     /** Non-null once detection has succeeded; null means we're in manual mode. */
     private var detectedPlace: LocationResolver.Place? = null
+
+    /**
+     * Forward-geocoded coordinates for the currently-typed manual city/
+     * country, once [scheduleManualGeocode] resolves them. Null until then,
+     * on a geocode failure, or whenever the text has changed since the last
+     * successful resolve — see [geocodeToken].
+     */
+    private var manualCoords: Pair<Double, Double>? = null
+
+    private val geocodeHandler = Handler(Looper.getMainLooper())
+    private var geocodeRunnable: Runnable? = null
+
+    /**
+     * Bumped on every text change that invalidates [manualCoords]; a
+     * resolve's result is only applied if this hasn't moved on since it
+     * started, so a slow geocode for stale text can't clobber a newer one
+     * that returned first.
+     */
+    private var geocodeToken = 0
 
     private val requestLocationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -72,6 +103,18 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
         etAge.addTextChangedListener(watcher)
         etCity.addTextChangedListener(watcher)
         etCountry.addTextChangedListener(watcher)
+
+        // Separate from `watcher` above: only city/country affect the geocode
+        // query, and age changes shouldn't re-trigger it.
+        val geocodeWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) = Unit
+            override fun afterTextChanged(s: Editable?) {
+                if (isInManualMode()) scheduleManualGeocode()
+            }
+        }
+        etCity.addTextChangedListener(geocodeWatcher)
+        etCountry.addTextChangedListener(geocodeWatcher)
 
         content.findViewById<View>(R.id.tvRefreshLocation)
             .setOnClickListener { detectLocation() }
@@ -138,6 +181,37 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
 
     private fun isInManualMode(): Boolean = groupManual.visibility == View.VISIBLE
 
+    /**
+     * Debounced forward-geocode of the typed city/country into [manualCoords].
+     * Any pending attempt is cancelled and [manualCoords] invalidated
+     * immediately — the old text no longer describes what's on screen — then
+     * a fresh one is scheduled once the fields stop changing, so a still-
+     * typing user doesn't fire a geocode per keystroke.
+     */
+    private fun scheduleManualGeocode() {
+        geocodeRunnable?.let { geocodeHandler.removeCallbacks(it) }
+        manualCoords = null
+
+        val city = etCity.text.toString().trim()
+        val country = etCountry.text.toString().trim()
+        if (city.isEmpty() || country.isEmpty()) return
+
+        val token = ++geocodeToken
+        val runnable = Runnable {
+            locationResolver.resolveCoordinates(
+                city, country,
+                onSuccess = { lat, lon -> if (token == geocodeToken) manualCoords = lat to lon },
+                onFailure = {
+                    // Fails open, same as everywhere else location can't be
+                    // resolved: this user simply has no coordinates for now.
+                    Log.i(TAG, "Could not forward-geocode manual city/country")
+                }
+            )
+        }
+        geocodeRunnable = runnable
+        geocodeHandler.postDelayed(runnable, GEOCODE_DEBOUNCE_MS)
+    }
+
     /** City/country from whichever mode is active, or null if not yet available. */
     private fun currentPlace(): LocationResolver.Place? {
         if (!isInManualMode()) return detectedPlace
@@ -174,12 +248,19 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
             // becomes real enough to appear in anyone's feed.
             UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
         )
-        // Coordinates only exist for a detected place. A manually typed city has
-        // none, so they're left absent rather than written null — there's simply
-        // nothing to record, and distance for this user falls open.
-        if (place.latitude != null && place.longitude != null) {
-            updates[UserProfile.FIELD_LATITUDE] = place.latitude
-            updates[UserProfile.FIELD_LONGITUDE] = place.longitude
+        // A GPS-detected place carries its own fix; a manually typed one falls
+        // back to whatever scheduleManualGeocode() resolved for it, if the
+        // debounce settled in time. Neither being available leaves the fields
+        // absent rather than written null — there's simply nothing to record,
+        // and distance for this user falls open.
+        val coords = if (place.latitude != null && place.longitude != null) {
+            place.latitude to place.longitude
+        } else {
+            manualCoords
+        }
+        if (coords != null) {
+            updates[UserProfile.FIELD_LATITUDE] = coords.first
+            updates[UserProfile.FIELD_LONGITUDE] = coords.second
         }
         return updates
     }
