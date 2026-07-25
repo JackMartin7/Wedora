@@ -41,12 +41,48 @@ class AlternatingAdGap {
 }
 
 /**
+ * Decides which real like cards get an ad inserted right after them — a
+ * single gap of 3, then a fixed gap of 4 forever after (3, 4, 4, 4...), per
+ * LikesActivity's own spec. Deliberately its own small sequencer rather than
+ * a variant of [AlternatingAdGap]: that one toggles forever (3, 4, 3, 4...)
+ * for the swipe stack and Discover grid, a genuinely different cadence from
+ * this screen's "one 3, then repeating 4s".
+ *
+ * Stateful and single-use: create one per build (each call to
+ * LikesActivity.buildLikesGridItems), never reused across builds.
+ */
+class FirstThreeThenFourAdGap {
+    private companion object {
+        const val FIRST_GAP = 3
+        const val REPEATING_GAP = 4
+    }
+
+    private var sinceLastAd = 0
+    private var isFirstGap = true
+
+    /**
+     * Call exactly once per real like card appended to the display list, in
+     * order. Returns true exactly when an ad belongs immediately after the
+     * card just appended.
+     */
+    fun afterLike(): Boolean {
+        sinceLastAd++
+        val gap = if (isFirstGap) FIRST_GAP else REPEATING_GAP
+        if (sinceLastAd < gap) return false
+        sinceLastAd = 0
+        isFirstGap = false
+        return true
+    }
+}
+
+/**
  * Keeps up to [target] native ads loaded and ready, and refills itself as
- * they're consumed — the shared shape behind both HomeActivity's swipe stack
- * and ExploreActivity's Discover grid, extracted so the pool/refill/backfill
- * machinery isn't duplicated between the two. What differs between the two
- * screens is only what "insert this ad" means for their own display list
- * (a SwipeCardStackView position vs. a RecyclerView/ListAdapter position),
+ * they're consumed — the shared shape behind HomeActivity's swipe stack,
+ * ExploreActivity's Discover grid, and LikesActivity's likes grid, extracted
+ * so the pool/refill/backfill machinery isn't duplicated between them. Each
+ * screen creates its own instance (ads aren't shared between screens); what
+ * differs is only what "insert this ad" means for a given display list (a
+ * SwipeCardStackView position vs. a RecyclerView/ListAdapter position),
  * which is why this class owns loading and pooling only, not insertion.
  *
  * [poll] never waits on a fresh load — a caller building its display list
@@ -54,8 +90,8 @@ class AlternatingAdGap {
  * never delays or blocks the screen; it just means fewer ad slots get filled
  * this pass. [refill] is how a caller both tops the pool back up AND gets
  * first refusal on every ad that finishes loading, for backfilling a slot it
- * had to skip earlier — see HomeActivity/ExploreActivity's own
- * `backfillPendingAdSlot` for that half of the pattern.
+ * had to skip earlier — see each screen's own `backfillPendingAdSlot` for
+ * that half of the pattern.
  */
 class NativeAdPool(
     private val context: Context,

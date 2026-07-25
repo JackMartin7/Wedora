@@ -10,6 +10,7 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityLikesBinding
@@ -59,6 +60,37 @@ class LikesActivity : AppCompatActivity() {
         startActivity(ProfileDetailActivity.intent(this, viewer.viewerUid))
     }
 
+    /**
+     * Loaded-and-ready native ads for the likes grid — same shared
+     * implementation Home's swipe stack and Explore's Discover grid use (see
+     * [NativeAdPool]), a separate instance since each screen manages its own
+     * display list.
+     */
+    private val adPool = NativeAdPool(this)
+
+    /**
+     * Positions in the grid where [buildLikesGridItems] wanted to insert an
+     * ad but [adPool] was empty at that moment — a real like ended up there
+     * instead, the same race Home/Explore guard against (see either one's
+     * own doc comment on the equivalent field). Backfilled by
+     * [backfillPendingAdSlot] once an ad finishes loading. No "already
+     * bound, don't touch it" restriction on which index is eligible — like
+     * DiscoverAdapter, LikesAdapter is a real ListAdapter/RecyclerView, so
+     * re-submitting the list safely re-binds whichever position changed
+     * type, on screen or not.
+     */
+    private val pendingAdSlots = mutableListOf<Int>()
+
+    /**
+     * Whether it's still safe to touch views or start a Glide/native-ad load
+     * on this Activity instance. Toggling dark/light mode recreates the
+     * Activity, and every async Firestore read below has no way to be
+     * cancelled once in flight — same class of bug Home/Explore's feed loads
+     * had (see either one's own isUsable doc comment), applied here
+     * proactively rather than waiting to hit the identical crash.
+     */
+    private fun isUsable(): Boolean = !isFinishing && !isDestroyed
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLikesBinding.inflate(layoutInflater)
@@ -90,8 +122,27 @@ class LikesActivity : AppCompatActivity() {
         binding.guestSignUpBanner.setOnClickListener(openSignUp)
         binding.btnGuestSignUpBannerAction.setOnClickListener(openSignUp)
 
+        // Kicked off before loadLikes's own network round trip — same
+        // "preload ahead" reasoning as Home/Explore, so an ad is very likely
+        // already sitting in the pool by the time the grid actually needs
+        // one. No-ops for a Premium user, since NativeAdPool.refill
+        // re-checks isPremium on every call.
+        adPool.refill { ad -> backfillPendingAdSlot(ad) }
+
         loadLikes()
         loadUsersMatched()
+    }
+
+    /**
+     * Native ads hold on to their own resources until explicitly released —
+     * everything ever loaded, whether currently shown in the grid or still
+     * waiting in the pool, needs destroy() so it doesn't leak past this
+     * Activity. Same reasoning as HomeActivity/ExploreActivity.onDestroy.
+     */
+    override fun onDestroy() {
+        adapter.currentList.forEach { item -> (item as? LikesGridItem.Ad)?.ad?.destroy() }
+        adPool.destroyAll()
+        super.onDestroy()
     }
 
     /**
@@ -111,11 +162,15 @@ class LikesActivity : AppCompatActivity() {
             firestore,
             selfUid,
             onResult = { users ->
+                if (!isUsable()) return@loadMatchedUsers
                 binding.usersMatchedSection.visibility =
                     if (users.isEmpty()) View.GONE else View.VISIBLE
                 matchedUserAdapter.submitList(users)
             },
-            onError = { binding.usersMatchedSection.visibility = View.GONE }
+            onError = {
+                if (!isUsable()) return@loadMatchedUsers
+                binding.usersMatchedSection.visibility = View.GONE
+            }
         )
     }
 
@@ -138,11 +193,13 @@ class LikesActivity : AppCompatActivity() {
         // Your Profile" strip below, rather than each running its own.
         firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
             .addOnSuccessListener { snapshot ->
+                if (!isUsable()) return@addOnSuccessListener
                 val isPremium = UserProfile.from(snapshot).isPremium
                 loadReceivedLikesAndShow(selfUid, isPremium)
                 loadProfileViewersStrip(selfUid, isPremium)
             }
             .addOnFailureListener {
+                if (!isUsable()) return@addOnFailureListener
                 // Can't confirm premium — fail closed to the free (blurred)
                 // experience rather than risk unblurring for a status that
                 // couldn't be verified. profileViewersSection stays hidden,
@@ -177,13 +234,17 @@ class LikesActivity : AppCompatActivity() {
             firestore,
             selfUid,
             onResult = { viewers ->
+                if (!isUsable()) return@loadProfileViewers
                 binding.profileViewersSection.visibility =
                     if (viewers.isEmpty()) View.GONE else View.VISIBLE
                 binding.rvProfileViewers.visibility = View.VISIBLE
                 binding.profileViewersLockedContainer.visibility = View.GONE
                 profileViewerAdapter.submitList(viewers)
             },
-            onError = { binding.profileViewersSection.visibility = View.GONE }
+            onError = {
+                if (!isUsable()) return@loadProfileViewers
+                binding.profileViewersSection.visibility = View.GONE
+            }
         )
     }
 
@@ -225,13 +286,17 @@ class LikesActivity : AppCompatActivity() {
             firestore,
             selfUid,
             onResult = { likes, unseenMatchIds ->
+                if (!isUsable()) return@loadReceivedLikes
                 if (likes.isEmpty()) showNoLikes() else showLikes(likes, isPremium)
                 // Marks seen even when the display list is empty but unseen ids
                 // exist (all likers' profiles were missing), so the badge still
                 // clears.
                 markLikesSeen(firestore, selfUid, unseenMatchIds)
             },
-            onError = { showNoLikes() }
+            onError = {
+                if (!isUsable()) return@loadReceivedLikes
+                showNoLikes()
+            }
         )
     }
 
@@ -297,7 +362,7 @@ class LikesActivity : AppCompatActivity() {
             binding.featuredContainer.visibility = View.GONE
             binding.featuredContainer.removeAllViews()
             binding.rvLikes.visibility = View.VISIBLE
-            adapter.submitList(likes)
+            adapter.submitList(buildLikesGridItems(likes, isPremium = true))
             binding.guestSignUpBanner.visibility = View.GONE
             return
         }
@@ -312,9 +377,66 @@ class LikesActivity : AppCompatActivity() {
 
         val remainder = if (teasing) likes.drop(FEATURED_COUNT) else likes
         binding.rvLikes.visibility = if (remainder.isEmpty()) View.GONE else View.VISIBLE
-        adapter.submitList(remainder)
+        adapter.submitList(buildLikesGridItems(remainder, isPremium = false))
 
         binding.guestSignUpBanner.visibility = View.GONE
+    }
+
+    // ----- Native ads (free signed-in users only — see class doc comment for guest access) ---
+
+    /**
+     * Weaves a native ad in after every real like [FirstThreeThenFourAdGap]
+     * says gets one, using only whatever's already sitting in [adPool] —
+     * never waiting on a fresh load. If the pool is empty when a slot comes
+     * up, that slot is recorded in [pendingAdSlots] rather than lost
+     * outright, and [backfillPendingAdSlot] converts it to an ad in place
+     * once one finishes loading. Same shape as HomeActivity.buildDisplayItems
+     * / ExploreActivity.buildDiscoverGridItems — see either one's own doc
+     * comment for the full reasoning, identical here, including [isPremium]
+     * being checked here rather than trusted from the caller: this is the
+     * one place every tile the grid ever shows passes through. Guests never
+     * reach this at all — see [showGuestTeaser], which only ever fills
+     * [binding.featuredContainer], never [adapter] — so in practice this is
+     * already scoped to free signed-in users specifically once [isPremium]
+     * is false.
+     */
+    private fun buildLikesGridItems(likes: List<ReceivedLike>, isPremium: Boolean): List<LikesGridItem> {
+        if (isPremium) return likes.map { LikesGridItem.Like(it) }
+
+        val adGap = FirstThreeThenFourAdGap()
+        val items = mutableListOf<LikesGridItem>()
+        likes.forEach { like ->
+            items += LikesGridItem.Like(like)
+            if (adGap.afterLike()) {
+                adPool.poll()?.let { ad ->
+                    items += LikesGridItem.Ad(ad)
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
+                } ?: run {
+                    pendingAdSlots += items.size
+                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
+                }
+            }
+        }
+        return items
+    }
+
+    /**
+     * Converts the earliest still-pending entry in [pendingAdSlots] into
+     * [ad], now that it's finished loading. No position is off-limits:
+     * LikesAdapter is a real ListAdapter, so re-submitting the list safely
+     * re-binds whichever position changed type regardless of scroll
+     * position. Returns whether [ad] was used this way, so [adPool] knows
+     * whether to fall back to pooling it instead (see [NativeAdPool.refill]).
+     */
+    private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
+        val currentItems = adapter.currentList
+        val index = pendingAdSlots.firstOrNull { it < currentItems.size } ?: return false
+        pendingAdSlots.remove(index)
+
+        adapter.submitList(
+            currentItems.toMutableList().apply { this[index] = LikesGridItem.Ad(ad) }
+        )
+        return true
     }
 
     /**

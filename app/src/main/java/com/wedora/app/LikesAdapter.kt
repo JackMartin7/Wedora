@@ -6,17 +6,42 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.nativead.NativeAd
 import com.wedora.app.databinding.ItemLikeGridBinding
+import com.wedora.app.databinding.ItemNativeAdLikeGridBinding
 
-/** Grid of users who liked you. */
+/**
+ * One tile in the Likes grid — either a real liker or (for non-Premium
+ * signed-in users) a native ad, woven in by LikesActivity at
+ * [FirstThreeThenFourAdGap]'s cadence — a single gap of 3 then a fixed
+ * repeating gap of 4, deliberately different from the alternating 3/4
+ * cadence the swipe stack and Discover grid share (see that class's own
+ * doc comment).
+ */
+sealed class LikesGridItem {
+    data class Like(val like: ReceivedLike) : LikesGridItem()
+    data class Ad(val ad: NativeAd) : LikesGridItem()
+}
+
+/** Grid of users who liked you (and, interleaved, ads). */
 class LikesAdapter(
     private val onClick: (ReceivedLike) -> Unit = {}
-) : ListAdapter<ReceivedLike, LikesAdapter.LikeViewHolder>(DIFF) {
+) : ListAdapter<LikesGridItem, RecyclerView.ViewHolder>(DIFF) {
 
     private companion object {
-        val DIFF = object : DiffUtil.ItemCallback<ReceivedLike>() {
-            override fun areItemsTheSame(a: ReceivedLike, b: ReceivedLike) = a.matchId == b.matchId
-            override fun areContentsTheSame(a: ReceivedLike, b: ReceivedLike) = a == b
+        const val VIEW_TYPE_LIKE = 0
+        const val VIEW_TYPE_AD = 1
+
+        val DIFF = object : DiffUtil.ItemCallback<LikesGridItem>() {
+            override fun areItemsTheSame(a: LikesGridItem, b: LikesGridItem): Boolean =
+                when {
+                    a is LikesGridItem.Like && b is LikesGridItem.Like ->
+                        a.like.matchId == b.like.matchId
+                    a is LikesGridItem.Ad && b is LikesGridItem.Ad -> a.ad === b.ad
+                    else -> false
+                }
+
+            override fun areContentsTheSame(a: LikesGridItem, b: LikesGridItem) = a == b
         }
     }
 
@@ -41,15 +66,41 @@ class LikesAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LikeViewHolder {
-        val binding = ItemLikeGridBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return LikeViewHolder(binding)
+    inner class AdViewHolder(
+        private val binding: ItemNativeAdLikeGridBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(ad: NativeAd) = with(binding) {
+            tvAdHeadline.text = ad.headline
+            tvAdCta.text = ad.callToAction
+            tvAdCta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
+
+            root.headlineView = tvAdHeadline
+            root.callToActionView = tvAdCta
+            root.mediaView = adMedia
+            root.setNativeAd(ad)
+        }
     }
 
-    override fun onBindViewHolder(holder: LikeViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is LikesGridItem.Like -> VIEW_TYPE_LIKE
+        is LikesGridItem.Ad -> VIEW_TYPE_AD
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == VIEW_TYPE_AD) {
+            AdViewHolder(ItemNativeAdLikeGridBinding.inflate(inflater, parent, false))
+        } else {
+            LikeViewHolder(ItemLikeGridBinding.inflate(inflater, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is LikesGridItem.Like -> (holder as LikeViewHolder).bind(item.like)
+            is LikesGridItem.Ad -> (holder as AdViewHolder).bind(item.ad)
+        }
     }
 }
 
