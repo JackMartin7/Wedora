@@ -40,6 +40,13 @@
     <color name="wedora_bg">#FAF7F7</color>
     <color name="wedora_surface">#FFFFFF</color>
     <color name="wedora_border">#F0EAEB</color>
+    <!-- Avatar ring/stroke, everywhere a small circular photo has a border —
+         was wedora_accent (or wedora_accent_shadow) throughout the app;
+         replaced with a neutral tone so the ring reads as UI chrome rather
+         than a status/action signal. Deliberately a shade darker than
+         wedora_border (#F0EAEB) rather than reusing it outright, for
+         definition against photos of varied brightness. -->
+    <color name="wedora_avatar_ring">#E8E0E1</color>
 
     <!-- Text -->
     <color name="wedora_text">#241A1D</color>

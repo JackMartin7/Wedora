@@ -47,6 +47,11 @@
     <color name="wedora_bg">#1C1417</color>
     <color name="wedora_surface">#2A2124</color>
     <color name="wedora_border">#3A2E32</color>
+    <!-- Same tone as wedora_border — see light values.xml's own comment for
+         why the light value is a shade darker than its wedora_border; in
+         dark mode wedora_border's existing value already gives enough
+         definition against a photo, so no separate adjustment was needed. -->
+    <color name="wedora_avatar_ring">#3A2E32</color>
 
     <!-- Text -->
     <color name="wedora_text">#F5EEEF</color>

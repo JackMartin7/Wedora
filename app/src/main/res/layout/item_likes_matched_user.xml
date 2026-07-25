@@ -22,7 +22,7 @@
         android:scaleType="centerCrop"
         android:src="@drawable/ic_avatar_placeholder"
         android:contentDescription="@string/cd_avatar"
-        app:strokeColor="@color/wedora_accent"
+        app:strokeColor="@color/wedora_avatar_ring"
         app:strokeWidth="2dp"
         app:shapeAppearanceOverlay="@style/WedoraCircleImage"
         app:layout_constraintTop_toTopOf="parent"

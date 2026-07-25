@@ -13,7 +13,7 @@
         android:layout_gravity="top|start"
         android:scaleType="centerCrop"
         android:contentDescription="@string/cd_avatar"
-        app:strokeColor="@color/wedora_accent"
+        app:strokeColor="@color/wedora_avatar_ring"
         app:strokeWidth="2dp"
         app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
 
