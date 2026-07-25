@@ -137,28 +137,11 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      */
     private fun uploadThenSaveUrl(file: File) {
         PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
-            // TEMPORARY DIAGNOSTIC (photoUrl-never-lands bug) — see
-            // PhotoUploadService's own diagToast comment. Remove this Toast
-            // and the two below once the bug is confirmed fixed.
-            Toast.makeText(
-                applicationContext,
-                "DIAG: callback fired, success=$success url=$url error=$error isFinishing=$isFinishing",
-                Toast.LENGTH_LONG
-            ).show()
-
             if (success && url != null) {
                 firestore.collection(UserProfile.COLLECTION).document(uid)
                     .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())
-                    .addOnSuccessListener {
-                        Toast.makeText(
-                            applicationContext, "DIAG: Firestore write SUCCEEDED", Toast.LENGTH_LONG
-                        ).show()
-                    }
                     .addOnFailureListener { e ->
                         logFirestoreWriteFailure(TAG, "Uploaded photo but failed to save its url", e)
-                        Toast.makeText(
-                            applicationContext, "DIAG: Firestore write FAILED: ${e.message}", Toast.LENGTH_LONG
-                        ).show()
                     }
             } else {
                 Log.w(TAG, "Profile photo upload failed: $error")

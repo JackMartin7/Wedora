@@ -5,7 +5,6 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Base64
 import android.util.Log
-import android.widget.Toast
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.DataOutputStream
@@ -57,23 +56,6 @@ object PhotoUploadService {
     private fun uploadKey(): String =
         String(Base64.decode(ENCODED_UPLOAD_KEY, Base64.NO_WRAP), Charsets.UTF_8)
 
-    // ----- TEMPORARY DIAGNOSTIC (photoUrl-never-lands bug) -----------------
-    //
-    // adb logcat isn't reliably reaching this device (same issue hit while
-    // debugging the Likes ad-gap bug), so this uses on-screen Toasts instead
-    // — they don't depend on adb/logcat at all. Remove this whole block, and
-    // the diagToast call sites below, once the bug is confirmed fixed.
-    //
-    // Always routed through mainHandler: this fires from both the caller's
-    // thread (the start toast) and from [executor]'s background thread (the
-    // response/exception toasts), and Toast.show() must run on the main
-    // thread regardless of which one called in.
-    private fun diagToast(context: Context, message: String) {
-        mainHandler.post {
-            Toast.makeText(context.applicationContext, "DIAG: $message", Toast.LENGTH_LONG).show()
-        }
-    }
-
     /**
      * Uploads the JPEG at [localFilePath] for [uid]. [callback] always fires
      * on the main thread, exactly once: [success] true only when the server
@@ -91,12 +73,9 @@ object PhotoUploadService {
         uid: String,
         callback: (success: Boolean, url: String?, error: String?) -> Unit
     ) {
-        diagToast(context, "upload starting, uid=$uid file=$localFilePath")
-
         executor.execute {
             val file = File(localFilePath)
             if (!file.exists()) {
-                diagToast(context, "local file missing at $localFilePath")
                 deliver(callback, false, null, "Local photo file does not exist")
                 return@execute
             }
@@ -112,13 +91,13 @@ object PhotoUploadService {
                     readTimeout = READ_TIMEOUT_MS
                     setRequestProperty("Connection", "Keep-Alive")
                     setRequestProperty("Content-Type", "multipart/form-data; boundary=$BOUNDARY")
-                    // Without this, HttpURLConnection sends Java's default
-                    // "Java/<version>" User-Agent, which the host's WAF
-                    // rejects outright with a static 403 page before
-                    // upload.php ever runs — confirmed via the diagToast
-                    // response-body diagnostic above returning a generic
-                    // Apache "403 Forbidden" HTML page, not JSON from the
-                    // script itself.
+                    // Java's default User-Agent ("Java/<version>") is a known
+                    // bot signature some hosting WAFs reject outright, so a
+                    // normal-looking one is set here instead. Confirmed via
+                    // on-device diagnostics NOT to be the whole story for this
+                    // endpoint's 403 (see PhotoUploadService's git history) —
+                    // left in regardless since it's harmless and still good
+                    // practice for a plain HttpURLConnection call.
                     setRequestProperty("User-Agent", "Mozilla/5.0 (Android) WedoraApp")
                 }
 
@@ -134,21 +113,17 @@ object PhotoUploadService {
                     ?.bufferedReader()?.use { it.readText() }
                     .orEmpty()
 
-                diagToast(context, "HTTP $responseCode, body=${body.take(300)}")
-
                 if (responseCode !in 200..299) {
                     deliver(callback, false, null, "Upload failed: HTTP $responseCode")
                     return@execute
                 }
 
-                parseResponse(context, body, callback)
+                parseResponse(body, callback)
             } catch (e: SocketTimeoutException) {
                 Log.w(TAG, "Photo upload timed out", e)
-                diagToast(context, "exception SocketTimeoutException: ${e.message}")
                 deliver(callback, false, null, "Upload timed out")
             } catch (e: IOException) {
                 Log.w(TAG, "Photo upload failed", e)
-                diagToast(context, "exception ${e.javaClass.simpleName}: ${e.message}")
                 deliver(callback, false, null, "No connection")
             } finally {
                 connection?.disconnect()
@@ -157,7 +132,6 @@ object PhotoUploadService {
     }
 
     private fun parseResponse(
-        context: Context,
         body: String,
         callback: (success: Boolean, url: String?, error: String?) -> Unit
     ) {
@@ -175,7 +149,6 @@ object PhotoUploadService {
             }
         } catch (e: JSONException) {
             Log.w(TAG, "Photo upload returned invalid JSON: $body", e)
-            diagToast(context, "exception parsing JSON: ${e.message}")
             deliver(callback, false, null, "Invalid server response")
         }
     }
