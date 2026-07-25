@@ -1,9 +1,32 @@
+<!--
+    The 108x108 viewport is the full adaptive-icon canvas, but only the
+    center 66x66 "safe zone" (21,21 to 87,87) is guaranteed visible across
+    launcher mask shapes (circle, squircle, rounded square) — anything
+    outside it can get clipped depending on the device/launcher. The heart
+    path's own coordinates were sized for the full 108x108 canvas (bounding
+    box roughly x:[16,92] y:[18,78]), overshooting the safe zone on the
+    left/right and top, which is what was getting cropped.
+
+    Scaled down 0.7x about the exact canvas center (54,54) via this group
+    rather than hand-editing the path's control points — a uniform
+    scale-about-center is both a shrink and a re-center in one transform,
+    and it can't introduce a curve-shape typo the way re-deriving every
+    bezier point by hand could. Resulting bounding box is roughly
+    x:[27,81] y:[29,71], comfortably inside the 66x66 safe zone with margin
+    to spare on every side.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,78 C54,78 30,63 22,47 C16,35 22,23 33,20 C40,18 47,22 54,32 C61,22 68,18 75,20 C86,23 92,35 86,47 C78,63 54,78 54,78 Z" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.7"
+        android:scaleY="0.7">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,78 C54,78 30,63 22,47 C16,35 22,23 33,20 C40,18 47,22 54,32 C61,22 68,18 75,20 C86,23 92,35 86,47 C78,63 54,78 54,78 Z" />
+    </group>
 </vector>
