@@ -32,7 +32,7 @@ object PhotoUploadService {
     private const val TAG = "WedoraPhotoUpload"
 
     private const val UPLOAD_URL =
-        "https://lightcoral-elephant-196936.hostingersite.com/wedora/upload.php"
+        "https://tuberstec.com/wedora/upload.php"
 
     /**
      * The endpoint's shared secret (upload.php's SECRET_KEY), Base64-encoded
