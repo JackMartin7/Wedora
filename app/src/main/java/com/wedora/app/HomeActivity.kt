@@ -415,6 +415,22 @@ class HomeActivity :
 
     // ----- Feed loading -----------------------------------------------------
 
+    /**
+     * Whether it's still safe to touch views or start a Glide load on this
+     * Activity instance. Toggling dark/light mode recreates the Activity —
+     * destroying this instance and building a fresh one — and the one-shot
+     * Firestore reads kicked off by [loadMatches]/[queryMatches] have no way
+     * to be cancelled once in flight, so their callbacks can land after that
+     * destroy completes. [showCards]'s bindCard -> loadRemoteProfilePhoto ->
+     * Glide.with(this) throws outright in that case rather than silently
+     * no-oping (`IllegalArgumentException: You cannot start a load for a
+     * destroyed activity`); the other callbacks below would just waste work
+     * on views nobody can see. Checked at the top of every callback in this
+     * load chain rather than once, since each is a separate point a stale
+     * result can resume at.
+     */
+    private fun isUsable(): Boolean = !isFinishing && !isDestroyed
+
     private fun loadMatches() {
         // No self document, no exclusion sets (nothing a guest has liked,
         // passed or blocked persists anywhere), no location — a guest sees
@@ -448,6 +464,7 @@ class HomeActivity :
         showLoading()
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { selfDoc ->
+                if (!isUsable()) return@addOnSuccessListener
                 val self = UserProfile.from(selfDoc)
                 val interestedIn = self.interestedIn
                 if (interestedIn.isNullOrBlank()) {
@@ -470,6 +487,7 @@ class HomeActivity :
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load own profile for matching", e)
+                if (!isUsable()) return@addOnFailureListener
                 showEmptyState(
                     icon = R.drawable.ic_sparkle_heart,
                     title = R.string.empty_home_error_title,
@@ -508,6 +526,12 @@ class HomeActivity :
         query
             .get()
             .addOnSuccessListener { snapshot ->
+                // Toggling dark/light mode recreates the Activity; this
+                // one-shot read has no way to be cancelled once in flight,
+                // so a stale result can land after that destroy — showCards
+                // would then try to Glide.with(this) on a destroyed
+                // Activity, which throws rather than no-oping. See isUsable().
+                if (!isUsable()) return@addOnSuccessListener
                 val excludedUids = resolveFeedExclusions(snapshot.documents, selfUid, exclusions)
                 val candidates = snapshot.documents
                     .filter { it.id != selfUid && it.id !in excludedUids }
@@ -544,6 +568,7 @@ class HomeActivity :
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to query matches", e)
+                if (!isUsable()) return@addOnFailureListener
                 showEmptyState(
                     icon = R.drawable.ic_sparkle_heart,
                     title = R.string.empty_home_error_title,

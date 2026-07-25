@@ -2,11 +2,14 @@ package com.wedora.app
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import android.widget.ImageView
 import androidx.annotation.DrawableRes
 import com.bumptech.glide.Glide
 import com.bumptech.glide.signature.ObjectKey
 import java.io.File
+
+private const val TAG = "WedoraImageLoading"
 
 /**
  * Loads [photoUrl] into this ImageView when present. When null (no photo set,
@@ -37,17 +40,30 @@ fun ImageView.loadAvatarOrPlaceholder(photoUrl: Uri?, @DrawableRes placeholderRe
  * something explicitly: a RecyclerView row reused for an item with no photo
  * must not keep showing whatever the previous item's photo was, which a
  * silent no-op here would let happen.
+ *
+ * Belt-and-suspenders against `IllegalArgumentException: You cannot start a
+ * load for a destroyed activity`: this is called from many adapters across
+ * the app, each with its own async gap (a Firestore callback, an Activity
+ * recreation from a theme toggle) where the host could have been destroyed
+ * by the time this actually runs. The real fix is each caller checking its
+ * own liveness before getting this far (see HomeActivity.isUsable for the
+ * pattern) — that avoids the wasted work, not just the crash — but this
+ * catch is the last line of defence for whichever caller doesn't.
  */
 fun ImageView.loadRemoteProfilePhoto(
     url: String?,
     @DrawableRes placeholderRes: Int = R.drawable.ic_avatar_placeholder
 ) {
-    Glide.with(this)
-        .load(url?.takeIf { it.isNotBlank() })
-        .placeholder(placeholderRes)
-        .error(placeholderRes)
-        .centerCrop()
-        .into(this)
+    try {
+        Glide.with(this)
+            .load(url?.takeIf { it.isNotBlank() })
+            .placeholder(placeholderRes)
+            .error(placeholderRes)
+            .centerCrop()
+            .into(this)
+    } catch (e: IllegalArgumentException) {
+        Log.w(TAG, "Skipped a photo load — host is no longer usable", e)
+    }
 }
 
 /**
