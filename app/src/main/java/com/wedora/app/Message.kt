@@ -22,7 +22,7 @@ import java.util.Locale
  * message is still only the local echo of a write Firestore hasn't
  * acknowledged yet. MessageAdapter uses it to show a single checkmark before
  * the server confirms and a double one after, so it needs the listener that
- * builds these to run with MetadataChanges.INCLUDES — otherwise the
+ * builds these to run with MetadataChanges.INCLUDE — otherwise the
  * pending-to-confirmed transition never re-fires the snapshot and the
  * checkmark would silently stick on single.
  */

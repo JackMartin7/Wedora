@@ -342,12 +342,12 @@ class ChatThreadActivity :
     private fun observeMessages() {
         messagesListener = messagesCollection()
             .orderBy(Message.FIELD_SENT_AT, Query.Direction.ASCENDING)
-            // INCLUDES, not the default: a just-sent message's own snapshot
+            // INCLUDE, not the default: a just-sent message's own snapshot
             // update — hasPendingWrites flipping false once Firestore
             // confirms it — is a metadata-only change. Without this, that
             // transition never re-fires the listener and MessageAdapter's
             // single checkmark would never advance to double.
-            .addSnapshotListener(MetadataChanges.INCLUDES) { snapshot, error ->
+            .addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
                 if (error != null) {
                     Log.w(TAG, "Message listener failed", error)
                     Toast.makeText(this, R.string.error_chat_load_failed, Toast.LENGTH_LONG).show()
