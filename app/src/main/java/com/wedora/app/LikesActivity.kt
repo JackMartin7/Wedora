@@ -385,7 +385,7 @@ class LikesActivity : AppCompatActivity() {
     // ----- Native ads (free signed-in users only — see class doc comment for guest access) ---
 
     /**
-     * Weaves a native ad in after every real like [FirstThreeThenFourAdGap]
+     * Weaves a native ad in after every real like [FirstTwoThenFourAdGap]
      * says gets one, using only whatever's already sitting in [adPool] —
      * never waiting on a fresh load. If the pool is empty when a slot comes
      * up, that slot is recorded in [pendingAdSlots] rather than lost
@@ -403,7 +403,7 @@ class LikesActivity : AppCompatActivity() {
     private fun buildLikesGridItems(likes: List<ReceivedLike>, isPremium: Boolean): List<LikesGridItem> {
         if (isPremium) return likes.map { LikesGridItem.Like(it) }
 
-        val adGap = FirstThreeThenFourAdGap()
+        val adGap = FirstTwoThenFourAdGap()
         val items = mutableListOf<LikesGridItem>()
         likes.forEach { like ->
             items += LikesGridItem.Like(like)

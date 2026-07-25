@@ -13,7 +13,7 @@ import com.wedora.app.databinding.ItemNativeAdLikeGridBinding
 /**
  * One tile in the Likes grid — either a real liker or (for non-Premium
  * signed-in users) a native ad, woven in by LikesActivity at
- * [FirstThreeThenFourAdGap]'s cadence — a single gap of 3 then a fixed
+ * [FirstTwoThenFourAdGap]'s cadence — a single gap of 2 then a fixed
  * repeating gap of 4, deliberately different from the alternating 3/4
  * cadence the swipe stack and Discover grid share (see that class's own
  * doc comment).

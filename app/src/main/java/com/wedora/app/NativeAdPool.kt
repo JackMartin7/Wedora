@@ -42,18 +42,27 @@ class AlternatingAdGap {
 
 /**
  * Decides which real like cards get an ad inserted right after them — a
- * single gap of 3, then a fixed gap of 4 forever after (3, 4, 4, 4...), per
+ * single gap of 2, then a fixed gap of 4 forever after (2, 4, 4, 4...), per
  * LikesActivity's own spec. Deliberately its own small sequencer rather than
  * a variant of [AlternatingAdGap]: that one toggles forever (3, 4, 3, 4...)
  * for the swipe stack and Discover grid, a genuinely different cadence from
- * this screen's "one 3, then repeating 4s".
+ * this screen's "one 2, then repeating 4s".
+ *
+ * The first gap is 2, not 3: [LikesActivity]'s main grid is what's left
+ * after its 2-tile featured teaser is carved out of the total like count
+ * (see LikesActivity.showLikes), so a gap of 3 here meant an account needed
+ * 5+ total likes before ever seeing an ad — confirmed via on-device
+ * diagnostics showing adsInserted=0 for a real account with 4 total likes
+ * (a remainder of 2, one short of the old threshold). 2 was chosen
+ * specifically so the ad appears as soon as the grid has any real content
+ * at all, without requiring an unrealistically large like count first.
  *
  * Stateful and single-use: create one per build (each call to
  * LikesActivity.buildLikesGridItems), never reused across builds.
  */
-class FirstThreeThenFourAdGap {
+class FirstTwoThenFourAdGap {
     private companion object {
-        const val FIRST_GAP = 3
+        const val FIRST_GAP = 2
         const val REPEATING_GAP = 4
     }
 
