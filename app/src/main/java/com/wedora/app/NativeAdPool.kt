@@ -4,12 +4,41 @@ import android.content.Context
 import com.google.android.gms.ads.nativead.NativeAd
 
 /**
- * A native ad follows every AD_INTERVALth real profile — any non-Premium
- * user, signed-in free or guest — shared by HomeActivity's swipe stack and
- * ExploreActivity's Discover grid so the two screens agree on cadence
- * without each hardcoding its own copy of the number.
+ * Decides which real profiles get an ad inserted right after them — an
+ * alternating gap of 3, then 4, then 3, then 4... rather than a fixed
+ * interval, so a non-Premium user (signed-in free or guest) doesn't see ads
+ * land on a perfectly predictable rhythm. Shared by HomeActivity's swipe
+ * stack and ExploreActivity's Discover grid so the two screens agree on
+ * cadence without each hardcoding their own copy of the pattern.
+ *
+ * Stateful and single-use: create one per build (each call to
+ * HomeActivity.buildDisplayItems / ExploreActivity.buildDiscoverGridItems),
+ * never reused across builds — a fresh list always restarts the pattern at
+ * a gap of 3, the same way the old fixed-interval version always restarted
+ * counting from profile 1.
  */
-const val AD_INTERVAL = 3
+class AlternatingAdGap {
+    private companion object {
+        const val FIRST_GAP = 3
+        const val SECOND_GAP = 4
+    }
+
+    private var sinceLastAd = 0
+    private var nextGap = FIRST_GAP
+
+    /**
+     * Call exactly once per real profile appended to the display list, in
+     * order. Returns true exactly when an ad belongs immediately after the
+     * profile just appended.
+     */
+    fun afterProfile(): Boolean {
+        sinceLastAd++
+        if (sinceLastAd < nextGap) return false
+        sinceLastAd = 0
+        nextGap = if (nextGap == FIRST_GAP) SECOND_GAP else FIRST_GAP
+        return true
+    }
+}
 
 /**
  * Keeps up to [target] native ads loaded and ready, and refills itself as

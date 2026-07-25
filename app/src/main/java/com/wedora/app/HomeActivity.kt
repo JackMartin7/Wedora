@@ -47,7 +47,7 @@ class HomeActivity :
 
     /**
      * The feed, in swipe order — a mix of real profiles and (for free users)
-     * native ads woven in every AD_INTERVAL profiles. Bound into the card
+     * native ads woven in at [AlternatingAdGap]'s cadence. Bound into the card
      * stack by position; only StackItem.Profile entries ever reach
      * likeUser/recordPass, so an ad never touches matching logic.
      */
@@ -861,9 +861,9 @@ class HomeActivity :
     // ----- Native ads (any non-Premium user — free signed-in or guest) -------
 
     /**
-     * Weaves a native ad in after every AD_INTERVALth real profile, using
-     * only whatever's already sitting in [adPool] — never waiting on a fresh
-     * load. If the pool is empty when a slot comes up (nothing preloaded yet,
+     * Weaves a native ad in after every profile [AlternatingAdGap] says gets
+     * one, using only whatever's already sitting in [adPool] — never waiting
+     * on a fresh load. If the pool is empty when a slot comes up (nothing preloaded yet,
      * or a run of failed loads), that slot is recorded in [pendingAdSlots]
      * rather than lost outright: no gap, no broken card, the next real
      * profile follows immediately, and [backfillPendingAdSlot] converts it
@@ -887,10 +887,11 @@ class HomeActivity :
         if (PremiumStatus.isPremium()) return profiles.map { StackItem.Profile(it) }
 
         pendingAdSlots.clear()
+        val adGap = AlternatingAdGap()
         val items = mutableListOf<StackItem>()
-        profiles.forEachIndexed { index, card ->
+        profiles.forEach { card ->
             items += StackItem.Profile(card)
-            if ((index + 1) % AD_INTERVAL == 0) {
+            if (adGap.afterProfile()) {
                 adPool.poll()?.let { ad ->
                     items += StackItem.Ad(ad)
                     adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }

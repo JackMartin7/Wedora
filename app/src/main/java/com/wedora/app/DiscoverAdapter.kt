@@ -23,8 +23,8 @@ data class DiscoverProfile(
 
 /**
  * One tile in the grid — either a real profile or (for non-Premium users) a
- * native ad, woven in every [AD_INTERVAL] profiles by ExploreActivity, the
- * same cadence and shared [NativeAdPool] HomeActivity's swipe stack uses.
+ * native ad, woven in by ExploreActivity at [AlternatingAdGap]'s cadence —
+ * the same pattern and shared [NativeAdPool] HomeActivity's swipe stack uses.
  */
 sealed class DiscoverGridItem {
     data class Profile(val profile: DiscoverProfile) : DiscoverGridItem()

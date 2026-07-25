@@ -348,22 +348,23 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
     // ----- Native ads (any non-Premium user — free signed-in or guest) -------
 
     /**
-     * Weaves a native ad in after every AD_INTERVALth profile, using only
-     * whatever's already sitting in [adPool] — never waiting on a fresh
-     * load. If the pool is empty when a slot comes up, that slot is recorded
-     * in [pendingAdSlots] rather than lost outright, and [backfillPendingAdSlot]
-     * converts it to an ad in place once one finishes loading. Same shape as
-     * HomeActivity.buildDisplayItems — see that function's own doc comment
-     * for the full reasoning, identical here.
+     * Weaves a native ad in after every profile [AlternatingAdGap] says gets
+     * one, using only whatever's already sitting in [adPool] — never waiting
+     * on a fresh load. If the pool is empty when a slot comes up, that slot
+     * is recorded in [pendingAdSlots] rather than lost outright, and
+     * [backfillPendingAdSlot] converts it to an ad in place once one finishes
+     * loading. Same shape as HomeActivity.buildDisplayItems — see that
+     * function's own doc comment for the full reasoning, identical here.
      */
     private fun buildDiscoverGridItems(profiles: List<DiscoverProfile>): List<DiscoverGridItem> {
         if (PremiumStatus.isPremium()) return profiles.map { DiscoverGridItem.Profile(it) }
 
         pendingAdSlots.clear()
+        val adGap = AlternatingAdGap()
         val items = mutableListOf<DiscoverGridItem>()
-        profiles.forEachIndexed { index, profile ->
+        profiles.forEach { profile ->
             items += DiscoverGridItem.Profile(profile)
-            if ((index + 1) % AD_INTERVAL == 0) {
+            if (adGap.afterProfile()) {
                 adPool.poll()?.let { ad ->
                     items += DiscoverGridItem.Ad(ad)
                     adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
