@@ -52,6 +52,18 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
     /** The full conversation list, kept so search can filter it in memory. */
     private var allPreviews: List<ChatPreview> = emptyList()
 
+    /**
+     * This user's own coordinates, fetched once in onCreate rather than on
+     * every render — they don't change mid-session, unlike the match data
+     * the live listener re-fires on. Null (from [loadSelfCoordinates]'s own
+     * fail-open handling, or simply not having arrived yet) just leaves
+     * every row's distance badge hidden; a render triggered by the very
+     * first matches snapshot, before this fetch resolves, catches up on the
+     * listener's next natural fire rather than forcing an extra one here.
+     */
+    private var selfLat: Double? = null
+    private var selfLon: Double? = null
+
     private val adapter = ChatListAdapter(
         onClick = { chat ->
             // Every row a guest ever sees is one of the two hardcoded demo
@@ -87,6 +99,8 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
 
         binding.btnCancelSelection.setOnClickListener { adapter.exitSelectionMode() }
         binding.btnDeleteSelection.setOnClickListener { confirmDeleteSelected() }
+
+        loadSelfCoordinates(this, firestore) { lat, lon -> selfLat = lat; selfLon = lon }
 
         // Back exits selection mode first, then closes the search bar; only
         // once neither is active does it behave like the back arrow.
@@ -441,7 +455,11 @@ class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
                 isUnread = match.hasUnreadFor(selfUid),
                 unreadCount = lastMessage?.unreadCount ?: 0,
                 lastSeen = profilesByUid[otherUid]?.lastSeen,
-                photoUrl = profilesByUid[otherUid]?.photoUrl
+                photoUrl = profilesByUid[otherUid]?.photoUrl,
+                distanceBadge = distanceBadgeBetween(
+                    selfLat, selfLon,
+                    profilesByUid[otherUid]?.latitude, profilesByUid[otherUid]?.longitude
+                )
             )
         }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
 

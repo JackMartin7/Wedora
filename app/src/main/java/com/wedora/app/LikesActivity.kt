@@ -158,20 +158,28 @@ class LikesActivity : AppCompatActivity() {
             return
         }
 
-        loadMatchedUsers(
-            firestore,
-            selfUid,
-            onResult = { users ->
-                if (!isUsable()) return@loadMatchedUsers
-                binding.usersMatchedSection.visibility =
-                    if (users.isEmpty()) View.GONE else View.VISIBLE
-                matchedUserAdapter.submitList(users)
-            },
-            onError = {
-                if (!isUsable()) return@loadMatchedUsers
-                binding.usersMatchedSection.visibility = View.GONE
-            }
-        )
+        // A separate coordinates read rather than threading through the one
+        // loadLikes() already does: this strip loads independently of it (see
+        // this function's own doc comment), so there's no single self-profile
+        // read both could share without forcing one to wait on the other.
+        loadSelfCoordinates(this, firestore) { myLat, myLon ->
+            if (!isUsable()) return@loadSelfCoordinates
+            loadMatchedUsers(
+                firestore,
+                selfUid,
+                myLat, myLon,
+                onResult = { users ->
+                    if (!isUsable()) return@loadMatchedUsers
+                    binding.usersMatchedSection.visibility =
+                        if (users.isEmpty()) View.GONE else View.VISIBLE
+                    matchedUserAdapter.submitList(users)
+                },
+                onError = {
+                    if (!isUsable()) return@loadMatchedUsers
+                    binding.usersMatchedSection.visibility = View.GONE
+                }
+            )
+        }
     }
 
     private fun loadLikes() {
@@ -190,21 +198,25 @@ class LikesActivity : AppCompatActivity() {
         // Own premium status first — showLikes needs it to decide whether to
         // blur at all, so it has to be known before the likes list renders,
         // not fetched alongside it. The same read also gates the "Who Viewed
-        // Your Profile" strip below, rather than each running its own.
+        // Your Profile" strip below, rather than each running its own — and
+        // now also supplies this user's own coordinates for both strips'
+        // distance badges, since the full profile is already in hand here.
         firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
             .addOnSuccessListener { snapshot ->
                 if (!isUsable()) return@addOnSuccessListener
-                val isPremium = UserProfile.from(snapshot).isPremium
-                loadReceivedLikesAndShow(selfUid, isPremium)
-                loadProfileViewersStrip(selfUid, isPremium)
+                val self = UserProfile.from(snapshot)
+                loadReceivedLikesAndShow(selfUid, self.isPremium, self.latitude, self.longitude)
+                loadProfileViewersStrip(selfUid, self.isPremium, self.latitude, self.longitude)
             }
             .addOnFailureListener {
                 if (!isUsable()) return@addOnFailureListener
                 // Can't confirm premium — fail closed to the free (blurred)
                 // experience rather than risk unblurring for a status that
                 // couldn't be verified. profileViewersSection stays hidden,
-                // its XML default, for the same reason.
-                loadReceivedLikesAndShow(selfUid, isPremium = false)
+                // its XML default, for the same reason. No coordinates either,
+                // for the same "couldn't verify" reasoning — distance badges
+                // just stay hidden rather than guessed at.
+                loadReceivedLikesAndShow(selfUid, isPremium = false, myLat = null, myLon = null)
             }
     }
 
@@ -224,7 +236,12 @@ class LikesActivity : AppCompatActivity() {
      * no query needed. Premium: the real list, hidden if there happen to be
      * zero viewers.
      */
-    private fun loadProfileViewersStrip(selfUid: String, isPremium: Boolean) {
+    private fun loadProfileViewersStrip(
+        selfUid: String,
+        isPremium: Boolean,
+        myLat: Double?,
+        myLon: Double?
+    ) {
         if (!isPremium) {
             showLockedProfileViewers()
             return
@@ -233,6 +250,7 @@ class LikesActivity : AppCompatActivity() {
         loadProfileViewers(
             firestore,
             selfUid,
+            myLat, myLon,
             onResult = { viewers ->
                 if (!isUsable()) return@loadProfileViewers
                 binding.profileViewersSection.visibility =
@@ -281,10 +299,16 @@ class LikesActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadReceivedLikesAndShow(selfUid: String, isPremium: Boolean) {
+    private fun loadReceivedLikesAndShow(
+        selfUid: String,
+        isPremium: Boolean,
+        myLat: Double?,
+        myLon: Double?
+    ) {
         loadReceivedLikes(
             firestore,
             selfUid,
+            myLat, myLon,
             onResult = { likes, unseenMatchIds ->
                 if (!isUsable()) return@loadReceivedLikes
                 if (likes.isEmpty()) showNoLikes() else showLikes(likes, isPremium)

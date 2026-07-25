@@ -26,7 +26,9 @@ data class ProfileViewer(
     val name: String,
     val lastSeen: Date?,
     val viewedAt: Timestamp?,
-    val photoUrl: String?
+    val photoUrl: String?,
+    /** Null when either this user or the viewer has no coordinates on file. */
+    val distanceBadge: String?
 )
 
 /**
@@ -62,10 +64,16 @@ fun recordProfileView(firestore: FirebaseFirestore, viewedUid: String, viewerUid
  *
  * A viewer whose profile is missing or unnamed is dropped rather than shown
  * as a blank row.
+ *
+ * [myLat]/[myLon] are this user's own coordinates, for each [ProfileViewer]'s
+ * [ProfileViewer.distanceBadge] — null from a caller with none to give,
+ * which simply leaves every badge null too.
  */
 fun loadProfileViewers(
     firestore: FirebaseFirestore,
     selfUid: String,
+    myLat: Double? = null,
+    myLon: Double? = null,
     onResult: (List<ProfileViewer>) -> Unit,
     onError: () -> Unit
 ) {
@@ -100,7 +108,8 @@ fun loadProfileViewers(
                             name = name,
                             lastSeen = profile.lastSeen,
                             viewedAt = viewedAtByUid[uid],
-                            photoUrl = profile.photoUrl
+                            photoUrl = profile.photoUrl,
+                            distanceBadge = distanceBadgeBetween(myLat, myLon, profile.latitude, profile.longitude)
                         )
                     }.sortedByDescending { it.viewedAt?.toDate()?.time ?: 0L }
 

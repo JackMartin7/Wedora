@@ -65,8 +65,30 @@
         app:layout_constraintStart_toEndOf="@id/ivAvatar"
         app:layout_constraintEnd_toStartOf="@id/btnMessage"
         app:layout_constraintTop_toBottomOf="@id/tvName"
-        app:layout_constraintBottom_toBottomOf="@id/ivAvatar"
+        app:layout_constraintBottom_toTopOf="@id/tvDistance"
         tools:text="Matched on 24 Jul 2026" />
+
+    <!-- Part of the same packed vertical chain as tvName/tvMatchedOn; hidden
+         when there's no distance, which leaves the row exactly as tall as
+         it was before. -->
+    <TextView
+        android:id="@+id/tvDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="3dp"
+        android:background="@drawable/bg_distance_pill"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="2.4 km"
+        app:layout_constraintStart_toEndOf="@id/ivAvatar"
+        app:layout_constraintTop_toBottomOf="@id/tvMatchedOn"
+        app:layout_constraintBottom_toBottomOf="@id/ivAvatar" />
 
     <TextView
         android:id="@+id/btnMessage"

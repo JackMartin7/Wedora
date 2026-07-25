@@ -26,7 +26,9 @@ data class MatchedUser(
     val name: String,
     val lastSeen: Date?,
     val createdAt: Timestamp?,
-    val photoUrl: String?
+    val photoUrl: String?,
+    /** Null when either this user or the match has no coordinates on file. */
+    val distanceBadge: String?
 )
 
 /**
@@ -39,10 +41,16 @@ data class MatchedUser(
  *
  * A match whose profile is missing or unnamed is dropped rather than
  * delivered as a blank entry.
+ *
+ * [myLat]/[myLon] are this user's own coordinates, for each [MatchedUser]'s
+ * [MatchedUser.distanceBadge] — null from a caller with none to give, which
+ * simply leaves every badge null too.
  */
 fun loadMatchedUsers(
     firestore: FirebaseFirestore,
     selfUid: String,
+    myLat: Double? = null,
+    myLon: Double? = null,
     onResult: (List<MatchedUser>) -> Unit,
     onError: () -> Unit
 ) {
@@ -82,7 +90,8 @@ fun loadMatchedUsers(
                             name = name,
                             lastSeen = profile.lastSeen,
                             createdAt = match.createdAt,
-                            photoUrl = profile.photoUrl
+                            photoUrl = profile.photoUrl,
+                            distanceBadge = distanceBadgeBetween(myLat, myLon, profile.latitude, profile.longitude)
                         )
                     }
                     onResult(users)

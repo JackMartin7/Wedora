@@ -41,6 +41,18 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
     private var userName: String = ""
 
     /**
+     * Set once [loadProfile] resolves, and combined with [selfLat]/[selfLon]
+     * (order-independent — whichever of the two async reads lands second
+     * calls [applyDistanceBadge]) into the distance line. Neither of these
+     * screens' async loads is otherwise coupled, so this is the only point
+     * where they need to know about each other.
+     */
+    private var otherProfile: UserProfile? = null
+    private var selfLat: Double? = null
+    private var selfLon: Double? = null
+    private var selfCoordsLoaded = false
+
+    /**
      * Whether the current user has liked this person (a match doc exists with
      * likedBy == me). Null until the check resolves — the heart shows a spinner
      * rather than guessing red or grey. Single source of truth for both the
@@ -85,9 +97,37 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
         binding.btnMessage.setOnClickListener { messageUser() }
 
         loadProfile()
+        loadSelfCoordinatesThenApply()
         checkLikeState()
         observePresence()
         recordThisView()
+    }
+
+    private fun loadSelfCoordinatesThenApply() {
+        loadSelfCoordinates(this, firestore) { lat, lon ->
+            selfLat = lat
+            selfLon = lon
+            selfCoordsLoaded = true
+            applyDistanceBadge()
+        }
+    }
+
+    /**
+     * Runs once both halves are in: [otherProfile] loaded and [selfCoordsLoaded].
+     * Called from both loaders' success paths, so whichever finishes second is
+     * the one that actually shows the badge.
+     */
+    private fun applyDistanceBadge() {
+        val profile = otherProfile ?: return
+        if (!selfCoordsLoaded) return
+
+        val badge = distanceBadgeBetween(selfLat, selfLon, profile.latitude, profile.longitude)
+        if (badge == null) {
+            binding.tvDetailDistance.visibility = View.GONE
+        } else {
+            binding.tvDetailDistance.text = badge
+            binding.tvDetailDistance.visibility = View.VISIBLE
+        }
     }
 
     /**
@@ -288,6 +328,7 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
 
     private fun showProfile(name: String, profile: UserProfile) {
         userName = name
+        otherProfile = profile
         binding.tvDetailName.text = name
         binding.ivDetailPhoto.loadRemoteProfilePhoto(profile.photoUrl)
 
@@ -320,6 +361,8 @@ class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.
             binding.tvDetailBio.text = bio
             binding.tvDetailBio.visibility = View.VISIBLE
         }
+
+        applyDistanceBadge()
 
         binding.progressLoading.visibility = View.GONE
         binding.scrollContent.visibility = View.VISIBLE

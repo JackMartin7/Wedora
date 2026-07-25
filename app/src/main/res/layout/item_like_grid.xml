@@ -37,6 +37,25 @@
         app:layout_constraintTop_toTopOf="@id/ivLikePhoto"
         app:layout_constraintEnd_toEndOf="@id/ivLikePhoto" />
 
+    <!-- Top-start corner, mirroring onlineDot's top-end placement. -->
+    <TextView
+        android:id="@+id/tvLikeDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_distance_pill"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="2.4 km"
+        app:layout_constraintTop_toTopOf="@id/ivLikePhoto"
+        app:layout_constraintStart_toStartOf="@id/ivLikePhoto" />
+
     <!-- Scrim anchored to the photo's lower portion for name legibility. -->
     <View
         android:id="@+id/scrim"

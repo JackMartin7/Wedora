@@ -67,8 +67,29 @@
         android:textSize="13sp"
         app:layout_constraintStart_toEndOf="@id/ivChatAvatar"
         app:layout_constraintTop_toBottomOf="@id/tvChatName"
-        app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar"
         app:layout_constraintEnd_toStartOf="@id/tvUnreadBadge" />
+
+    <!-- Below the preview line; hidden when there's no distance, which
+         leaves the row exactly as tall as it was before (ivChatAvatar's
+         44dp still drives the row height in that case, same as always). -->
+    <TextView
+        android:id="@+id/tvChatDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="3dp"
+        android:background="@drawable/bg_distance_pill"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="2.4 km"
+        app:layout_constraintStart_toEndOf="@id/ivChatAvatar"
+        app:layout_constraintTop_toBottomOf="@id/tvChatPreview"
+        app:layout_constraintBottom_toBottomOf="@id/ivChatAvatar" />
 
     <TextView
         android:id="@+id/tvChatTimestamp"

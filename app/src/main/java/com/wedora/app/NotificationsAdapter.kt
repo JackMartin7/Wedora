@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -29,6 +30,13 @@ class NotificationsAdapter(
             tvNotificationName.text = item.likerName
             onlineDot.root.bindOnlineDot(item.lastSeen)
             tvNotificationTime.text = formatRelativeShort(root.context, item.createdAt)
+
+            if (item.distanceBadge == null) {
+                tvNotificationDistance.visibility = View.GONE
+            } else {
+                tvNotificationDistance.visibility = View.VISIBLE
+                tvNotificationDistance.text = item.distanceBadge
+            }
 
             root.setOnClickListener { onClick(item) }
         }

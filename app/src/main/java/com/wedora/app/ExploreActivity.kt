@@ -201,7 +201,11 @@ class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
         if (filtered.isEmpty()) {
             showDiscoverSearchEmpty(q)
         } else {
-            showDiscover(filtered.map { DiscoverProfile(it.id, it.name, it.ageLocationLine(this), it.photoUrl) })
+            showDiscover(
+                filtered.map {
+                    DiscoverProfile(it.id, it.name, it.ageLocationLine(this), it.photoUrl, it.distanceBadge())
+                }
+            )
         }
     }
 

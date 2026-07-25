@@ -18,7 +18,9 @@ data class DiscoverProfile(
     val userId: String,
     val name: String,
     val meta: String?,
-    val photoUrl: String?
+    val photoUrl: String?,
+    /** Null when either this user or the profile has no coordinates on file. */
+    val distanceBadge: String? = null
 )
 
 /**
@@ -70,6 +72,13 @@ class DiscoverAdapter(
             } else {
                 tvDiscoverMeta.visibility = View.VISIBLE
                 tvDiscoverMeta.text = profile.meta
+            }
+
+            if (profile.distanceBadge == null) {
+                tvDiscoverDistance.visibility = View.GONE
+            } else {
+                tvDiscoverDistance.visibility = View.VISIBLE
+                tvDiscoverDistance.text = profile.distanceBadge
             }
 
             root.setOnClickListener { onClick(profile) }

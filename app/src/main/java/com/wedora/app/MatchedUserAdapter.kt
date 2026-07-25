@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -27,6 +28,13 @@ class MatchedUserAdapter(
             ivMatchedAvatar.loadRemoteProfilePhoto(user.photoUrl)
             tvMatchedName.text = user.name
             onlineDot.root.bindOnlineDot(user.lastSeen)
+
+            if (user.distanceBadge == null) {
+                tvMatchedDistance.visibility = View.GONE
+            } else {
+                tvMatchedDistance.visibility = View.VISIBLE
+                tvMatchedDistance.text = user.distanceBadge
+            }
 
             root.setOnClickListener { onClick(user) }
         }

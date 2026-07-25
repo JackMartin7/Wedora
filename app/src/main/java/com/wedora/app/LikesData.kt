@@ -23,7 +23,9 @@ data class ReceivedLike(
     val likerUserId: String,
     val likerName: String,
     val profile: UserProfile,
-    val createdAt: Timestamp?
+    val createdAt: Timestamp?,
+    /** Null when either this user or the liker has no coordinates on file. */
+    val distanceBadge: String?
 )
 
 /**
@@ -42,10 +44,17 @@ data class ReceivedLike(
  * received like. A like whose liker profile is missing is dropped from the
  * display list but still reported in unseenMatchIds — so [markLikesSeen] can
  * clear a badge count the user could otherwise never act on.
+ *
+ * [myLat]/[myLon] are this user's own coordinates, for each [ReceivedLike]'s
+ * [ReceivedLike.distanceBadge] — null from a caller with none to give (a
+ * guest, or an account with no coordinates), which simply leaves every badge
+ * null too.
  */
 fun loadReceivedLikes(
     firestore: FirebaseFirestore,
     selfUid: String,
+    myLat: Double? = null,
+    myLon: Double? = null,
     onResult: (likes: List<ReceivedLike>, unseenMatchIds: List<String>) -> Unit,
     onError: () -> Unit
 ) {
@@ -94,7 +103,8 @@ fun loadReceivedLikes(
                             likerUserId = likerUid,
                             likerName = name,
                             profile = profile,
-                            createdAt = match.createdAt
+                            createdAt = match.createdAt,
+                            distanceBadge = distanceBadgeBetween(myLat, myLon, profile.latitude, profile.longitude)
                         )
                     }
                     onResult(likes, unseenIds)

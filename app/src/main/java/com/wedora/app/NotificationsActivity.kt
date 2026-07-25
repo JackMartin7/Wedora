@@ -49,26 +49,30 @@ class NotificationsActivity : AppCompatActivity() {
         }
 
         showLoading()
-        loadReceivedLikes(
-            firestore,
-            selfUid,
-            onResult = { likes, unseenMatchIds ->
-                showNotifications(
-                    likes.map {
-                        NotificationItem(
-                            matchId = it.matchId,
-                            likerUserId = it.likerUserId,
-                            likerName = it.likerName,
-                            createdAt = it.createdAt,
-                            lastSeen = it.profile.lastSeen,
-                            photoUrl = it.profile.photoUrl
-                        )
-                    }
-                )
-                markLikesSeen(firestore, selfUid, unseenMatchIds)
-            },
-            onError = { showNotifications(emptyList()) }
-        )
+        loadSelfCoordinates(this, firestore) { myLat, myLon ->
+            loadReceivedLikes(
+                firestore,
+                selfUid,
+                myLat, myLon,
+                onResult = { likes, unseenMatchIds ->
+                    showNotifications(
+                        likes.map {
+                            NotificationItem(
+                                matchId = it.matchId,
+                                likerUserId = it.likerUserId,
+                                likerName = it.likerName,
+                                createdAt = it.createdAt,
+                                lastSeen = it.profile.lastSeen,
+                                photoUrl = it.profile.photoUrl,
+                                distanceBadge = it.distanceBadge
+                            )
+                        }
+                    )
+                    markLikesSeen(firestore, selfUid, unseenMatchIds)
+                },
+                onError = { showNotifications(emptyList()) }
+            )
+        }
     }
 
     private fun showLoading() {

@@ -62,6 +62,13 @@ class LikesAdapter(
                 tvLikeLocation.text = location
             }
 
+            if (like.distanceBadge == null) {
+                tvLikeDistance.visibility = View.GONE
+            } else {
+                tvLikeDistance.visibility = View.VISIBLE
+                tvLikeDistance.text = like.distanceBadge
+            }
+
             root.setOnClickListener { onClick(like) }
         }
     }

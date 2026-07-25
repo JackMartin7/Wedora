@@ -22,7 +22,9 @@ data class MatchHistoryItem(
     val matchedOn: Date?,
     /** For the online-status dot; batch-loaded alongside the match data. */
     val lastSeen: Date?,
-    val photoUrl: String?
+    val photoUrl: String?,
+    /** Null when either this user or the match has no coordinates on file. */
+    val distanceBadge: String?
 )
 
 /**
@@ -62,6 +64,13 @@ class MatchHistoryAdapter(
                 tvMatchedOn.text = root.context.getString(
                     R.string.match_history_matched_on, dateFormat.format(item.matchedOn)
                 )
+            }
+
+            if (item.distanceBadge == null) {
+                tvDistance.visibility = android.view.View.GONE
+            } else {
+                tvDistance.visibility = android.view.View.VISIBLE
+                tvDistance.text = item.distanceBadge
             }
 
             root.setOnClickListener { onRowClick(item) }

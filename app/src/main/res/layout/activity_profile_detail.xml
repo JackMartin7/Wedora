@@ -112,6 +112,23 @@
                 tools:visibility="visible"
                 tools:text="24 • Islamabad, Pakistan" />
 
+            <!-- Hidden when either this user or the profile has no
+                 coordinates on file. -->
+            <TextView
+                android:id="@+id/tvDetailDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_distance_pill"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="2.4 km" />
+
             <!-- "Divorced • Looking for Second Wife"; hidden on accounts that
                  predate these fields. -->
             <TextView

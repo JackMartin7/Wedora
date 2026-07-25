@@ -68,8 +68,9 @@ class ProfileViewersActivity : AppCompatActivity() {
         showLoading()
         firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
             .addOnSuccessListener { snapshot ->
-                if (UserProfile.from(snapshot).isPremium) {
-                    loadAndShowViewers(selfUid)
+                val self = UserProfile.from(snapshot)
+                if (self.isPremium) {
+                    loadAndShowViewers(selfUid, self.latitude, self.longitude)
                 } else {
                     showTeaser()
                 }
@@ -81,10 +82,11 @@ class ProfileViewersActivity : AppCompatActivity() {
             }
     }
 
-    private fun loadAndShowViewers(selfUid: String) {
+    private fun loadAndShowViewers(selfUid: String, myLat: Double?, myLon: Double?) {
         loadProfileViewers(
             firestore,
             selfUid,
+            myLat, myLon,
             onResult = { viewers -> if (viewers.isEmpty()) showEmpty() else showViewers(viewers) },
             onError = { showEmpty() }
         )

@@ -54,8 +54,7 @@
         app:layout_constraintEnd_toStartOf="@id/tvNotificationAction"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintHorizontal_bias="0"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivNotificationAvatar"
         tools:text="Amelia Hart" />
 
     <TextView
@@ -91,5 +90,25 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:text="2m ago" />
+
+    <!-- Below the name/action/time row; hidden when there's no distance to
+         show, which leaves the row exactly as tall as it was before. -->
+    <TextView
+        android:id="@+id/tvNotificationDistance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_distance_pill"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="2dp"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:fontFamily="@font/poppins_medium"
+        android:visibility="gone"
+        tools:visibility="visible"
+        tools:text="2.4 km"
+        app:layout_constraintStart_toEndOf="@id/ivNotificationAvatar"
+        app:layout_constraintTop_toBottomOf="@id/tvNotificationName" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

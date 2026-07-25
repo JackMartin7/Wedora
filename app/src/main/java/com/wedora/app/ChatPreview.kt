@@ -25,5 +25,7 @@ data class ChatPreview(
     /** For the online-status dot; batch-loaded alongside the match data. */
     val lastSeen: Date?,
     /** The other user's hosted photo, batch-loaded the same way as [lastSeen]; null on a demo/guest row or an account with none. */
-    val photoUrl: String?
+    val photoUrl: String?,
+    /** Null when either this user or the other has no coordinates on file. */
+    val distanceBadge: String? = null
 )

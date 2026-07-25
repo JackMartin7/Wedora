@@ -45,24 +45,28 @@ class MatchHistoryActivity : AppCompatActivity() {
         }
 
         showLoading()
-        loadMatchedUsers(
-            firestore,
-            selfUid,
-            onResult = { users ->
-                val items = users.map {
-                    MatchHistoryItem(
-                        matchId = it.matchId,
-                        otherUserId = it.otherUserId,
-                        name = it.name,
-                        matchedOn = it.createdAt?.toDate(),
-                        lastSeen = it.lastSeen,
-                        photoUrl = it.photoUrl
-                    )
-                }
-                if (items.isEmpty()) showEmpty() else showHistory(items)
-            },
-            onError = { showEmpty() }
-        )
+        loadSelfCoordinates(this, firestore) { myLat, myLon ->
+            loadMatchedUsers(
+                firestore,
+                selfUid,
+                myLat, myLon,
+                onResult = { users ->
+                    val items = users.map {
+                        MatchHistoryItem(
+                            matchId = it.matchId,
+                            otherUserId = it.otherUserId,
+                            name = it.name,
+                            matchedOn = it.createdAt?.toDate(),
+                            lastSeen = it.lastSeen,
+                            photoUrl = it.photoUrl,
+                            distanceBadge = it.distanceBadge
+                        )
+                    }
+                    if (items.isEmpty()) showEmpty() else showHistory(items)
+                },
+                onError = { showEmpty() }
+            )
+        }
     }
 
     private fun showLoading() {

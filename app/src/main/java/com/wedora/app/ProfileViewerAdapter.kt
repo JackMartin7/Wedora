@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -32,6 +33,13 @@ class ProfileViewerAdapter(
                 formatRelativeShort(root.context, viewer.viewedAt)
             )
             onlineDot.root.bindOnlineDot(viewer.lastSeen)
+
+            if (viewer.distanceBadge == null) {
+                tvViewerDistance.visibility = View.GONE
+            } else {
+                tvViewerDistance.visibility = View.VISIBLE
+                tvViewerDistance.text = viewer.distanceBadge
+            }
 
             root.setOnClickListener { onClick(viewer) }
         }
