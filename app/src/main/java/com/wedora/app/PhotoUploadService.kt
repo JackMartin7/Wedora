@@ -112,6 +112,14 @@ object PhotoUploadService {
                     readTimeout = READ_TIMEOUT_MS
                     setRequestProperty("Connection", "Keep-Alive")
                     setRequestProperty("Content-Type", "multipart/form-data; boundary=$BOUNDARY")
+                    // Without this, HttpURLConnection sends Java's default
+                    // "Java/<version>" User-Agent, which the host's WAF
+                    // rejects outright with a static 403 page before
+                    // upload.php ever runs — confirmed via the diagToast
+                    // response-body diagnostic above returning a generic
+                    // Apache "403 Forbidden" HTML page, not JSON from the
+                    // script itself.
+                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android) WedoraApp")
                 }
 
                 DataOutputStream(connection.outputStream).use { out ->
