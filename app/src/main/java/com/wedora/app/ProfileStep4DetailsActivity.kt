@@ -259,8 +259,14 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
             manualCoords
         }
         if (coords != null) {
-            updates[UserProfile.FIELD_LATITUDE] = coords.first
-            updates[UserProfile.FIELD_LONGITUDE] = coords.second
+            // Coordinates are rounded to ~1km precision before storage as a
+            // privacy measure — since Firestore rules currently allow any
+            // signed-in user to read this field directly (needed for the
+            // matching feed), this prevents raw coordinates from revealing
+            // someone's precise/exact location even if read outside the
+            // app's own distance-badge UI.
+            updates[UserProfile.FIELD_LATITUDE] = fuzzCoordinate(coords.first)
+            updates[UserProfile.FIELD_LONGITUDE] = fuzzCoordinate(coords.second)
         }
         return updates
     }

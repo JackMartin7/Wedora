@@ -44,6 +44,25 @@ object DistanceUtils {
 }
 
 /**
+ * Rounds a latitude or longitude to roughly a 1km grid, for storage rather
+ * than display — see call sites in ProfileStep4DetailsActivity and
+ * EditProfileActivity. 1 degree of latitude is ~111km, so 2 decimal places
+ * is ~1.11km precision (3 decimal places would be ~111m, too precise for
+ * this purpose).
+ *
+ * Coordinates are rounded to ~1km precision before storage as a privacy
+ * measure — since Firestore rules currently allow any signed-in user to
+ * read this field directly (needed for the matching feed), this prevents
+ * raw coordinates from revealing someone's precise/exact location even if
+ * read outside the app's own distance-badge UI. The ~1-2km of extra
+ * imprecision this adds to a calculated distance (both sides' coordinates
+ * are rounded) is an accepted tradeoff, not a bug — see
+ * [DistanceUtils.distanceKm], which is unchanged and simply receives
+ * already-rounded values.
+ */
+fun fuzzCoordinate(value: Double): Double = Math.round(value * 100.0) / 100.0
+
+/**
  * "2.4 km" between two points, or null when either side lacks coordinates —
  * the single fail-open check every distance badge in the app shares. Screens
  * whose display model isn't [MatchCard] (Likes, Notifications, Match

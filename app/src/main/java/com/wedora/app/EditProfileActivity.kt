@@ -385,8 +385,16 @@ class EditProfileActivity : AppCompatActivity() {
         ) {
             val coords = manualCoords
             if (coords != null) {
-                changes[UserProfile.FIELD_LATITUDE] = coords.first
-                changes[UserProfile.FIELD_LONGITUDE] = coords.second
+                // Coordinates are rounded to ~1km precision before storage as
+                // a privacy measure — since Firestore rules currently allow
+                // any signed-in user to read this field directly (needed for
+                // the matching feed), this prevents raw coordinates from
+                // revealing someone's precise/exact location even if read
+                // outside the app's own distance-badge UI. Applies here (and
+                // in ProfileStep4DetailsActivity) to any GPS-detected fix
+                // too, if one is ever re-added to this screen.
+                changes[UserProfile.FIELD_LATITUDE] = fuzzCoordinate(coords.first)
+                changes[UserProfile.FIELD_LONGITUDE] = fuzzCoordinate(coords.second)
             } else {
                 changes[UserProfile.FIELD_LATITUDE] = FieldValue.delete()
                 changes[UserProfile.FIELD_LONGITUDE] = FieldValue.delete()
