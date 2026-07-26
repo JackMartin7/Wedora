@@ -1,7 +1,22 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
+}
+
+// Release signing credentials. keystore.properties (repo root, gitignored —
+// see .gitignore) holds the store/key passwords in plain text and is never
+// committed; absent entirely on a machine that only builds debug, or before
+// part 2's keytool walkthrough has been run. Loaded here rather than inline
+// in signingConfigs so a missing file fails with a clear "release build
+// needs keystore.properties" story instead of a cryptic NPE deep in AGP.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -16,6 +31,17 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -24,6 +50,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Only actually usable once keystore.properties exists — see
+            // above. Referencing it unconditionally (rather than guarding
+            // this line too) is deliberate: a release build attempted
+            // before the keystore is set up should fail loudly at sign
+            // time, not silently produce an unsigned/debug-signed .aab.
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 

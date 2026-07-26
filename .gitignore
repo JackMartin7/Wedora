@@ -12,6 +12,14 @@ gradle-app.setting
 # Local configuration (SDK path, signing, etc.)
 local.properties
 
+# Release signing — keystore.properties holds the store/key passwords in
+# plain text; the keystore file itself is the actual private key. Neither
+# should ever reach version control. See app/build.gradle.kts's
+# signingConfigs block for how these are read at build time.
+keystore.properties
+*.jks
+*.keystore
+
 # Android Studio / IntelliJ
 *.iml
 .idea/
