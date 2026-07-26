@@ -1,10 +1,6 @@
-// TODO before production release:
-// 1. Create a real AdMob account at admob.google.com
-// 2. Add this app in AdMob, get the real App ID
-// 3. Create a Native Advanced ad unit, get its real Ad Unit ID
-// 4. Replace the test App ID in AndroidManifest.xml
-// 5. Replace the test ad unit ID here
-// Using test IDs in production shows only test ads and generates no revenue.
+// Intentionally using test ad IDs through internal/closed testing to avoid
+// invalid-traffic risk on real ad units. Swap to real IDs immediately before
+// public release.
 
 package com.wedora.app
 

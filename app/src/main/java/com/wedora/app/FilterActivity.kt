@@ -22,8 +22,10 @@ import com.wedora.app.databinding.ActivityFilterBinding
  * the viewer's own gender would offer a man "First Wife", which no woman in
  * his feed can ever have stored, and the filter would return nothing.
  *
- * Distance is stored but inert: there are no coordinates on either side to
- * measure between. The screen says so rather than implying a live filter.
+ * Distance is a real filter (see Feed.kt's matchesDistanceFilter) — it
+ * narrows the feed using each side's stored coordinates, failing open
+ * (keeping the card) whenever either side has none, same as everywhere else
+ * distance is used in this app.
  *
  * Values are written on Apply, not as the controls move, so backing out leaves
  * the feed as it was.
@@ -212,7 +214,6 @@ class FilterActivity : AppCompatActivity() {
                 .toSet()
         )
 
-        // TODO: wire to real distance calculation when Maps is implemented
         FilterPrefs.setDistanceKm(this, selectedDistance())
 
         setResult(RESULT_OK)

@@ -7,10 +7,10 @@ import android.content.Context
  * [OnboardingPrefs], [ThemePrefs], [GuestPrefs], [LocalProfilePrefs] and
  * [NotificationPrefs] — so account deletion clears them via clearAllWedoraData.
  *
- * Age, status and looking-for narrow the feed. Distance is stored and restored
- * so the screen remembers what the user chose, but nothing reads it when
- * querying — there are no coordinates on either side to measure between. It's
- * marked at its accessor.
+ * Age, status, looking-for and distance all narrow the feed — see Feed.kt's
+ * matchesDistanceFilter for how distance is applied (it fails open whenever
+ * either side lacks coordinates, same as every other distance calculation in
+ * this app).
  */
 object FilterPrefs {
 
@@ -59,10 +59,6 @@ object FilterPrefs {
             .apply()
     }
 
-    /**
-     * UI-only.
-     * TODO: wire to real distance calculation when Maps is implemented
-     */
     fun getDistanceKm(context: Context): Int =
         prefs(context).getInt(KEY_DISTANCE_KM, DEFAULT_DISTANCE_KM)
 
@@ -73,10 +69,6 @@ object FilterPrefs {
     /**
      * True when anything differs from the defaults — drives the dot on the
      * Home filter icon.
-     *
-     * Deliberately counts the stored-but-inert filters too. The user chose
-     * them and the screen shows them as chosen, so reporting "no filters
-     * active" would contradict what they can see.
      */
     fun hasActiveFilters(context: Context): Boolean =
         getAgeMin(context) != DEFAULT_AGE_MIN ||
