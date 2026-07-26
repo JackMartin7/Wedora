@@ -412,14 +412,36 @@ class ChatThreadActivity :
                         supportFragmentManager, DailyLimitReachedBottomSheet.Kind.MESSAGES
                     )
                 }
-                is MessageSendAttempt.Started -> attempt.task.addOnFailureListener { e ->
-                    Log.w(TAG, "Failed to send message", e)
-                    binding.etMessage.setText(text)
-                    binding.etMessage.setSelection(text.length)
-                    Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
+                is MessageSendAttempt.Started -> {
+                    // Only once the write actually succeeds — not optimistic
+                    // the way clearing the composer above is; a push about a
+                    // message that failed to send would be actively
+                    // misleading.
+                    attempt.task.addOnSuccessListener { sendMessagePush(text) }
+                    attempt.task.addOnFailureListener { e ->
+                        Log.w(TAG, "Failed to send message", e)
+                        binding.etMessage.setText(text)
+                        binding.etMessage.setSelection(text.length)
+                        Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * The sender's own display name, not otherUid's — mirrors HomeActivity's
+     * own greeting text, which treats FirebaseAuth's displayName as this
+     * device's authoritative copy of the signed-in user's name, so no extra
+     * Firestore read is needed here just for this. Falls back to the UID
+     * (never skips the push over a missing name), matching
+     * MatchNotificationWatcher.resolveDisplayName's own "name ?: otherUid"
+     * fallback for the equivalent local notification.
+     */
+    private fun sendMessagePush(text: String) {
+        val senderName = FirebaseAuth.getInstance().currentUser?.displayName
+            ?.takeIf { it.isNotBlank() } ?: selfUid
+        PushNotificationSender.send(otherUid, senderName, text, PushNotificationSender.TYPE_MESSAGE, selfUid)
     }
 
     override fun onUpgradeFromDailyLimitRequested() {
