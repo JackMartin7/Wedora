@@ -21,13 +21,22 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.wedora.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.wedora.app"
         minSdk = 24
-        targetSdk = 34
-        versionCode = 1
+        // Play Console requires targeting API 35 (Android 15) as of this
+        // bump. See this file's own note by the AGP version in the root
+        // build.gradle.kts for why that plugin needed bumping alongside
+        // this. Biggest behavior change worth knowing about: apps
+        // targeting 35 get edge-to-edge display forced on by default — see
+        // the commit message for this change for the full rundown; this
+        // app has no window-inset handling anywhere yet, so it's a real
+        // visual-regression risk worth a manual on-device check, not
+        // something a clean compile can catch.
+        targetSdk = 35
+        versionCode = 2
         versionName = "1.0.0"
     }
 
