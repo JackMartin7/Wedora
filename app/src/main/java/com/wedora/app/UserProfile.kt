@@ -143,6 +143,15 @@ data class UserProfile(
         const val FIELD_MESSAGES_SENT_TODAY = "messagesSentToday"
         const val FIELD_MESSAGES_SENT_DATE = "messagesSentDate"
         const val FIELD_PHOTO_URL = "photoUrl"
+        /**
+         * This device's current FCM registration token — write-only from the
+         * app's own perspective (nothing here reads it back), like
+         * [FIELD_CREATED_AT]. send_notification.php reads it server-side to
+         * address a push at this user. Written on every confirmed sign-in
+         * (see AuthRouting.registerFcmToken) and whenever it rotates (see
+         * WedoraFirebaseMessagingService.onNewToken).
+         */
+        const val FIELD_FCM_TOKEN = "fcmToken"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150

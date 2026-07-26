@@ -5,6 +5,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
 
 private const val TAG = "WedoraAuth"
 
@@ -35,12 +36,36 @@ fun resolveSignedInDestination(
         .addOnSuccessListener { snapshot ->
             val profile = UserProfile.from(snapshot)
             syncEmailIfChanged(firestore, uid, snapshot, profile)
+            registerFcmToken(firestore, uid)
             onResolved(nextSetupStepFor(profile))
         }
         .addOnFailureListener { e ->
             Log.w(TAG, "Couldn't read profile for the setup gate; continuing to Home", e)
             onResolved(HomeActivity::class.java)
         }
+}
+
+/**
+ * Refreshes `users/{uid}.fcmToken` on every confirmed sign-in — not just
+ * once on first grant — since a token can rotate at any time (reinstall,
+ * app data clear, Play Services update, ...) and a stale one silently drops
+ * every push to this device until something overwrites it.
+ * [WedoraFirebaseMessagingService.onNewToken] covers a rotation that
+ * happens while already signed in; this covers the token this device
+ * already held becoming attached to this account in the first place. Runs
+ * unconditionally on both callers of [resolveSignedInDestination] — a fresh
+ * sign-in (LoginActivity) and a restored session (SplashActivity) — which
+ * together are the closest thing this app has to "on every login." Failure
+ * is logged only: a push is a nice-to-have, not worth blocking sign-in over.
+ */
+private fun registerFcmToken(firestore: FirebaseFirestore, uid: String) {
+    FirebaseMessaging.getInstance().token
+        .addOnSuccessListener { token ->
+            firestore.collection(UserProfile.COLLECTION).document(uid)
+                .set(mapOf(UserProfile.FIELD_FCM_TOKEN to token), SetOptions.merge())
+                .addOnFailureListener { e -> Log.w(TAG, "Failed to save FCM token", e) }
+        }
+        .addOnFailureListener { e -> Log.w(TAG, "Failed to fetch FCM token", e) }
 }
 
 /**

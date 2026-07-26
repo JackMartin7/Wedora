@@ -26,6 +26,17 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3940256099942544~3347511713" />
 
+        <!-- Push notifications — see WedoraFirebaseMessagingService's own
+             doc comment for why send_notification.php sends data-only
+             payloads rather than "notification" ones. -->
+        <service
+            android:name=".WedoraFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity
             android:name=".SplashActivity"
             android:exported="true"

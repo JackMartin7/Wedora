@@ -113,6 +113,72 @@ object AppNotifications {
         )
     }
 
+    /**
+     * Shows a notification for an FCM push (see
+     * [WedoraFirebaseMessagingService.onMessageReceived]), using its title/
+     * body verbatim rather than re-deriving them the way notifyNewMatch/
+     * notifyNewLike/notifyNewMessage do for a *locally observed* event — a
+     * push already carries exactly what the sending device's
+     * [PushNotificationSender] call decided to say.
+     *
+     * [type] is one of [PushNotificationSender.TYPE_MATCH]/
+     * [PushNotificationSender.TYPE_LIKE]/[PushNotificationSender.TYPE_MESSAGE]
+     * and picks the channel/toggle/tap-destination, mirroring the three
+     * local-notification functions above; an unrecognized type is dropped
+     * rather than guessed at.
+     *
+     * Reuses the exact same [idFor] scheme those local paths use, so a push
+     * and MatchNotificationWatcher's own live detection for the *same*
+     * matchId/category collapse into one notification — the second call
+     * just replaces the first via [NotificationManagerCompat.notify] rather
+     * than stacking a duplicate — instead of the user seeing both.
+     */
+    fun notifyFromPush(
+        context: Context,
+        type: String,
+        matchId: String,
+        otherUid: String,
+        title: String,
+        body: String
+    ) {
+        when (type) {
+            PushNotificationSender.TYPE_MATCH -> {
+                if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) {
+                    Log.d(TAG, "Skipping push match notification for $matchId: category disabled in Settings")
+                    return
+                }
+                show(
+                    context, NotificationChannels.MATCHES, idFor(matchId, ID_OFFSET_MATCH),
+                    title, body, ProfileDetailActivity.intent(context, otherUid)
+                )
+            }
+            PushNotificationSender.TYPE_LIKE -> {
+                if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.LIKES)) {
+                    Log.d(TAG, "Skipping push like notification for $matchId: category disabled in Settings")
+                    return
+                }
+                show(
+                    context, NotificationChannels.LIKES, idFor(matchId, ID_OFFSET_LIKE),
+                    title, body, Intent(context, LikesActivity::class.java)
+                )
+            }
+            PushNotificationSender.TYPE_MESSAGE -> {
+                if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.MESSAGES)) {
+                    Log.d(TAG, "Skipping push message notification for $matchId: category disabled in Settings")
+                    return
+                }
+                // title doubles as the sender's display name here — that's
+                // what PushNotificationSender.send's message call site
+                // passes as title, matching notifyNewMessage's own shape.
+                show(
+                    context, NotificationChannels.MESSAGES, idFor(matchId, ID_OFFSET_MESSAGE),
+                    title, body, ChatThreadActivity.intent(context, otherUid, title)
+                )
+            }
+            else -> Log.w(TAG, "Ignoring push with unrecognized type \"$type\"")
+        }
+    }
+
     private fun idFor(matchId: String, offset: Int): Int =
         matchId.hashCode() * 4 + offset
 
