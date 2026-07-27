@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Unban User" — a positive/reversing action, styled with wedora_success
+     rather than the destructive wedora_error bg_button_danger sits next to
+     on the same screen. Same pill radius as both, so the set reads as one
+     matched family. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33FFFFFF">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_success" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+</ripple>

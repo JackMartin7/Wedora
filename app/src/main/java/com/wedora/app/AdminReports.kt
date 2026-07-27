@@ -195,3 +195,23 @@ fun banUser(
             onError()
         }
 }
+
+/**
+ * Clears isBanned/banReason on [reportedUid]'s profile — the Firestore
+ * half of an unban. Deliberately touches no report documents: an unban
+ * doesn't retroactively un-decide whatever an admin already recorded
+ * about the reports that led to it, the same "this doesn't rewrite
+ * history" reasoning [banUser] itself follows.
+ *
+ * banReason is deleted outright rather than set to an empty string or
+ * null — there's nothing left to explain once the ban it explained is
+ * gone. Re-enabling the Auth account itself is a separate call to the
+ * enableUserAccount Cloud Function, made by the caller after this
+ * succeeds (see AdminReportDetailActivity.unbanReportedUser).
+ */
+fun unbanUser(firestore: FirebaseFirestore, reportedUid: String): Task<Void> =
+    firestore.collection(UserProfile.COLLECTION).document(reportedUid)
+        .update(
+            UserProfile.FIELD_IS_BANNED, false,
+            UserProfile.FIELD_BAN_REASON, FieldValue.delete()
+        )

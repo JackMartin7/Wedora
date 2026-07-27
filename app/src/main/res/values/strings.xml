@@ -639,11 +639,15 @@
 
     <string name="admin_action_dismiss">Dismiss Report</string>
     <string name="admin_action_ban">Ban User</string>
+    <string name="admin_action_unban">Unban User</string>
     <string name="admin_action_failed">Something went wrong. Try again.</string>
     <string name="admin_report_dismissed">Report dismissed</string>
     <string name="admin_user_banned">User banned</string>
+    <string name="admin_user_unbanned">User unbanned</string>
     <string name="admin_ban_confirm_title">Ban this user?</string>
     <string name="admin_ban_confirm_message">%1$s will be banned and signed out of Wedora. This can\'t be undone from here.</string>
+    <string name="admin_unban_confirm_title">Unban this user?</string>
+    <string name="admin_unban_confirm_message">%1$s will be able to sign in to Wedora again.</string>
 
     <string name="error_account_suspended">Your account has been suspended</string>
 </resources>

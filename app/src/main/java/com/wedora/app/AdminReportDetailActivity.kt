@@ -51,6 +51,18 @@ class AdminReportDetailActivity : AppCompatActivity() {
     private lateinit var reporterUid: String
     private lateinit var reason: String
 
+    /**
+     * Whether the reported user is currently banned — decides which of
+     * btnBanUser/btnUnbanUser [showProfile] shows (never both). Defaults
+     * to false (Ban shown) until the profile load resolves, and stays
+     * false if that load fails — the same fail-open-to-reviewable
+     * reasoning [loadReportedProfile] already documents; banning an
+     * already-banned account is harmless and idempotent on both the
+     * Firestore write and the Cloud Function call, so defaulting to
+     * "show Ban" when the real state is unknown never makes things worse.
+     */
+    private var reportedIsBanned = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -83,6 +95,7 @@ class AdminReportDetailActivity : AppCompatActivity() {
 
         binding.btnDismiss.setOnClickListener { onDismissTapped() }
         binding.btnBanUser.setOnClickListener { onBanTapped() }
+        binding.btnUnbanUser.setOnClickListener { onUnbanTapped() }
 
         loadReportedProfile()
     }
@@ -112,6 +125,18 @@ class AdminReportDetailActivity : AppCompatActivity() {
         binding.progressLoading.visibility = View.GONE
         binding.scrollContent.visibility = View.VISIBLE
         binding.actionRow.visibility = View.VISIBLE
+        // Defensive reset, not a fix for a confirmed cause: every action's
+        // own tap handler already disables the row for the duration of its
+        // write and re-enables on failure, and a fresh onCreate/View
+        // inflation starts enabled by default regardless — but resetting
+        // explicitly here means a freshly (re)loaded screen can never be
+        // stuck disabled by some earlier state this screen didn't itself
+        // set, whatever the cause.
+        setActionsEnabled(true)
+
+        reportedIsBanned = profile?.isBanned == true
+        binding.btnBanUser.visibility = if (reportedIsBanned) View.GONE else View.VISIBLE
+        binding.btnUnbanUser.visibility = if (reportedIsBanned) View.VISIBLE else View.GONE
 
         if (profile == null) return
 
@@ -216,8 +241,62 @@ class AdminReportDetailActivity : AppCompatActivity() {
             }
     }
 
+    /** Same "confirm first, it changes account access" reasoning as [onBanTapped]. */
+    private fun onUnbanTapped() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.admin_unban_confirm_title)
+            .setMessage(getString(R.string.admin_unban_confirm_message, binding.tvReportedName.text))
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.admin_action_unban) { _, _ -> unbanReportedUser() }
+            .show()
+    }
+
+    /**
+     * Clears isBanned/banReason (see [unbanUser]'s own doc comment), then
+     * calls the enableUserAccount Cloud Function so the account can
+     * actually sign in again — clearing the Firestore flag alone doesn't
+     * do that; AuthRouting's isBanned check only ever blocks a sign-in,
+     * it was never what disabled the Auth account being disabled in the
+     * first place.
+     */
+    private fun unbanReportedUser() {
+        setActionsEnabled(false)
+        unbanUser(firestore, reportedUid)
+            .addOnSuccessListener {
+                enableAuthAccount(reportedUid)
+                Toast.makeText(this, R.string.admin_user_unbanned, Toast.LENGTH_SHORT).show()
+                finish()
+            }
+            .addOnFailureListener { e ->
+                logFirestoreWriteFailure(TAG, "Failed to unban $reportedUid", e)
+                setActionsEnabled(true)
+                Toast.makeText(this, R.string.admin_action_failed, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Fire-and-forget, same reasoning as [disableAuthAccount]: the
+     * Firestore write is what AuthRouting's isBanned check reads, so it's
+     * already the source of truth for whether this account is allowed to
+     * sign in going forward — a failure here just means the *Auth*
+     * account itself stays disabled a while longer, not that the unban
+     * silently failed.
+     */
+    private fun enableAuthAccount(targetUid: String) {
+        FirebaseFunctions.getInstance()
+            .getHttpsCallable("enableUserAccount")
+            .call(hashMapOf("targetUid" to targetUid))
+            .addOnSuccessListener {
+                Log.i(TAG, "enableUserAccount succeeded for $targetUid")
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "enableUserAccount call failed for $targetUid; Firestore-level unban still applies", e)
+            }
+    }
+
     private fun setActionsEnabled(enabled: Boolean) {
         binding.btnDismiss.isEnabled = enabled
         binding.btnBanUser.isEnabled = enabled
+        binding.btnUnbanUser.isEnabled = enabled
     }
 }

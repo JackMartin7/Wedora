@@ -251,6 +251,9 @@
             android:textSize="15sp"
             android:fontFamily="@font/poppins_medium" />
 
+        <!-- Never both visible at once — exactly one of these two shows,
+             chosen at bind time by the reported user's own isBanned. -->
+
         <TextView
             android:id="@+id/btnBanUser"
             android:layout_width="match_parent"
@@ -262,6 +265,19 @@
             android:textColor="@color/white"
             android:textSize="15sp"
             android:fontFamily="@font/poppins_medium" />
+
+        <TextView
+            android:id="@+id/btnUnbanUser"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_button_success"
+            android:gravity="center"
+            android:text="@string/admin_action_unban"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:fontFamily="@font/poppins_medium"
+            android:visibility="gone" />
 
     </LinearLayout>
 
