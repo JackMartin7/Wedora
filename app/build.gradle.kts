@@ -102,6 +102,8 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging-ktx")
     // The disableUserAccount admin callable — see AdminReportDetailActivity.
     implementation("com.google.firebase:firebase-functions-ktx")
+    // Google Sign-In — see GoogleAuthHelper.
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Image loading (signed-in user avatars from Firebase photoUrl)
     implementation("com.github.bumptech.glide:glide:4.16.0")

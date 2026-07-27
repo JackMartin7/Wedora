@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivitySignupBinding
 
 /**
@@ -38,6 +39,9 @@ class SignUpActivity : WedoraBaseActivity() {
     private lateinit var binding: ActivitySignupBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private var isPasswordVisible = false
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    private lateinit var googleAuthHelper: GoogleAuthHelper
 
     /**
      * Opening Terms from the agreement link shows its "I Agree" button; tapping
@@ -55,6 +59,20 @@ class SignUpActivity : WedoraBaseActivity() {
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
         applyEdgeInsets(binding.root, applyIme = true)
+
+        googleAuthHelper = GoogleAuthHelper(
+            activity = this,
+            onSignedIn = { uid -> routeAfterGoogleSignIn(uid) },
+            onCancelled = { binding.btnGoogle.isEnabled = true },
+            onError = {
+                binding.btnGoogle.isEnabled = true
+                Toast.makeText(this, R.string.error_google_sign_in_failed, Toast.LENGTH_LONG).show()
+            }
+        )
+        binding.btnGoogle.setOnClickListener {
+            binding.btnGoogle.isEnabled = false
+            googleAuthHelper.launch()
+        }
 
         setUpLoginPrompt()
         setUpAgreementLinks()
@@ -162,6 +180,32 @@ class SignUpActivity : WedoraBaseActivity() {
             ?: binding.etEmail.text.toString().trim()
         startActivity(EmailVerificationActivity.intent(this, email))
         finish()
+    }
+
+    /**
+     * A Google account skips EmailVerificationActivity entirely — unlike
+     * [finishSignUp]'s email/password path, there's no unverified state to
+     * hand off to, so this routes straight through the same
+     * [resolveSignedInDestination] gate LoginActivity's own sign-in and
+     * SplashActivity's session restore both use, sending a brand-new account
+     * to whichever profile step it's missing (its displayName is very likely
+     * already prefilled from the Google account by this point, so that's
+     * usually step 2 onward) and a returning one straight to Home.
+     */
+    private fun routeAfterGoogleSignIn(uid: String) {
+        resolveSignedInDestination(firestore, uid) { routing ->
+            when (routing) {
+                is SignedInRouting.Allowed -> {
+                    startActivity(Intent(this, routing.destination))
+                    finish()
+                    applyHandoffTransition()
+                }
+                SignedInRouting.Banned -> {
+                    binding.btnGoogle.isEnabled = true
+                    Toast.makeText(this, R.string.error_account_suspended, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     private fun signUpErrorMessage(e: Exception?): String {

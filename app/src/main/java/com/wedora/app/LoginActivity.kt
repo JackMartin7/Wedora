@@ -30,11 +30,32 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
     private var isPasswordVisible = false
 
+    private lateinit var googleAuthHelper: GoogleAuthHelper
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
         applyEdgeInsets(binding.root, applyIme = true)
+
+        googleAuthHelper = GoogleAuthHelper(
+            activity = this,
+            onSignedIn = { uid ->
+                // Guest state and routing are exactly what a successful
+                // email/password sign-in already does below (onSignInSuccess)
+                // — this joins that same path rather than duplicating it.
+                routeAfterSignIn(uid)
+            },
+            onCancelled = { binding.btnGoogle.isEnabled = true },
+            onError = {
+                binding.btnGoogle.isEnabled = true
+                Toast.makeText(this, R.string.error_google_sign_in_failed, Toast.LENGTH_LONG).show()
+            }
+        )
+        binding.btnGoogle.setOnClickListener {
+            binding.btnGoogle.isEnabled = false
+            googleAuthHelper.launch()
+        }
 
         setUpSignUpPrompt()
 

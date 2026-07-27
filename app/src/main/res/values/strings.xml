@@ -16,6 +16,11 @@
     <string name="no_account_prompt">Don’t have an account? </string>
     <string name="sign_up_link">Sign Up</string>
 
+    <!-- Google Sign-In — shared by Login and Sign Up -->
+    <string name="auth_divider_or">Or continue with</string>
+    <string name="btn_continue_with_google">Continue with Google</string>
+    <string name="error_google_sign_in_failed">Google sign-in failed. Please try again.</string>
+
     <!-- Forgot Password -->
     <string name="forgot_password_title">Forgot Password</string>
     <string name="forgot_password_subtitle">Enter your email and we\'ll send you a link to reset your password.</string>

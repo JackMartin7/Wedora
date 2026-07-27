@@ -159,6 +159,61 @@
             app:layout_constraintHorizontal_bias="0"
             app:layout_constraintTop_toBottomOf="@id/tvAgreementLinks" />
 
+        <!-- Divider "Or continue with" -->
+        <View
+            android:id="@+id/dividerLeft"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="@color/wedora_border"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvDividerOr"
+            app:layout_constraintTop_toBottomOf="@id/btnSignUp"
+            app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
+
+        <TextView
+            android:id="@+id/tvDividerOr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:text="@string/auth_divider_or"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@id/dividerLeft"
+            app:layout_constraintEnd_toStartOf="@id/dividerRight"
+            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
+
+        <View
+            android:id="@+id/dividerRight"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:background="@color/wedora_border"
+            app:layout_constraintStart_toEndOf="@id/tvDividerOr"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/tvDividerOr"
+            app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
+
+        <!-- Google sign-in -->
+        <TextView
+            android:id="@+id/btnGoogle"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_button_google"
+            android:gravity="center"
+            android:drawableStart="@drawable/ic_google"
+            android:drawablePadding="10dp"
+            android:paddingHorizontal="16dp"
+            android:text="@string/btn_continue_with_google"
+            android:textColor="@color/wedora_text"
+            android:textSize="15sp"
+            android:fontFamily="@font/poppins_medium"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDividerOr" />
+
         <!-- Login prompt -->
         <TextView
             android:id="@+id/tvLoginPrompt"
@@ -168,7 +223,7 @@
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
+            app:layout_constraintTop_toBottomOf="@id/btnGoogle" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Continue with Google" — neutral surface + border rather than the accent
+     fill WedoraPrimaryButton uses, so it doesn't compete with the actual
+     primary action (Login/Sign Up) above it. Same 14dp corner radius as
+     bg_button_primary_stateful so the two read as one matched button family. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/wedora_input_border">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_surface" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/wedora_border" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</ripple>
