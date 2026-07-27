@@ -32,6 +32,7 @@ class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyBottomNavScreenInsets(binding.root, binding.bottomNav)
 
         setUpDarkModeSwitch()
         setUpSettingsRows()

@@ -82,6 +82,7 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
         super.onCreate(savedInstanceState)
         binding = ActivityChatsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyBottomNavScreenInsets(binding.root, binding.bottomNav)
 
         binding.rvChats.layoutManager = LinearLayoutManager(this)
         binding.rvChats.adapter = adapter

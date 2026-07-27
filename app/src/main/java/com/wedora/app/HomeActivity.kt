@@ -216,6 +216,7 @@ class HomeActivity :
         super.onCreate(savedInstanceState)
         binding = ActivityHomeBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyBottomNavScreenInsets(binding.root, binding.bottomNav)
 
         showGreeting()
         showSignedInUser()

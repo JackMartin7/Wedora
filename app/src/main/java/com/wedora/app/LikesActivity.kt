@@ -94,6 +94,7 @@ class LikesActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLikesBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyBottomNavScreenInsets(binding.root, binding.bottomNav)
 
         binding.rvLikes.layoutManager = GridLayoutManager(this, GRID_COLUMNS)
         binding.rvLikes.adapter = adapter

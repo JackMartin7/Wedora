@@ -82,6 +82,7 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         super.onCreate(savedInstanceState)
         binding = ActivityExploreBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyBottomNavScreenInsets(binding.root, binding.bottomNav)
 
         binding.rvNearby.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
