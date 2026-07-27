@@ -34,7 +34,7 @@ android {
         // is what actually covers that now, wired app-wide across every
         // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 4
+        versionCode = 5
         versionName = "1.0.2"
     }
 
