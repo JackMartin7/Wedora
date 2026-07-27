@@ -18,6 +18,18 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    // The one Firebase Auth UID with admin access to the Reports queue —
+    // see AdminReportsActivity/AdminReportDetailActivity, and
+    // WedoraAdmin.UID on the client, which this must be kept in sync with
+    // by hand (Firestore rules can't reference a Kotlin constant). Also
+    // duplicated in functions/src/index.ts's disableUserAccount for the
+    // same reason — three places, one value, no single source of truth
+    // possible across languages/deploy targets.
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.uid == 'QgOuA5no4jR6hsFoNp5UFWMceHk2';
+    }
+
     // On an update, request.resource.data is the POST-write document — the
     // incoming change merged over the existing fields. So this holds even for
     // an update that doesn't touch age itself, as long as the stored age is
@@ -96,6 +108,16 @@ service cloud.firestore {
           && isPremiumUnchanged()
           && likesLimitRespected()
           && messagesLimitRespected();
+
+      // Admin-only exception, evaluated as an OR alongside the owner-only
+      // allow update above (Firestore grants a write if ANY matching allow
+      // statement is true) — the admin UID may set isBanned/banReason on
+      // ANY user's document after reviewing a report, and nothing else.
+      // Scoped tightly via diff().affectedKeys() so admin status can't
+      // become a backdoor to edit anything else on someone's profile.
+      allow update: if isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['isBanned', 'banReason']);
 
       allow delete: if isOwner(userId);
     }
@@ -277,13 +299,28 @@ service cloud.firestore {
       }
     }
 
-    // Reports are write-only from the client: a signed-in user can file one
-    // (as themselves), but no client can read, edit or delete them. An admin
-    // reviews them out of band.
+    // Reports are write-only from any signed-in client: they can file one
+    // (as themselves), but can never read the queue back or edit/delete an
+    // existing report — that's the admin's job, done in-app now via
+    // AdminReportsActivity/AdminReportDetailActivity rather than out of
+    // band.
     match /reports/{reportId} {
       allow create: if request.auth != null
           && request.resource.data.reporterUid == request.auth.uid;
-      allow read, update, delete: if false;
+
+      allow read: if isAdmin();
+
+      // The admin may only ever change status (to one of the four known
+      // values)/resolvedAt/actionTaken — never reattribute a report's
+      // reportedUid/reporterUid/reason, which would rewrite what actually
+      // happened rather than record a decision about it.
+      allow update: if isAdmin()
+          && request.resource.data.status
+               in ['pending', 'resolved', 'dismissed', 'banned']
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'resolvedAt', 'actionTaken']);
+
+      allow delete: if false;
     }
 
     // Each user owns their own block list and nobody else can see it.

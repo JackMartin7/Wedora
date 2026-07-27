@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Ban User" — a destructive action, styled with wedora_error rather than
+     the usual accent. Same pill radius as bg_pill_outline (the "Dismiss
+     Report" button right above it on the same screen), so the pair reads
+     as one matched set. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#33FFFFFF">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_error" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+</ripple>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A report's status badge on AdminReportsActivity's list rows and
+     AdminReportDetailActivity — solid color set at bind time via
+     backgroundTintList per status (pending/resolved/dismissed/banned), not
+     fixed here. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_text_secondary" />
+    <corners android:radius="9dp" />
+</shape>

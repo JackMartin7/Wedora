@@ -200,6 +200,18 @@
             android:name=".ProfileActivity"
             android:exported="false" />
 
+        <!-- Hidden admin-only screens — see WedoraAdmin.UID and
+             ProfileActivity's own hidden settings row. Not exported: only
+             ever reached from inside this app's own task, by a UID both
+             screens re-check on their own onCreate regardless. -->
+        <activity
+            android:name=".AdminReportsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AdminReportDetailActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -112,7 +112,19 @@ data class UserProfile(
      * upload never succeeded; every reader treats that as "no photo" and
      * falls back to the neutral placeholder rather than erroring.
      */
-    val photoUrl: String?
+    val photoUrl: String?,
+    /**
+     * Set by an admin via AdminReportDetailActivity's Ban action — see
+     * firestore.rules' admin-only exception on this field. Absent/false for
+     * every normal account. [AuthRouting.resolveSignedInDestination] checks
+     * this on every sign-in as a secondary safety net (the primary
+     * enforcement is the disableUserAccount Cloud Function disabling the
+     * Auth account itself) and signs the user straight back out if it's
+     * somehow true despite that.
+     */
+    val isBanned: Boolean,
+    /** Why, shown to the banned user; null unless [isBanned] is true. */
+    val banReason: String?
 ) {
 
     /** "18 years old • Islamabad, Pakistan", or null if incomplete. */
@@ -152,6 +164,8 @@ data class UserProfile(
          * WedoraFirebaseMessagingService.onNewToken).
          */
         const val FIELD_FCM_TOKEN = "fcmToken"
+        const val FIELD_IS_BANNED = "isBanned"
+        const val FIELD_BAN_REASON = "banReason"
 
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
@@ -184,7 +198,9 @@ data class UserProfile(
             likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE),
             messagesSentToday = snapshot.getLong(FIELD_MESSAGES_SENT_TODAY)?.toInt() ?: 0,
             messagesSentDate = snapshot.getString(FIELD_MESSAGES_SENT_DATE),
-            photoUrl = snapshot.getString(FIELD_PHOTO_URL)
+            photoUrl = snapshot.getString(FIELD_PHOTO_URL),
+            isBanned = snapshot.getBoolean(FIELD_IS_BANNED) ?: false,
+            banReason = snapshot.getString(FIELD_BAN_REASON)
         )
     }
 }

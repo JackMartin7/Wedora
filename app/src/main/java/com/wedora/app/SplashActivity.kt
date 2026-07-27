@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -75,7 +76,17 @@ class SplashActivity : AppCompatActivity() {
             // Firebase ever changed that default. Guests are routed by the
             // GuestPrefs branch below instead.
             user != null && !user.isAnonymous && user.isEmailVerified ->
-                resolveSignedInDestination(firestore, user.uid) { setDestination(it) }
+                resolveSignedInDestination(firestore, user.uid) { routing ->
+                    when (routing) {
+                        is SignedInRouting.Allowed -> setDestination(routing.destination)
+                        SignedInRouting.Banned -> {
+                            Toast.makeText(
+                                this, R.string.error_account_suspended, Toast.LENGTH_LONG
+                            ).show()
+                            setDestination(LoginActivity::class.java)
+                        }
+                    }
+                }
 
             // A guest who reopened the app stays a guest — no bounce to Login.
             // Their anonymous Firebase session (see LoginActivity.continueAsGuest)

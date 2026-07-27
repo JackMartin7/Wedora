@@ -187,7 +187,18 @@ class LoginActivity : AppCompatActivity(), EmailNotVerifiedBottomSheet.Host {
      * every launch, so the gate has to live somewhere both entry points reach.
      */
     private fun routeAfterSignIn(uid: String) {
-        resolveSignedInDestination(firestore, uid) { goTo(it) }
+        resolveSignedInDestination(firestore, uid) { routing ->
+            when (routing) {
+                is SignedInRouting.Allowed -> goTo(routing.destination)
+                // Already signed out by resolveSignedInDestination itself;
+                // nothing to navigate to since Login is where this already
+                // is — just stop the spinner and say why.
+                SignedInRouting.Banned -> {
+                    setLoading(false)
+                    Toast.makeText(this, R.string.error_account_suspended, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
     }
 
     /**

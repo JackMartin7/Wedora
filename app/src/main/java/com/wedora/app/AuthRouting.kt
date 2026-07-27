@@ -9,9 +9,23 @@ import com.google.firebase.messaging.FirebaseMessaging
 
 private const val TAG = "WedoraAuth"
 
+/** What [resolveSignedInDestination] decided. */
+sealed class SignedInRouting {
+    /** Proceed to [destination] as normal. */
+    data class Allowed(val destination: Class<*>) : SignedInRouting()
+
+    /**
+     * This account is banned (see [UserProfile.isBanned]) — already signed
+     * out by the time this is delivered. The caller's job is just to show
+     * why and land on Login; there's no destination to proceed to.
+     */
+    object Banned : SignedInRouting()
+}
+
 /**
  * Decides where a signed-in, email-verified user belongs: Home if their
- * profile is finished, otherwise the first setup step they haven't answered.
+ * profile is finished, otherwise the first setup step they haven't answered
+ * — or [SignedInRouting.Banned] if an admin has banned this account.
  *
  * Resuming at the missing step is what makes the progressive flow work in both
  * directions. A new user walks it front to back; someone who quit halfway
@@ -23,6 +37,16 @@ private const val TAG = "WedoraAuth"
  * between the two ways into the app. Neither calls it until the email is
  * verified.
  *
+ * The ban check runs first, before anything else here: a banned account
+ * gets no setup-step routing, no email sync, no FCM token registration —
+ * just signed out immediately. This is a *secondary* safety net; the
+ * primary enforcement is the disableUserAccount Cloud Function disabling
+ * the Auth account itself (see AdminReportDetailActivity), which stops a
+ * banned user from ever reaching this point at all in the normal case.
+ * This check exists for when that call failed, didn't run yet, or the
+ * account was banned by some other path — it can't rely on the ban having
+ * already been enforced upstream.
+ *
  * A failed read fails *open* to Home rather than stranding an authenticated
  * user behind a step they can't get past. The gate runs again on the next
  * launch, so a transient failure self-corrects.
@@ -30,18 +54,24 @@ private const val TAG = "WedoraAuth"
 fun resolveSignedInDestination(
     firestore: FirebaseFirestore,
     uid: String,
-    onResolved: (Class<*>) -> Unit
+    onResolved: (SignedInRouting) -> Unit
 ) {
     firestore.collection(UserProfile.COLLECTION).document(uid).get()
         .addOnSuccessListener { snapshot ->
             val profile = UserProfile.from(snapshot)
+            if (profile.isBanned) {
+                Log.i(TAG, "Signing out banned account $uid")
+                FirebaseAuth.getInstance().signOut()
+                onResolved(SignedInRouting.Banned)
+                return@addOnSuccessListener
+            }
             syncEmailIfChanged(firestore, uid, snapshot, profile)
             registerFcmToken(firestore, uid)
-            onResolved(nextSetupStepFor(profile))
+            onResolved(SignedInRouting.Allowed(nextSetupStepFor(profile)))
         }
         .addOnFailureListener { e ->
             Log.w(TAG, "Couldn't read profile for the setup gate; continuing to Home", e)
-            onResolved(HomeActivity::class.java)
+            onResolved(SignedInRouting.Allowed(HomeActivity::class.java))
         }
 }
 

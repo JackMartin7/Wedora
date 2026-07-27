@@ -452,7 +452,25 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
             },
             SettingsRow(R.drawable.ic_policy, R.string.settings_privacy_policy) {
                 startActivity(Intent(this, PrivacyPolicyActivity::class.java))
-            },
+            }
+        )
+
+        // Hidden entry point: only ever appended for WedoraAdmin.UID, with
+        // no other discoverable hint anywhere in the UI that this row could
+        // exist. Placed after building the base list rather than as a
+        // SettingsRow entry filtered out below, so a non-admin's list is
+        // built exactly as if this feature didn't exist at all.
+        val adminRow = if (FirebaseAuth.getInstance().currentUser?.uid == WedoraAdmin.UID) {
+            listOf(
+                SettingsRow(R.drawable.ic_flag, R.string.settings_admin_reports) {
+                    startActivity(Intent(this, AdminReportsActivity::class.java))
+                }
+            )
+        } else {
+            emptyList()
+        }
+
+        val logoutRow = listOf(
             // guestEnabled: leaving guest mode needs no account, so this is
             // the one row a guest can actually use — see showGuestChrome's
             // own bottom Log In link for the parallel "leave guest mode"
@@ -463,7 +481,7 @@ class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
         )
 
         val inflater = LayoutInflater.from(this)
-        rows.forEach { row ->
+        (rows + adminRow + logoutRow).forEach { row ->
             val rowBinding = ItemSettingsRowBinding.inflate(inflater, binding.settingsContainer, true)
             rowBinding.ivRowIcon.setImageResource(row.iconRes)
             rowBinding.tvRowLabel.setText(row.labelRes)
