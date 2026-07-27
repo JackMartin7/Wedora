@@ -30,7 +30,7 @@ class ForgotPasswordActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityForgotPasswordBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeInsets(binding.root)
+        applyEdgeInsets(binding.root, applyIme = true)
 
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         binding.btnSendResetLink.setOnClickListener { attemptSendResetLink() }

@@ -51,13 +51,18 @@
             android:name=".OnboardingActivity"
             android:exported="false" />
 
-        <!-- adjustResize: without it (the previous state), the ScrollView +
-             EditText-as-first-focusable-view combination this screen uses —
-             the same shape every other text-input screen below already
-             declares this for — left the very first tap on etEmail
-             swallowed by the window's keyboard pan/resize negotiation
-             instead of reaching it as a focus click; a second tap on a
-             different field worked because the window had since settled. -->
+        <!-- adjustResize is largely inert here now: WedoraBaseActivity calls
+             enableEdgeToEdge() on every screen, which calls
+             WindowCompat.setDecorFitsSystemWindows(window, false) — and per
+             Android's edge-to-edge guidance, that stops the window from
+             automatically resizing for the IME at all, regardless of this
+             attribute. Kept set anyway since it's harmless and this is still
+             the conventional signal for "this screen has text input"; the
+             actual fix is WedoraBaseActivity.applyEdgeInsets's applyIme
+             parameter (see LoginActivity.onCreate), which pads the ScrollView
+             root by the keyboard's own inset so a low-enough field like
+             etPassword is pushed above it instead of ending up in the IME's
+             (invisible but still touch-intercepting) covered area. -->
         <activity
             android:name=".LoginActivity"
             android:exported="false"
@@ -68,16 +73,19 @@
             android:exported="false" />
 
         <!-- adjustResize — see LoginActivity's own comment; identical layout
-             shape (ScrollView, etEmail the first focusable view), identical
-             bug. -->
+             shape (ScrollView, etPassword/applyIme=true), identical fix. -->
         <activity
             android:name=".SignUpActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- adjustResize — see LoginActivity's own comment. Only one field
+             here (etEmail), but it sits low enough on screen (below the
+             illustration) to reach the same IME-covers-the-field issue. -->
         <activity
             android:name=".ForgotPasswordActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <!-- Progressive profile setup. adjustResize so the keyboard doesn't
              cover the Continue button on the text-entry steps. -->

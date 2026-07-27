@@ -54,7 +54,7 @@ class SignUpActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeInsets(binding.root)
+        applyEdgeInsets(binding.root, applyIme = true)
 
         setUpLoginPrompt()
         setUpAgreementLinks()

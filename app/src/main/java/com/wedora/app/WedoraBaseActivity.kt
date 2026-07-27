@@ -116,13 +116,31 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
      * [applyTop]/[applyBottom] let a screen with only one edge that needs
      * handling skip the other, rather than padding a side nothing sits
      * against.
+     *
+     * [applyIme] additionally folds the on-screen keyboard's own inset into
+     * [bottomTarget]'s bottom padding whenever it's showing. This is not
+     * optional plumbing left over from pre-edge-to-edge windowSoftInputMode
+     * behaviour: enableEdgeToEdge() calls
+     * WindowCompat.setDecorFitsSystemWindows(window, false), and per
+     * Android's own edge-to-edge guidance that stops the window from
+     * automatically resizing for the IME at all — android:windowSoftInputMode
+     * ="adjustResize" in the manifest no longer does anything by itself once
+     * a screen has opted into edge-to-edge, regardless of API level. Without
+     * this, a field low enough on the screen to end up under the keyboard's
+     * covered area isn't just visually hidden: it's not receiving touches
+     * either, since the (invisible, undrawn, but still present) IME window
+     * sits above it in z-order and swallows the tap before it ever reaches
+     * the field. Screens with only a lone, higher-up field (search bars,
+     * etc.) don't need this — only ones where a field can end up low enough
+     * on screen for the keyboard to reach it.
      */
     protected fun applyEdgeInsets(
         root: View,
         topTarget: View = root,
         bottomTarget: View = root,
         applyTop: Boolean = true,
-        applyBottom: Boolean = true
+        applyBottom: Boolean = true,
+        applyIme: Boolean = false
     ) {
         val topInitial = topTarget.paddingTop
         val bottomInitial = bottomTarget.paddingBottom
@@ -135,7 +153,11 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
                 topTarget.updatePadding(top = topInitial + systemBars.top)
             }
             if (applyBottom) {
-                val bottomInset = maxOf(systemBars.bottom, gestures.bottom)
+                var bottomInset = maxOf(systemBars.bottom, gestures.bottom)
+                if (applyIme) {
+                    val imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    bottomInset = maxOf(bottomInset, imeInset)
+                }
                 bottomTarget.updatePadding(bottom = bottomInitial + bottomInset)
             }
 

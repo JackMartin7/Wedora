@@ -34,7 +34,7 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeInsets(binding.root)
+        applyEdgeInsets(binding.root, applyIme = true)
 
         setUpSignUpPrompt()
 
