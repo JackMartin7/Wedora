@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.graphics.Rect
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
@@ -154,11 +155,35 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
             }
             if (applyBottom) {
                 var bottomInset = maxOf(systemBars.bottom, gestures.bottom)
+                var imeInset = 0
                 if (applyIme) {
-                    val imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
                     bottomInset = maxOf(bottomInset, imeInset)
                 }
                 bottomTarget.updatePadding(bottom = bottomInitial + bottomInset)
+
+                // The padding above only makes room; it doesn't move the
+                // scroll position, so the now-focused-but-still-offscreen
+                // field would otherwise stay hidden until the user scrolled
+                // manually. root.findFocus() is the field that was just
+                // tapped (focus is requested synchronously on touch, well
+                // before this listener fires from the keyboard's own
+                // show animation), and requestRectangleOnScreen bubbles up
+                // to the nearest scrolling ancestor — this doesn't need to
+                // know or care that ancestor is specifically a ScrollView.
+                // Posted rather than called inline: updatePadding above
+                // hasn't been laid out yet, so the field's coordinates are
+                // still the pre-padding ones at this point in the callback.
+                if (applyIme && imeInset > 0) {
+                    root.findFocus()?.let { focused ->
+                        focused.post {
+                            focused.requestRectangleOnScreen(
+                                Rect(0, 0, focused.width, focused.height),
+                                false
+                            )
+                        }
+                    }
+                }
             }
 
             insets
