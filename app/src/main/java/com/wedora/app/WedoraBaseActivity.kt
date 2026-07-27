@@ -146,6 +146,15 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
      * view tree, gated on the keyboard actually being up right now (tracked
      * in [imeInsetShowing]) so it doesn't try to scroll on ordinary
      * navigation while the keyboard is closed.
+     *
+     * [onInsetsApplied], if given, runs after every padding update — for a
+     * caller with more to fix up than the field/button [bottomTarget]
+     * padding already handles. ChatThreadActivity uses it to re-run its own
+     * scroll-to-bottom-message logic: rvMessages sits in a plain
+     * ConstraintLayout, not a ScrollView, so there's no ancestor for
+     * [scrollIntoView]'s requestRectangleOnScreen to bubble up to — the
+     * message list needs an explicit scrollToPosition(lastIndex) of its own
+     * whenever the keyboard's appearance changes how much of it is visible.
      */
     protected fun applyEdgeInsets(
         root: View,
@@ -153,7 +162,8 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
         bottomTarget: View = root,
         applyTop: Boolean = true,
         applyBottom: Boolean = true,
-        applyIme: Boolean = false
+        applyIme: Boolean = false,
+        onInsetsApplied: (() -> Unit)? = null
     ) {
         val topInitial = topTarget.paddingTop
         val bottomInitial = bottomTarget.paddingBottom
@@ -201,6 +211,8 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
                     root.findFocus()?.let(::scrollIntoView)
                 }
             }
+
+            onInsetsApplied?.invoke()
 
             insets
         }

@@ -100,7 +100,19 @@ class ChatThreadActivity :
         super.onCreate(savedInstanceState)
         binding = ActivityChatThreadBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        applyEdgeInsets(binding.root)
+        // applyIme: pushes etMessage/btnSend above the keyboard, same fix as
+        // Login/SignUp's password field — rvMessages sits in a plain
+        // ConstraintLayout rather than a ScrollView though, so it has no
+        // scrolling ancestor for the base class's own focus-follow logic to
+        // reach; onInsetsApplied re-runs this screen's own scroll-to-bottom
+        // instead, so the latest message stays above the composer rather
+        // than sliding out of view behind it as the keyboard opens/closes.
+        applyEdgeInsets(binding.root, applyIme = true) {
+            val itemCount = binding.rvMessages.adapter?.itemCount ?: 0
+            if (itemCount > 0) {
+                binding.rvMessages.scrollToPosition(itemCount - 1)
+            }
+        }
 
         if (intent.getBooleanExtra(EXTRA_DEMO, false)) {
             setUpDemoThread()
