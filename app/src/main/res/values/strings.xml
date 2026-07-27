@@ -393,6 +393,11 @@
     <string name="password_updated">Password updated successfully</string>
     <string name="error_password_update_failed">Couldn\'t update your password. Please try again.</string>
 
+    <!-- Shown instead of the "Change Password" strings above for an account
+         with no email/password credential yet (Google-only sign-up) -->
+    <string name="account_set_password">Set Password</string>
+    <string name="password_set">Password set — you can now also log in with email</string>
+
     <string name="account_change_email">Change Email</string>
     <string name="label_new_email">New Email</string>
     <string name="account_update_email">Update Email</string>

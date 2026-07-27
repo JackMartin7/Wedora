@@ -64,9 +64,17 @@
             android:paddingHorizontal="16dp"
             android:paddingBottom="32dp">
 
-            <!-- ===== Change Password ===== -->
+            <!-- ===== Change/Set Password ===== -->
+            <!-- Heading and button text, plus whether the current-password
+                 row below shows at all, all swap based on whether the
+                 signed-in account has an email/password credential linked —
+                 see AccountSettingsActivity.updatePasswordSectionUi(). A
+                 Google-only account has nothing to type as a "current"
+                 password, so that row is gone entirely rather than shown
+                 disabled. -->
 
             <TextView
+                android:id="@+id/tvChangePasswordHeading"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
@@ -76,6 +84,7 @@
                 android:fontFamily="@font/poppins_semibold" />
 
             <TextView
+                android:id="@+id/labelCurrentPassword"
                 style="@style/WedoraFieldLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

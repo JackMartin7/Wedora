@@ -7,18 +7,27 @@ import android.util.Patterns
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.WriteBatch
 import com.wedora.app.databinding.ActivityAccountSettingsBinding
 import com.wedora.app.databinding.DialogPasswordPromptBinding
 
 /**
- * Change password, change email, delete account.
+ * Change/set password, change email, delete account.
  *
  * All three are "sensitive" operations in Firebase's terms and need a recent
  * sign-in, so each re-authenticates first. Change Password takes the current
@@ -28,6 +37,15 @@ import com.wedora.app.databinding.DialogPasswordPromptBinding
  * Re-auth failure is deliberately reported as "current password is incorrect"
  * rather than a generic error — a wrong password is overwhelmingly the reason
  * it fails, and it's the one cause the user can act on.
+ *
+ * None of that has a password to check for a Google-only account (one signed
+ * up via GoogleAuthHelper and never set one) — [hasPasswordProvider] is the
+ * gate everything below branches on. Change Email and Delete Account
+ * re-authenticate with a fresh Google credential instead (see
+ * [reauthenticateWithGoogle]); the password section offers Set Password
+ * instead of Change Password, and needs no re-auth of its own at all —
+ * linking a new credential onto an already-signed-in session is not one of
+ * Firebase's "sensitive" operations the way updating or deleting is.
  */
 class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.Host {
 
@@ -42,6 +60,40 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
+    /** Whether the signed-in account has an email/password credential linked. */
+    private var hasPasswordProvider = false
+
+    private val googleSignInClient: GoogleSignInClient by lazy {
+        val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(this, options)
+    }
+
+    /** What to do once [googleReauthLauncher] delivers a fresh credential. */
+    private var pendingGoogleReauthAction: ((FirebaseUser) -> Unit)? = null
+
+    private val googleReauthLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != RESULT_OK) {
+            setBusy(false)
+            pendingGoogleReauthAction = null
+            return@registerForActivityResult
+        }
+        try {
+            val account = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                .getResult(ApiException::class.java)
+            finishGoogleReauth(account)
+        } catch (e: ApiException) {
+            setBusy(false)
+            pendingGoogleReauthAction = null
+            Log.w(TAG, "Google re-authentication failed", e)
+            Toast.makeText(this, R.string.error_network, Toast.LENGTH_LONG).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAccountSettingsBinding.inflate(layoutInflater)
@@ -54,6 +106,9 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
             finish()
             return
         }
+
+        hasPasswordProvider = user.providerData.any { it.providerId == EmailAuthProvider.PROVIDER_ID }
+        updatePasswordSectionUi()
 
         binding.etNewEmail.setText(user.email.orEmpty())
 
@@ -101,6 +156,60 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
             }
     }
 
+    /**
+     * Re-authenticates a Google-only account with a fresh Google credential
+     * instead of a password — there isn't one to ask for. Tries a silent
+     * sign-in first, which succeeds with no UI at all when the cached Google
+     * session is still valid (the overwhelmingly common case, since this is
+     * the same account the user is already signed into); only falls back to
+     * the interactive account-chooser prompt via [googleReauthLauncher] when
+     * that fails.
+     */
+    private fun reauthenticateWithGoogle(onSuccess: (FirebaseUser) -> Unit) {
+        pendingGoogleReauthAction = onSuccess
+        setBusy(true)
+        googleSignInClient.silentSignIn()
+            .addOnSuccessListener { account -> finishGoogleReauth(account) }
+            .addOnFailureListener { googleReauthLauncher.launch(googleSignInClient.signInIntent) }
+    }
+
+    private fun finishGoogleReauth(account: GoogleSignInAccount) {
+        val action = pendingGoogleReauthAction
+        val user = auth.currentUser
+        val idToken = account.idToken
+        if (action == null || user == null || idToken == null) {
+            setBusy(false)
+            pendingGoogleReauthAction = null
+            Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        user.reauthenticate(GoogleAuthProvider.getCredential(idToken, null))
+            .addOnSuccessListener {
+                pendingGoogleReauthAction = null
+                action(user)
+            }
+            .addOnFailureListener { e ->
+                setBusy(false)
+                pendingGoogleReauthAction = null
+                Log.w(TAG, "Google re-authentication failed", e)
+                Toast.makeText(this, R.string.error_network, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Re-authenticates via whichever credential this account actually has,
+     * then runs [onSuccess] — the one thing Change Email and Delete Account
+     * both need, differing only in which prompt they show first.
+     */
+    private fun reauthenticateAndThen(onSuccess: (FirebaseUser) -> Unit) {
+        if (hasPasswordProvider) {
+            promptForPassword { password -> reauthenticate(password, onSuccess) }
+        } else {
+            reauthenticateWithGoogle(onSuccess)
+        }
+    }
+
     /** Password prompt for the two actions with no password field on screen. */
     private fun promptForPassword(onEntered: (String) -> Unit) {
         val dialogBinding = DialogPasswordPromptBinding.inflate(layoutInflater)
@@ -122,14 +231,33 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
             .show()
     }
 
-    // ----- Change password ------------------------------------------------
+    // ----- Change / Set password -------------------------------------------
+
+    /**
+     * Reflects [hasPasswordProvider] in the three views whose text or
+     * visibility depends on it: the section heading, the "current password"
+     * row (only meaningful when there's an existing password to confirm),
+     * and the submit button.
+     */
+    private fun updatePasswordSectionUi() {
+        val headingRes =
+            if (hasPasswordProvider) R.string.account_change_password else R.string.account_set_password
+        binding.tvChangePasswordHeading.setText(headingRes)
+        binding.btnUpdatePassword.setText(
+            if (hasPasswordProvider) R.string.account_update_password else R.string.account_set_password
+        )
+
+        val currentPasswordVisibility = if (hasPasswordProvider) View.VISIBLE else View.GONE
+        binding.labelCurrentPassword.visibility = currentPasswordVisibility
+        binding.etCurrentPassword.visibility = currentPasswordVisibility
+    }
 
     private fun updatePassword() {
         val current = binding.etCurrentPassword.text.toString()
         val new = binding.etNewPassword.text.toString()
         val confirm = binding.etConfirmPassword.text.toString()
 
-        if (current.isEmpty()) {
+        if (hasPasswordProvider && current.isEmpty()) {
             showFieldError(binding.etCurrentPassword, getString(R.string.error_current_password_required))
             return
         }
@@ -149,21 +277,62 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
             return
         }
 
-        reauthenticate(current) { user ->
-            user.updatePassword(new)
-                .addOnSuccessListener {
-                    setBusy(false)
-                    clearPasswordFields()
-                    Toast.makeText(this, R.string.password_updated, Toast.LENGTH_LONG).show()
-                }
-                .addOnFailureListener { e ->
-                    Log.w(TAG, "Failed to update password", e)
-                    setBusy(false)
-                    Toast.makeText(
-                        this, R.string.error_password_update_failed, Toast.LENGTH_LONG
-                    ).show()
-                }
+        if (hasPasswordProvider) {
+            reauthenticate(current) { user ->
+                user.updatePassword(new)
+                    .addOnSuccessListener {
+                        setBusy(false)
+                        clearPasswordFields()
+                        Toast.makeText(this, R.string.password_updated, Toast.LENGTH_LONG).show()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Failed to update password", e)
+                        setBusy(false)
+                        Toast.makeText(
+                            this, R.string.error_password_update_failed, Toast.LENGTH_LONG
+                        ).show()
+                    }
+            }
+        } else {
+            linkPasswordCredential(new)
         }
+    }
+
+    /**
+     * Adds an email/password credential to a Google-only account without
+     * disturbing the existing Google sign-in — the two coexist afterwards as
+     * two ways into the same account. Needs no re-authentication first:
+     * linking a new provider onto an already-signed-in session isn't one of
+     * Firebase's "sensitive" operations the way updating a password or
+     * deleting the account is, so there's nothing to reauthenticate.
+     */
+    private fun linkPasswordCredential(newPassword: String) {
+        val user = auth.currentUser
+        val email = user?.email
+        if (user == null || email.isNullOrBlank()) {
+            Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        setBusy(true)
+        user.linkWithCredential(EmailAuthProvider.getCredential(email, newPassword))
+            .addOnSuccessListener {
+                setBusy(false)
+                clearPasswordFields()
+                hasPasswordProvider = true
+                updatePasswordSectionUi()
+                Toast.makeText(this, R.string.password_set, Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener { e ->
+                setBusy(false)
+                Log.w(TAG, "Failed to link password credential", e)
+                val resId = when (e) {
+                    is FirebaseAuthUserCollisionException -> R.string.error_email_in_use
+                    is FirebaseAuthWeakPasswordException -> R.string.error_weak_password
+                    else -> R.string.error_password_update_failed
+                }
+                Toast.makeText(this, resId, Toast.LENGTH_LONG).show()
+            }
     }
 
     private fun clearPasswordFields() {
@@ -191,9 +360,7 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
             return
         }
 
-        promptForPassword { password ->
-            reauthenticate(password) { user -> sendEmailChangeVerification(user, newEmail) }
-        }
+        reauthenticateAndThen { user -> sendEmailChangeVerification(user, newEmail) }
     }
 
     /**
@@ -225,14 +392,13 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
     // ----- Delete account -------------------------------------------------
 
     /**
-     * From [DeleteAccountBottomSheet] once the user confirms. The password
-     * re-auth and the deletion itself are unchanged — the sheet only replaces
-     * the first "are you sure" step.
+     * From [DeleteAccountBottomSheet] once the user confirms. The re-auth
+     * (password or Google, see [reauthenticateAndThen]) and the deletion
+     * itself are unchanged — the sheet only replaces the first "are you
+     * sure" step.
      */
     override fun onDeleteAccountConfirmed() {
-        promptForPassword { password ->
-            reauthenticate(password) { user -> deleteAccountData(user) }
-        }
+        reauthenticateAndThen { user -> deleteAccountData(user) }
     }
 
     /**
