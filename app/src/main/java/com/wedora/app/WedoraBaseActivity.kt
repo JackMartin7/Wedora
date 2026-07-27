@@ -134,6 +134,18 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
      * the field. Screens with only a lone, higher-up field (search bars,
      * etc.) don't need this — only ones where a field can end up low enough
      * on screen for the keyboard to reach it.
+     *
+     * Scrolling the focused field into view (once there's room for it) needs
+     * two separate triggers, not one: the window insets callback below fires
+     * when the *keyboard itself* appears — covers tapping a field while the
+     * keyboard is closed — but moving focus via the keyboard's own "Next"
+     * action (email -> password) doesn't change the IME inset at all, since
+     * the keyboard was already showing and stays exactly the same height.
+     * No new insets dispatch means the callback below never re-runs, so that
+     * path needs its own listener: a global focus-change listener on root's
+     * view tree, gated on the keyboard actually being up right now (tracked
+     * in [imeInsetShowing]) so it doesn't try to scroll on ordinary
+     * navigation while the keyboard is closed.
      */
     protected fun applyEdgeInsets(
         root: View,
@@ -145,6 +157,21 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
     ) {
         val topInitial = topTarget.paddingTop
         val bottomInitial = bottomTarget.paddingBottom
+        var imeInsetShowing = false
+
+        fun scrollIntoView(view: View) {
+            view.post {
+                view.requestRectangleOnScreen(Rect(0, 0, view.width, view.height), false)
+            }
+        }
+
+        if (applyIme) {
+            root.viewTreeObserver.addOnGlobalFocusChangeListener { _, newFocus ->
+                if (imeInsetShowing && newFocus != null) {
+                    scrollIntoView(newFocus)
+                }
+            }
+        }
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -158,6 +185,7 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
                 var imeInset = 0
                 if (applyIme) {
                     imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    imeInsetShowing = imeInset > 0
                     bottomInset = maxOf(bottomInset, imeInset)
                 }
                 bottomTarget.updatePadding(bottom = bottomInitial + bottomInset)
@@ -168,21 +196,9 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
                 // manually. root.findFocus() is the field that was just
                 // tapped (focus is requested synchronously on touch, well
                 // before this listener fires from the keyboard's own
-                // show animation), and requestRectangleOnScreen bubbles up
-                // to the nearest scrolling ancestor — this doesn't need to
-                // know or care that ancestor is specifically a ScrollView.
-                // Posted rather than called inline: updatePadding above
-                // hasn't been laid out yet, so the field's coordinates are
-                // still the pre-padding ones at this point in the callback.
-                if (applyIme && imeInset > 0) {
-                    root.findFocus()?.let { focused ->
-                        focused.post {
-                            focused.requestRectangleOnScreen(
-                                Rect(0, 0, focused.width, focused.height),
-                                false
-                            )
-                        }
-                    }
+                // show animation).
+                if (imeInsetShowing) {
+                    root.findFocus()?.let(::scrollIntoView)
                 }
             }
 
