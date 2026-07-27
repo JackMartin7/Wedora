@@ -1,7 +1,6 @@
 package com.wedora.app
 
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.wedora.app.databinding.ActivityLegalDocumentBinding
 
 /**
@@ -9,7 +8,7 @@ import com.wedora.app.databinding.ActivityLegalDocumentBinding
  * button, however it's reached, so it reuses the shared layout with the button
  * left at its default GONE.
  */
-class PrivacyPolicyActivity : AppCompatActivity() {
+class PrivacyPolicyActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityLegalDocumentBinding
 

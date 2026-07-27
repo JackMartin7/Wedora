@@ -12,8 +12,6 @@
         <item name="colorAccent">@color/wedora_accent</item>
         <item name="colorError">@color/wedora_error</item>
         <item name="android:windowBackground">@color/wedora_bg</item>
-        <item name="android:statusBarColor" tools:targetApi="21">@color/wedora_bg</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">@bool/wedora_light_status_bar</item>
         <item name="android:textColorPrimary">@color/wedora_text</item>
         <item name="android:textColorSecondary">@color/wedora_text_secondary</item>
         <item name="android:textColorHint">@color/wedora_text_secondary</item>
@@ -45,11 +43,15 @@
         <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
     </style>
 
-    <!-- Splash keeps the brand gradient behind it, so it always uses light icons -->
+    <!--
+        Splash keeps the brand gradient behind both system bars, so it
+        always uses light (non-dark) icons — see
+        SplashActivity.isLightSystemBars, which overrides the base's
+        light/dark-following default with a fixed false instead of reading
+        @bool/wedora_light_status_bar here.
+    -->
     <style name="Theme.Wedora.Splash" parent="Theme.Wedora">
         <item name="android:windowBackground">@drawable/bg_splash_gradient</item>
-        <item name="android:statusBarColor" tools:targetApi="21">@color/wedora_gradient_start</item>
-        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
     </style>
 
     <!-- Reusable input field style -->

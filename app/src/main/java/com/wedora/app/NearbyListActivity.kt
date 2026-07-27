@@ -3,7 +3,6 @@ package com.wedora.app
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityNearbyListBinding
@@ -16,7 +15,7 @@ import com.wedora.app.databinding.ActivityNearbyListBinding
  * grid do — the same feed, the same distance filter — just without the preview
  * cap.
  */
-class NearbyListActivity : AppCompatActivity() {
+class NearbyListActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityNearbyListBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }

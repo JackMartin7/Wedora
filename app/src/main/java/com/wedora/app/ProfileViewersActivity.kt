@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -21,7 +20,7 @@ import com.wedora.app.databinding.ItemProfileViewerFeaturedBinding
  * purpose at all (Likes still counts and previews; "who viewed" only exists
  * to be unlocked).
  */
-class ProfileViewersActivity : AppCompatActivity() {
+class ProfileViewersActivity : WedoraBaseActivity() {
 
     private companion object {
         /** Decorative only — see item_profile_viewer_featured.xml. */

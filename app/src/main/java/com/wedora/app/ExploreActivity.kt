@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.ads.nativead.NativeAd
@@ -21,7 +20,7 @@ import com.wedora.app.databinding.ActivityExploreBinding
  * (see [loadDiscoveryFeed]). The strip is a quick glance at the nearest few;
  * the grid is the full list; "See All" opens it as its own scrollable screen.
  */
-class ExploreActivity : AppCompatActivity(), GuestProfileLimitBottomSheet.Host {
+class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host {
 
     private companion object {
         /** How many of the closest people the horizontal strip previews. */

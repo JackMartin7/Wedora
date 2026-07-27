@@ -3,7 +3,6 @@ package com.wedora.app
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityFilterBinding
@@ -30,7 +29,7 @@ import com.wedora.app.databinding.ActivityFilterBinding
  * Values are written on Apply, not as the controls move, so backing out leaves
  * the feed as it was.
  */
-class FilterActivity : AppCompatActivity() {
+class FilterActivity : WedoraBaseActivity() {
 
     private companion object {
         const val TAG = "WedoraFilter"

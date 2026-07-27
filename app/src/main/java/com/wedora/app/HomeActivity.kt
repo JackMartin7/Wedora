@@ -10,7 +10,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.firebase.auth.FirebaseAuth
@@ -22,7 +21,7 @@ import com.wedora.app.databinding.ItemNativeAdCardBinding
 import java.util.Calendar
 
 class HomeActivity :
-    AppCompatActivity(),
+    WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
     GuestProfileLimitBottomSheet.Host {
 

@@ -11,7 +11,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import com.wedora.app.databinding.ActivityHelpCenterBinding
 import com.wedora.app.databinding.ItemFaqBinding
 import java.util.Locale
@@ -38,7 +37,7 @@ private val FAQS = listOf(
  * without recycling the expand state can't be rebound onto the wrong row —
  * which is the usual source of an accordion showing two answers open at once.
  */
-class HelpCenterActivity : AppCompatActivity() {
+class HelpCenterActivity : WedoraBaseActivity() {
 
     private companion object {
         const val CHEVRON_ROTATION_MS = 200L

@@ -11,7 +11,6 @@ import android.view.View
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
 import androidx.activity.addCallback
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.wedora.app.databinding.ActivityEmailVerificationBinding
 
@@ -29,7 +28,7 @@ import com.wedora.app.databinding.ActivityEmailVerificationBinding
  * LoginActivity (which re-checks on every sign-in). Leaving for Login signs the
  * account out to restore a clean state.
  */
-class EmailVerificationActivity : AppCompatActivity() {
+class EmailVerificationActivity : WedoraBaseActivity() {
 
     companion object {
         private const val EXTRA_EMAIL = "extra_email"

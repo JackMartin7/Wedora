@@ -2,7 +2,6 @@ package com.wedora.app
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import com.wedora.app.databinding.ActivityGuestGenderPromptBinding
 
 /**
@@ -15,7 +14,7 @@ import com.wedora.app.databinding.ActivityGuestGenderPromptBinding
  * [LoginActivity.continueAsGuest], which is the only caller and does that
  * check before ever starting this Activity.
  */
-class GuestGenderPromptActivity : AppCompatActivity() {
+class GuestGenderPromptActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityGuestGenderPromptBinding
     private lateinit var genderControl: SegmentedControl

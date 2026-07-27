@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
@@ -18,7 +17,7 @@ import com.wedora.app.databinding.ActivityForgotPasswordBinding
  * opens Firebase's own hosted reset page, so the app's involvement ends once
  * the email is sent.
  */
-class ForgotPasswordActivity : AppCompatActivity() {
+class ForgotPasswordActivity : WedoraBaseActivity() {
 
     private companion object {
         const val TAG = "WedoraAuth"

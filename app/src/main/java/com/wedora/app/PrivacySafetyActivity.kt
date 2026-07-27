@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -22,7 +21,7 @@ import com.wedora.app.databinding.ActivityPrivacySafetyBinding
  * firestore.rules, which is what makes it a privacy control rather than a UI
  * preference — see the messages create rule.
  */
-class PrivacySafetyActivity : AppCompatActivity() {
+class PrivacySafetyActivity : WedoraBaseActivity() {
 
     private companion object {
         const val TAG = "WedoraPrivacy"

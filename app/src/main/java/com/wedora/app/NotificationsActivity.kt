@@ -2,7 +2,6 @@ package com.wedora.app
 
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -14,7 +13,7 @@ import com.wedora.app.databinding.ActivityNotificationsBinding
  * Shares [loadReceivedLikes] / [markLikesSeen] with the Likes grid — same data,
  * different presentation — so opening either screen clears the Home badge.
  */
-class NotificationsActivity : AppCompatActivity() {
+class NotificationsActivity : WedoraBaseActivity() {
 
     private companion object {
         /** Enough to fill the top of the list while the read is in flight. */

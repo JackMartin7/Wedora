@@ -2,7 +2,6 @@ package com.wedora.app
 
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,7 +16,7 @@ import com.wedora.app.databinding.ActivityAdminReportsBinding
  * signed in as the admin is bounced immediately, before a single report
  * loads.
  */
-class AdminReportsActivity : AppCompatActivity() {
+class AdminReportsActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityAdminReportsBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }

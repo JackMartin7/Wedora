@@ -7,7 +7,6 @@ import android.util.Patterns
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -30,7 +29,7 @@ import com.wedora.app.databinding.DialogPasswordPromptBinding
  * rather than a generic error — a wrong password is overwhelmingly the reason
  * it fails, and it's the one cause the user can act on.
  */
-class AccountSettingsActivity : AppCompatActivity(), DeleteAccountBottomSheet.Host {
+class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraAccount"

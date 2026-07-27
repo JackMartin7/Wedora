@@ -2,7 +2,6 @@ package com.wedora.app
 
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -13,7 +12,7 @@ import com.wedora.app.databinding.ActivityMatchHistoryBinding
  * from Chats (which is about conversations) and Likes (which is about who liked
  * whom). The row opens the profile; the "Message" pill opens the conversation.
  */
-class MatchHistoryActivity : AppCompatActivity() {
+class MatchHistoryActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityMatchHistoryBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }

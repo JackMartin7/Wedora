@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.addCallback
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.Timestamp
@@ -36,7 +35,7 @@ import java.util.Date
  * for a demo thread at all.
  */
 class ChatThreadActivity :
-    AppCompatActivity(),
+    WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
     GuestChatBlockedBottomSheet.Host {
 

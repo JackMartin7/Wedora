@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import com.wedora.app.databinding.ActivityLegalDocumentBinding
 
 /**
@@ -15,7 +14,7 @@ import com.wedora.app.databinding.ActivityLegalDocumentBinding
  * Profile settings, where it's read-only and the button is hidden. The
  * [EXTRA_FROM_SIGNUP] flag is what tells the two apart.
  */
-class TermsOfServiceActivity : AppCompatActivity() {
+class TermsOfServiceActivity : WedoraBaseActivity() {
 
     companion object {
         private const val EXTRA_FROM_SIGNUP = "extra_from_signup"

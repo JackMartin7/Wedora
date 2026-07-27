@@ -15,7 +15,6 @@ import android.util.Patterns
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -34,7 +33,7 @@ import com.wedora.app.databinding.ActivitySignupBinding
  * set(merge) as each answer arrives, which is also what lets the routing gate
  * send a returning user back to whichever step they left off at.
  */
-class SignUpActivity : AppCompatActivity() {
+class SignUpActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivitySignupBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }

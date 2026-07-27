@@ -5,12 +5,11 @@ import android.os.Bundle
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.wedora.app.databinding.ActivityOnboardingBinding
 
-class OnboardingActivity : AppCompatActivity() {
+class OnboardingActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityOnboardingBinding
 

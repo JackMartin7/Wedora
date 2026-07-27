@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.LinearLayout
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.ads.nativead.NativeAd
@@ -30,7 +29,7 @@ import com.wedora.app.databinding.ItemProfileViewerStripLockedBinding
  * — likes aren't access-controlled by tier, only their presentation is.
  * Blurring two tiles is a prompt to upgrade, not an access control.
  */
-class LikesActivity : AppCompatActivity() {
+class LikesActivity : WedoraBaseActivity() {
 
     private companion object {
         const val GRID_COLUMNS = 2

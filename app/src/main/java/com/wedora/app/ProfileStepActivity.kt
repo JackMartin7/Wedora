@@ -8,7 +8,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.annotation.LayoutRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -27,7 +26,7 @@ import com.wedora.app.databinding.ActivityProfileStepBinding
  * and the routing gate can drop them back at step 3 instead of starting over.
  * It also means every write is a set(merge) onto whatever is already there.
  */
-abstract class ProfileStepActivity : AppCompatActivity() {
+abstract class ProfileStepActivity : WedoraBaseActivity() {
 
     protected companion object {
         const val TAG = "WedoraProfileStep"

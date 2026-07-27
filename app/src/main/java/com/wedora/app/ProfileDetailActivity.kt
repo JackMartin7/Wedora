@@ -7,7 +7,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -20,7 +19,7 @@ import com.wedora.app.databinding.ActivityProfileDetailBinding
  * than passing the already-loaded card fields through the Intent — one source
  * of truth, and the detail view can't show a stale copy of the feed's data.
  */
-class ProfileDetailActivity : AppCompatActivity(), DailyLimitReachedBottomSheet.Host {
+class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraMatching"

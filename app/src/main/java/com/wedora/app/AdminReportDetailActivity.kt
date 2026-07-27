@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,7 +19,7 @@ import com.wedora.app.databinding.ActivityAdminReportDetailBinding
  * [WedoraAdmin.UID]; re-checked here too for the same defense-in-depth
  * reasoning as that screen's own onCreate guard.
  */
-class AdminReportDetailActivity : AppCompatActivity() {
+class AdminReportDetailActivity : WedoraBaseActivity() {
 
     companion object {
         private const val TAG = "WedoraAdmin"

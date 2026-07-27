@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -20,7 +19,12 @@ import com.google.firebase.firestore.FirebaseFirestore
  * The destination is resolved in parallel with the branding delay rather than
  * after it, so the profile lookup usually costs nothing in wall-clock time.
  */
-class SplashActivity : AppCompatActivity() {
+class SplashActivity : WedoraBaseActivity() {
+
+    // The brand gradient (bg_splash_gradient) sits behind both system bars
+    // regardless of light/dark theme, so this never follows
+    // @bool/wedora_light_status_bar the way every other screen does.
+    override val isLightSystemBars = false
 
     private companion object {
         const val SPLASH_DELAY_MS = 1800L

@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.wedora.app.databinding.ActivityNotificationsSettingsBinding
 import com.wedora.app.databinding.ItemNotificationToggleBinding
@@ -30,7 +29,7 @@ import com.wedora.app.databinding.ItemNotificationToggleBinding
  * after a prior denial on its own, so this doesn't need its own "already
  * asked" guard to avoid nagging.
  */
-class NotificationsSettingsActivity : AppCompatActivity() {
+class NotificationsSettingsActivity : WedoraBaseActivity() {
 
     private companion object {
         /**

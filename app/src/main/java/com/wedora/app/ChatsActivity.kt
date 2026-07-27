@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
@@ -25,7 +24,7 @@ import java.util.Date
  * prompt to start one, with an unread badge when the other person has written
  * something this user hasn't opened.
  */
-class ChatsActivity : AppCompatActivity(), DeleteChatsBottomSheet.Host {
+class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraChat"

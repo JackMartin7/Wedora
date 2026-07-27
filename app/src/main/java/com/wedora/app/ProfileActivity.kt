@@ -13,14 +13,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityProfileBinding
 import com.wedora.app.databinding.ItemSettingsRowBinding
 
-class ProfileActivity : AppCompatActivity(), LogoutBottomSheet.Host {
+class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host {
 
     private companion object {
         const val TAG = "WedoraProfile"

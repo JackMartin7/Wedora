@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.ColorRes
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.wedora.app.databinding.ActivityPaymentSubscriptionBinding
@@ -24,7 +23,7 @@ import com.wedora.app.databinding.ItemPremiumFeatureBinding
  * the Play Console at runtime (they're per-country and can change), so treat
  * these as layout, not as a source of truth.
  */
-class PaymentSubscriptionActivity : AppCompatActivity() {
+class PaymentSubscriptionActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityPaymentSubscriptionBinding
 
