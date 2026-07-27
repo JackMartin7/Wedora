@@ -29,15 +29,13 @@ android {
         // Play Console requires targeting API 35 (Android 15) as of this
         // bump. See this file's own note by the AGP version in the root
         // build.gradle.kts for why that plugin needed bumping alongside
-        // this. Biggest behavior change worth knowing about: apps
-        // targeting 35 get edge-to-edge display forced on by default — see
-        // the commit message for this change for the full rundown; this
-        // app has no window-inset handling anywhere yet, so it's a real
-        // visual-regression risk worth a manual on-device check, not
-        // something a clean compile can catch.
+        // this. Apps targeting 35 get edge-to-edge display forced on by
+        // default — WedoraBaseActivity's enableEdgeToEdge()/inset handling
+        // is what actually covers that now, wired app-wide across every
+        // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
     }
 
     signingConfigs {
