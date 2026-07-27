@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import com.wedora.app.databinding.ActivityAdminReportDetailBinding
 
 /**
@@ -171,20 +172,17 @@ class AdminReportDetailActivity : AppCompatActivity() {
 
     /**
      * Sets isBanned/banReason on the reported user's profile and resolves
-     * every pending report against them — see [banUser]'s own doc comment.
-     *
-     * TODO (part 2): once disableUserAccount is deployed, call it here after
-     * this succeeds, so the ban actually blocks sign-in rather than just
-     * recording that it should. AuthRouting's own isBanned check (added
-     * alongside this) is the safety net for exactly that gap in the
-     * meantime — a banned user is signed back out on their next launch even
-     * without the Cloud Function, just not immediately.
+     * every pending report against them (see [banUser]'s own doc comment),
+     * then calls the disableUserAccount Cloud Function so the ban actually
+     * blocks sign-in immediately rather than only being enforced the next
+     * time [AuthRouting]'s isBanned safety-net check happens to run.
      */
     private fun banReportedUser() {
         setActionsEnabled(false)
         banUser(
             firestore, reportedUid, banReason = reason,
             onResult = {
+                disableAuthAccount(reportedUid)
                 Toast.makeText(this, R.string.admin_user_banned, Toast.LENGTH_SHORT).show()
                 finish()
             },
@@ -193,6 +191,29 @@ class AdminReportDetailActivity : AppCompatActivity() {
                 Toast.makeText(this, R.string.admin_action_failed, Toast.LENGTH_LONG).show()
             }
         )
+    }
+
+    /**
+     * Fire-and-forget: the admin's ban action is already complete and
+     * confirmed to the UI by the time this is called — the Firestore write
+     * in [banReportedUser] is what the app's own AuthRouting.isBanned check
+     * enforces regardless of whether this call ever lands. A failure here
+     * is logged, not surfaced, and doesn't reopen the actions or block
+     * finish(): the account is already blocked from signing in on its next
+     * attempt via that safety net, just not with the immediate
+     * revokeRefreshTokens kick of any *currently* open session this
+     * function would otherwise provide.
+     */
+    private fun disableAuthAccount(targetUid: String) {
+        FirebaseFunctions.getInstance()
+            .getHttpsCallable("disableUserAccount")
+            .call(hashMapOf("targetUid" to targetUid))
+            .addOnSuccessListener {
+                Log.i(TAG, "disableUserAccount succeeded for $targetUid")
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "disableUserAccount call failed for $targetUid; Firestore-level ban still applies", e)
+            }
     }
 
     private fun setActionsEnabled(enabled: Boolean) {

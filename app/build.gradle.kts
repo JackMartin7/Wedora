@@ -99,6 +99,8 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     // Push notifications — see WedoraFirebaseMessagingService.
     implementation("com.google.firebase:firebase-messaging-ktx")
+    // The disableUserAccount admin callable — see AdminReportDetailActivity.
+    implementation("com.google.firebase:firebase-functions-ktx")
 
     // Image loading (signed-in user avatars from Firebase photoUrl)
     implementation("com.github.bumptech.glide:glide:4.16.0")
