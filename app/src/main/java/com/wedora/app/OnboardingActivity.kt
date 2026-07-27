@@ -38,6 +38,7 @@ class OnboardingActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityOnboardingBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.viewPager.adapter = OnboardingAdapter(pages)
 
@@ -105,7 +106,10 @@ class OnboardingActivity : WedoraBaseActivity() {
 
     private fun finishOnboarding() {
         OnboardingPrefs.setOnboardingComplete(this)
-        startActivity(Intent(this, LoginActivity::class.java))
+        // A first-time user has no account yet, so Sign Up is the more
+        // logical landing than Login — "Already have an account? Login"
+        // on that screen still reaches LoginActivity for anyone who does.
+        startActivity(Intent(this, SignUpActivity::class.java))
         finish()
         applyHandoffTransition()
     }

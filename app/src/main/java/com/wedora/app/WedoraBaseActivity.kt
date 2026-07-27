@@ -94,4 +94,52 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
             insets
         }
     }
+
+    /**
+     * General-purpose variant of [applyBottomNavScreenInsets] for every
+     * screen that isn't one of the five bottom-nav tabs: no
+     * BottomNavigationView to treat specially, just a root layout whose top
+     * and bottom content both sit directly on root's own edges with plain
+     * XML margins — a title/back-arrow row at the top, a floating
+     * Continue/Save/Send/Apply-style button or bar at the bottom. That's
+     * the shape almost every remaining screen in the app uses.
+     *
+     * [topTarget]/[bottomTarget] default to [root] itself, which is correct
+     * whenever the bottom element is a "floating" view with margins on
+     * every side rather than a full-bleed bar touching the screen's edges —
+     * same reasoning as [applyBottomNavScreenInsets]'s doc comment: a
+     * floating button already has root's own background visible around it,
+     * so pushing it up via root padding introduces no colour seam. Pass a
+     * different [bottomTarget] (e.g. a full-width message composer bar with
+     * its own background) for the rare screen where that doesn't hold.
+     *
+     * [applyTop]/[applyBottom] let a screen with only one edge that needs
+     * handling skip the other, rather than padding a side nothing sits
+     * against.
+     */
+    protected fun applyEdgeInsets(
+        root: View,
+        topTarget: View = root,
+        bottomTarget: View = root,
+        applyTop: Boolean = true,
+        applyBottom: Boolean = true
+    ) {
+        val topInitial = topTarget.paddingTop
+        val bottomInitial = bottomTarget.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val gestures = insets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures())
+
+            if (applyTop) {
+                topTarget.updatePadding(top = topInitial + systemBars.top)
+            }
+            if (applyBottom) {
+                val bottomInset = maxOf(systemBars.bottom, gestures.bottom)
+                bottomTarget.updatePadding(bottom = bottomInitial + bottomInset)
+            }
+
+            insets
+        }
+    }
 }
