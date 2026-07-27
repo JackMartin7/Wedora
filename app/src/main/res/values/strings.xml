@@ -453,7 +453,7 @@
     <string name="help_frequently_asked">Frequently Asked</string>
     <string name="help_chat_support">Chat with Support</string>
     <string name="help_no_results">No results for “%1$s”</string>
-    <string name="support_email">support@wedora.app</string>
+    <string name="support_email">admin@tuberstec.com</string>
     <string name="support_subject">Support Request</string>
     <string name="error_no_email_app">No email app found on this device.</string>
 
