@@ -11,8 +11,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 
 private const val TAG = "WedoraGoogleAuth"
 
@@ -29,17 +27,21 @@ private const val TAG = "WedoraGoogleAuth"
  * registerForActivityResult call, and the reason this isn't built lazily
  * on first tap of the button.
  *
- * [onSignedIn] receives the signed-in UID and whether this was a new
- * account — a new account has already had its Firestore profile prefilled
- * (see [prefillProfile]) with whatever Google supplied by the time this
- * fires, so the caller's job is just to route, via the same
- * [resolveSignedInDestination] gate both Login's own email/password path
- * and SplashActivity already use. Routing through that shared gate rather
- * than a special "new user" destination is what makes the prefill actually
- * matter: nextSetupStepFor reads the same displayName field this just
- * wrote, so a Google account that supplied one skips
- * ProfileStep1NameActivity automatically, with no separate "skip step 1"
- * branch needed here.
+ * Deliberately does not write anything to the Firestore profile doc, and
+ * does not check additionalUserInfo?.isNewUser to decide whether to. A new
+ * account with no doc at all already routes to ProfileStep1NameActivity via
+ * the normal resolveSignedInDestination gate, the same as any other fresh
+ * sign-up — and that screen already pre-fills its name field from
+ * auth.currentUser.displayName, which Firebase itself populates from the
+ * Google account automatically on this kind of sign-in, no extra write
+ * needed. Pre-filling Firestore's displayName directly (an earlier version
+ * of this class did) would have made nextSetupStepFor treat the name as
+ * already answered and skip Step 1 outright — silently accepting whatever
+ * Google's account name happens to be for a profile the user is meant to
+ * consciously choose. Letting Step 1 run normally, just with a suggested
+ * value already typed in, is the fix: confirm or edit, not accept blind.
+ * ProfileStep5PhotoActivity applies the identical treatment to
+ * auth.currentUser.photoUrl for the same reason.
  */
 class GoogleAuthHelper(
     private val activity: WedoraBaseActivity,
@@ -48,7 +50,6 @@ class GoogleAuthHelper(
     private val onError: () -> Unit
 ) {
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
-    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     private val googleSignInClient: GoogleSignInClient by lazy {
         val options = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -78,7 +79,7 @@ class GoogleAuthHelper(
                 onError()
                 return@registerForActivityResult
             }
-            signInToFirebase(idToken, account.displayName, account.photoUrl?.toString())
+            signInToFirebase(idToken)
         } catch (e: ApiException) {
             Log.w(TAG, "Google sign-in failed", e)
             onError()
@@ -89,7 +90,7 @@ class GoogleAuthHelper(
         launcher.launch(googleSignInClient.signInIntent)
     }
 
-    private fun signInToFirebase(idToken: String, displayName: String?, photoUrl: String?) {
+    private fun signInToFirebase(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(credential)
             .addOnSuccessListener { result ->
@@ -106,69 +107,11 @@ class GoogleAuthHelper(
                 // extra call here; this is not re-checked or re-gated on
                 // anywhere in the routing this hands off to.
                 GuestPrefs.clearGuest(activity)
-
-                if (result.additionalUserInfo?.isNewUser == true) {
-                    prefillProfile(user.uid, displayName, photoUrl) {
-                        onSignedIn(user.uid)
-                    }
-                } else {
-                    onSignedIn(user.uid)
-                }
+                onSignedIn(user.uid)
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Firebase credential sign-in failed", e)
                 onError()
-            }
-    }
-
-    /**
-     * Seeds displayName/photoUrl from the Google account onto the
-     * brand-new profile doc, so ProfileStep1NameActivity — reached via the
-     * same [resolveSignedInDestination] gate the caller uses once this
-     * finishes — sees a name already on file and is skipped, the same as a
-     * returning user who already answered it. set(merge) onto a document
-     * that doesn't exist yet still succeeds (Firestore treats it as a
-     * create) and matches every other step-write in this flow.
-     *
-     * Only writes the fields Google actually supplied — either can be
-     * null/blank depending on the account's own privacy settings, and an
-     * absent field here just means Step 1 asks for a name normally, not a
-     * write of an empty string that would need to be distinguished from
-     * "not answered yet" everywhere else that checks it.
-     *
-     * Google's photo URL is stored directly as photoUrl rather than
-     * downloaded and re-uploaded through the Hostinger flow
-     * (PhotoUploadService): it's already a stable, permanently-hosted HTTPS
-     * URL Google itself serves, so re-hosting it would just be a slower path
-     * to a string with the same shape and no benefit — that extra hop only
-     * pays for itself for a device-local file that has no URL yet, which
-     * this isn't.
-     */
-    private fun prefillProfile(
-        uid: String,
-        displayName: String?,
-        photoUrl: String?,
-        onDone: () -> Unit
-    ) {
-        val fields = buildMap<String, Any> {
-            if (!displayName.isNullOrBlank()) put(UserProfile.FIELD_DISPLAY_NAME, displayName)
-            if (!photoUrl.isNullOrBlank()) put(UserProfile.FIELD_PHOTO_URL, photoUrl)
-            auth.currentUser?.email?.let { put(UserProfile.FIELD_EMAIL, it) }
-        }
-        if (fields.isEmpty()) {
-            onDone()
-            return
-        }
-
-        firestore.collection(UserProfile.COLLECTION).document(uid)
-            .set(fields, SetOptions.merge())
-            .addOnCompleteListener {
-                if (!it.isSuccessful) {
-                    Log.w(TAG, "Failed to prefill profile from Google account", it.exception)
-                }
-                // Not worth failing the sign-in over — the missing fields
-                // just get asked for normally on whichever step reads them.
-                onDone()
             }
     }
 }

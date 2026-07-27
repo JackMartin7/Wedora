@@ -40,6 +40,19 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
     private lateinit var photoView: ShapeableImageView
     private lateinit var actionLabel: TextView
 
+    /**
+     * Google's account photo, shown as a suggestion when there's no local
+     * pick yet — set only by [showSuggestedGooglePhoto], cleared by
+     * [savePickedPhoto] the moment the user actually chooses their own.
+     * [onStepSaved] is what turns "shown" into "accepted": tapping Continue
+     * with this still set (i.e. never overridden by a real pick) is the
+     * user's explicit confirmation, not a silent default. Skip bypasses
+     * [onStepSaved] entirely (see [ProfileStepActivity]'s own Continue vs
+     * Skip wiring), so skipping never applies a suggestion the user didn't
+     * act on either way.
+     */
+    private var suggestedGooglePhotoUrl: String? = null
+
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) savePickedPhoto(uri)
@@ -70,10 +83,21 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
         actionLabel.setOnClickListener { pickImageLauncher.launch("image/*") }
 
         // Shows a photo already chosen on a previous pass through the flow.
-        LocalProfilePrefs.getPhotoPath(this, uid)
+        val localPhoto = LocalProfilePrefs.getPhotoPath(this, uid)
             ?.let { File(it) }
             ?.takeIf { it.exists() }
-            ?.let { showPhoto(it) }
+
+        val googlePhoto = auth.currentUser?.photoUrl
+
+        when {
+            localPhoto != null -> showPhoto(localPhoto)
+            // A suggestion, not an accepted photo — same "confirm or
+            // change" treatment as ProfileStep1NameActivity's pre-filled
+            // name field. See [suggestedGooglePhotoUrl]'s own doc comment
+            // for what turns this into an actual saved photo.
+            googlePhoto != null -> showSuggestedGooglePhoto(googlePhoto)
+            else -> Unit
+        }
     }
 
     /** Continue is always available — the photo is optional. */
@@ -87,8 +111,27 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
     /**
      * Ends the setup flow rather than stacking Home on top of five steps that
      * should no longer be reachable by back.
+     *
+     * Tapping Continue with [suggestedGooglePhotoUrl] still set — meaning the
+     * user saw the Google account photo pre-filled and didn't replace it —
+     * is what actually accepts it: only now does it get saved as this
+     * account's photoUrl, fire-and-forget same as [uploadThenSaveUrl]'s own
+     * write. Stored directly rather than downloaded and re-uploaded through
+     * PhotoUploadService: it's already a stable HTTPS URL Google itself
+     * serves, so re-hosting it would just be a slower path to an equivalent
+     * string.
      */
-    override fun onStepSaved() = finishSetup()
+    override fun onStepSaved() {
+        val acceptedGooglePhoto = suggestedGooglePhotoUrl
+        if (acceptedGooglePhoto != null) {
+            firestore.collection(UserProfile.COLLECTION).document(uid)
+                .set(mapOf(UserProfile.FIELD_PHOTO_URL to acceptedGooglePhoto), SetOptions.merge())
+                .addOnFailureListener { e ->
+                    logFirestoreWriteFailure(TAG, "Failed to save accepted Google photo url", e)
+                }
+        }
+        finishSetup()
+    }
 
     private fun finishSetup() {
         startActivity(
@@ -111,6 +154,12 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
                 destination.outputStream().use { output -> input.copyTo(output) }
             } ?: throw IOException("openInputStream returned null")
 
+            // An explicit pick replaces any Google suggestion outright —
+            // onStepSaved only checks this for the case where the user never
+            // did this, so clearing it here isn't strictly load-bearing, but
+            // leaving a stale suggestion around after a real pick would be
+            // confusing for anything added later that reads it.
+            suggestedGooglePhotoUrl = null
             LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
             showPhoto(destination)
             uploadThenSaveUrl(destination)
@@ -164,6 +213,28 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
             .load(file)
             .skipMemoryCache(true)
             .diskCacheStrategy(DiskCacheStrategy.NONE)
+            .centerCrop()
+            .into(photoView)
+    }
+
+    /**
+     * The suggestion itself — see [suggestedGooglePhotoUrl]'s doc comment
+     * for what turns showing it into actually saving it. Visually identical
+     * to [showPhoto] (same padding/label change, so it reads as "you have a
+     * photo" rather than something tentative-looking) since the whole point
+     * is that this is a real, usable photo the user is free to just keep —
+     * the "still needs confirming" part is a matter of what onStepSaved
+     * does with it, not how it looks here. A remote URL rather than a File,
+     * so no cache-skipping: unlike a local pick, this one URL never changes
+     * underneath the same uid.
+     */
+    private fun showSuggestedGooglePhoto(uri: Uri) {
+        suggestedGooglePhotoUrl = uri.toString()
+        photoView.setPadding(0, 0, 0, 0)
+        actionLabel.setText(R.string.change_photo)
+
+        Glide.with(this)
+            .load(uri)
             .centerCrop()
             .into(photoView)
     }
