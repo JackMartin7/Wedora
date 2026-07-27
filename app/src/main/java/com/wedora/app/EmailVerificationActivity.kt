@@ -66,6 +66,7 @@ class EmailVerificationActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEmailVerificationBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val email = intent.getStringExtra(EXTRA_EMAIL).orEmpty()
         binding.tvSubtitle.text = getString(R.string.verify_subtitle, email)

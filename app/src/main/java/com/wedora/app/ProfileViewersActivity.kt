@@ -38,6 +38,7 @@ class ProfileViewersActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileViewersBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.rvViewers.layoutManager = LinearLayoutManager(this)
         binding.rvViewers.adapter = adapter

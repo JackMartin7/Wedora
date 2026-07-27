@@ -69,6 +69,7 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileStepBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val currentUid = auth.currentUser?.uid
         if (currentUid == null) {

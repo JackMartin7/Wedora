@@ -56,6 +56,7 @@ class HelpCenterActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityHelpCenterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnBack.setOnClickListener { finish() }
         binding.rowChatSupport.setOnClickListener { emailSupport() }

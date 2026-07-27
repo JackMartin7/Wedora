@@ -46,6 +46,7 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
         super.onCreate(savedInstanceState)
         binding = ActivityAccountSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val user = auth.currentUser
         if (user == null) {

@@ -24,6 +24,7 @@ class GuestGenderPromptActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityGuestGenderPromptBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val content = binding.guestGenderContent
         genderControl = SegmentedControl(

@@ -41,6 +41,7 @@ class PrivacySafetyActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPrivacySafetyBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val uid = FirebaseAuth.getInstance().realUid
         if (uid == null) {

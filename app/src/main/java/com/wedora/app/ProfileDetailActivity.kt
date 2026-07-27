@@ -70,6 +70,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         super.onCreate(savedInstanceState)
         binding = ActivityProfileDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val id = intent.getStringExtra(EXTRA_USER_ID)
         if (id.isNullOrBlank()) {

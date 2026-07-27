@@ -55,6 +55,7 @@ class NotificationsSettingsActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationsSettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnBack.setOnClickListener { finish() }
         buildToggleRows()

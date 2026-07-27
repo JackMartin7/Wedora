@@ -46,6 +46,7 @@ class FilterActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnClose.setOnClickListener { finish() }
         binding.btnReset.setOnClickListener { resetToDefaults() }

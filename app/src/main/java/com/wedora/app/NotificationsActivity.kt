@@ -31,6 +31,7 @@ class NotificationsActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnBack.setOnClickListener { finish() }
 

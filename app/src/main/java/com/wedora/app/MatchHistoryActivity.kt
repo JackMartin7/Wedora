@@ -26,6 +26,7 @@ class MatchHistoryActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMatchHistoryBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.rvHistory.layoutManager = LinearLayoutManager(this)
         binding.rvHistory.adapter = adapter

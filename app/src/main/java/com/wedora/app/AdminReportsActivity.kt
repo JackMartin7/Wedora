@@ -35,6 +35,7 @@ class AdminReportsActivity : WedoraBaseActivity() {
 
         binding = ActivityAdminReportsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.rvAdminReports.layoutManager = LinearLayoutManager(this)
         binding.rvAdminReports.adapter = adapter

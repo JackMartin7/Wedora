@@ -100,6 +100,7 @@ class ChatThreadActivity :
         super.onCreate(savedInstanceState)
         binding = ActivityChatThreadBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         if (intent.getBooleanExtra(EXTRA_DEMO, false)) {
             setUpDemoThread()

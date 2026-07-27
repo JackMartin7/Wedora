@@ -28,6 +28,7 @@ class NearbyListActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityNearbyListBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.rvNearbyList.layoutManager = LinearLayoutManager(this)
         binding.rvNearbyList.adapter = adapter

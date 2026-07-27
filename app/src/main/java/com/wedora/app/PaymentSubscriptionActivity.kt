@@ -34,6 +34,7 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityPaymentSubscriptionBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnBack.setOnClickListener { finish() }
 

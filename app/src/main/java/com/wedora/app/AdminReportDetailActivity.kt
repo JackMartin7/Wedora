@@ -81,6 +81,7 @@ class AdminReportDetailActivity : WedoraBaseActivity() {
 
         binding = ActivityAdminReportDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.btnBack.setOnClickListener { finish() }
 

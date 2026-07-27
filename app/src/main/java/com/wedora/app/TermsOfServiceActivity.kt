@@ -31,6 +31,7 @@ class TermsOfServiceActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLegalDocumentBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         binding.tvTitle.setText(R.string.terms_title)
         binding.tvBody.setText(R.string.terms_body)

@@ -114,6 +114,7 @@ class EditProfileActivity : WedoraBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityEditProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        applyEdgeInsets(binding.root)
 
         val currentUid = auth.currentUser?.uid
         if (currentUid == null) {
