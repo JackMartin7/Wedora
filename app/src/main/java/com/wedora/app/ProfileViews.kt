@@ -20,6 +20,19 @@ internal const val PROFILE_VIEWS_COLLECTION = "profileViews"
 internal const val PROFILE_VIEWS_SUBCOLLECTION_VIEWERS = "viewers"
 private const val FIELD_VIEWED_AT = "viewedAt"
 
+// internal, not private: AccountSettingsActivity's delete-account cleanup
+// queries this field via a collectionGroup(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS)
+// query to find every "I viewed someone" record a departing user left under
+// OTHER users' owned subcollections — those aren't reachable any other way,
+// since they're not a subcollection of the departing user's own document.
+// Redundant with the document ID (already the viewer's uid) but Firestore
+// collection-group queries need an actual field to filter on. Only present
+// on documents written after this field was added; a record from before
+// still deletes fine if found some other way, it just won't be matched by
+// this specific query — the same kind of legacy gap Match.kt's own
+// likedBy-vs-likedUsers fallback comment describes.
+internal const val FIELD_VIEWER_UID = "viewerUid"
+
 /** Someone who viewed the current user's profile, resolved to their name and presence. */
 data class ProfileViewer(
     val viewerUid: String,
@@ -49,7 +62,13 @@ fun recordProfileView(firestore: FirebaseFirestore, viewedUid: String, viewerUid
 
     firestore.collection(PROFILE_VIEWS_COLLECTION).document(viewedUid)
         .collection(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS).document(viewerUid)
-        .set(mapOf(FIELD_VIEWED_AT to FieldValue.serverTimestamp()), SetOptions.merge())
+        .set(
+            mapOf(
+                FIELD_VIEWED_AT to FieldValue.serverTimestamp(),
+                FIELD_VIEWER_UID to viewerUid
+            ),
+            SetOptions.merge()
+        )
         .addOnFailureListener { e -> Log.w(TAG, "Failed to record profile view", e) }
 }
 

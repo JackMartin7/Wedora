@@ -338,13 +338,23 @@ service cloud.firestore {
 
     // One view record per unique viewer. The viewer can only ever write their
     // own entry — recordProfileView always writes as the signed-in user, never
-    // on anyone else's behalf — and only the profile owner can read the list
-    // of who viewed them. A viewer can't read this back to confirm their own
-    // view landed; nothing in the app needs that, and opening read access to
-    // the viewer too would let anyone enumerate who's been looking at a given
-    // profile.
+    // on anyone else's behalf.
+    //
+    // Read is normally owner-only: a viewer can't read this back to confirm
+    // their own view landed day-to-day, and opening read access to the whole
+    // list would let anyone enumerate who's been looking at a given profile.
+    // The one exception is a viewer reading their OWN entry (viewerUid ==
+    // caller) — added for AccountSettingsActivity's delete-account cleanup,
+    // which needs to find every "I viewed someone" record a departing user
+    // left under other users' owned subcollections via a
+    // collectionGroup('viewers') query; Firestore denies a collection-group
+    // query outright unless every potentially-matching document is
+    // individually readable, so without this the query itself would fail
+    // before it could find anything to delete. Still never exposes another
+    // viewer's entry or the full per-profile list to anyone but the owner.
     match /profileViews/{viewedUid}/viewers/{viewerUid} {
-      allow read: if request.auth != null && request.auth.uid == viewedUid;
+      allow read: if request.auth != null
+          && (request.auth.uid == viewedUid || request.auth.uid == viewerUid);
       allow write: if request.auth != null && request.auth.uid == viewerUid;
     }
   }

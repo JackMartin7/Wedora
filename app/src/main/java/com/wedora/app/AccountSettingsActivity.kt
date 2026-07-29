@@ -13,6 +13,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -21,8 +23,9 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.WriteBatch
+import com.google.firebase.firestore.QuerySnapshot
 import com.wedora.app.databinding.ActivityAccountSettingsBinding
 import com.wedora.app.databinding.DialogPasswordPromptBinding
 
@@ -402,68 +405,123 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
     }
 
     /**
-     * Deletes this user's own data, then the Auth account itself.
+     * Deletes this user's own data, then the Auth account itself — in that
+     * order, and only proceeding to Auth deletion if every Firestore step
+     * actually succeeded. An earlier version of this used
+     * batch.commit().addOnFailureListener{...}.addOnCompleteListener{...}:
+     * addOnCompleteListener fires on both success AND failure of that same
+     * Task, so a failed commit still fell through to deleting the Auth
+     * account — logged, never surfaced, never blocking. That's why deleted
+     * users' Firestore documents were turning up still present: the account
+     * was gone, but nothing said the write that was supposed to remove its
+     * data had actually failed.
      *
-     * Match documents and their messages are deliberately NOT deleted. They are
-     * shared with another participant who still needs their side of the
+     * Four sources of this user's own data are read in parallel, then
+     * deleted together with the profile document in one pass:
+     * - blocks/{uid}/blockedUsers — private to this user, nobody else reads it
+     * - passes/{uid}/passedUsers — same shape, who they've swiped past
+     * - profileViews/{uid}/viewers — who viewed THEIR profile
+     * - a collectionGroup("viewers") query for FIELD_VIEWER_UID == uid — the
+     *   views THEY made on other people's profiles, which live under those
+     *   other users' own profileViews/{otherUid}/viewers subcollections and
+     *   so aren't reachable as a subcollection of this user's own document
+     *   the way the first three are. See firestore.rules' own comment on
+     *   profileViews for why this query is even allowed to find them.
+     *
+     * Tasks.whenAllSuccess, not whenAllComplete: if even one of the four
+     * reads fails, this stops here and reports an error rather than
+     * deleting only part of the user's data.
+     *
+     * Match documents and their messages are deliberately NOT included. They
+     * are shared with another participant who still needs their side of the
      * conversation, and a client can't delete only "their half" of a document
      * that represents both people. Deleting them here would silently erase
      * someone else's chat history. Removing the leftover matches of deleted
      * accounts is a server-side job (a Cloud Function on user deletion), not
      * something to do from the departing client.
-     *
-     * The blocks subcollection IS deleted: it's private to this user, nobody
-     * else reads it, and the existing rules already permit the owner to delete
-     * their own entries.
      */
     private fun deleteAccountData(user: FirebaseUser) {
         val uid = user.uid
 
-        firestore.collection(Moderation.BLOCKS_COLLECTION)
-            .document(uid)
-            .collection(Moderation.BLOCKED_USERS_SUBCOLLECTION)
+        val blockedTask = firestore.collection(Moderation.BLOCKS_COLLECTION)
+            .document(uid).collection(Moderation.BLOCKED_USERS_SUBCOLLECTION).get()
+        val passedTask = firestore.collection(Passes.COLLECTION)
+            .document(uid).collection(Passes.PASSED_USERS_SUBCOLLECTION).get()
+        val ownViewersTask = firestore.collection(PROFILE_VIEWS_COLLECTION)
+            .document(uid).collection(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS).get()
+        val viewedByMeTask = firestore.collectionGroup(PROFILE_VIEWS_SUBCOLLECTION_VIEWERS)
+            .whereEqualTo(FIELD_VIEWER_UID, uid)
             .get()
-            .addOnSuccessListener { snapshot ->
-                val batch = firestore.batch()
-                snapshot.documents.forEach { batch.delete(it.reference) }
-                batch.delete(firestore.collection(UserProfile.COLLECTION).document(uid))
-                commitDeletion(user, batch)
-            }
-            .addOnFailureListener { e ->
-                // Couldn't enumerate the block list — delete the profile
-                // document anyway rather than stranding the user in an account
-                // they've asked to remove.
-                Log.w(TAG, "Couldn't read block list while deleting account", e)
-                val batch = firestore.batch()
-                batch.delete(firestore.collection(UserProfile.COLLECTION).document(uid))
-                commitDeletion(user, batch)
-            }
-    }
 
-    /**
-     * Firestore first, then the Auth account. Deleting Auth first would revoke
-     * the credentials the Firestore writes are authorised by, leaving the
-     * documents behind with no signed-in user able to remove them.
-     */
-    private fun commitDeletion(user: FirebaseUser, batch: WriteBatch) {
-        val uid = user.uid
-        batch.commit()
-            .addOnFailureListener { e ->
-                // Logged, not fatal: the account deletion below is the part the
-                // user asked for, and a leftover profile document is recoverable
-                // server-side. Stopping here would leave them unable to proceed.
-                Log.w(TAG, "Failed to delete Firestore data for $uid", e)
-            }
-            .addOnCompleteListener {
-                user.delete()
-                    .addOnSuccessListener { onAccountDeleted(uid) }
+        Tasks.whenAllSuccess<QuerySnapshot>(blockedTask, passedTask, ownViewersTask, viewedByMeTask)
+            .addOnSuccessListener { snapshots ->
+                val refs = snapshots.flatMap { it.documents }.map { it.reference }.toMutableList()
+                refs.add(firestore.collection(UserProfile.COLLECTION).document(uid))
+
+                deleteInBatches(refs)
+                    .addOnSuccessListener { deleteAuthAccount(user) }
                     .addOnFailureListener { e ->
-                        Log.w(TAG, "Failed to delete auth account", e)
+                        Log.w(TAG, "Failed to delete Firestore data for $uid; account not deleted", e)
                         setBusy(false)
                         Toast.makeText(
                             this, R.string.error_account_delete_failed, Toast.LENGTH_LONG
                         ).show()
                     }
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to enumerate data to delete for $uid; account not deleted", e)
+                setBusy(false)
+                Toast.makeText(this, R.string.error_account_delete_failed, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Deletes [refs] across as many batches as needed — Firestore caps a
+     * single batch at 500 writes, and passes alone can already number up to
+     * [Passes.MAX_LOADED] (500) for one user. Chunks of 450 rather than 500
+     * to leave headroom for the profile document [deleteAccountData] always
+     * appends on top of whatever the four reads found.
+     *
+     * Batches commit sequentially, each chained via continueWithTask off the
+     * previous one, and a batch that fails short-circuits every batch after
+     * it (checking prev.isSuccessful and propagating its exception onward
+     * instead of attempting the next chunk) — the caller sees one failure
+     * for the whole operation rather than a partial, silently-incomplete
+     * deletion.
+     */
+    private fun deleteInBatches(refs: List<DocumentReference>): Task<Void> {
+        var chain: Task<Void> = Tasks.forResult(null)
+        for (chunk in refs.chunked(450)) {
+            chain = chain.continueWithTask { previous ->
+                if (!previous.isSuccessful) {
+                    Tasks.forException(previous.exception ?: Exception("Batch delete failed"))
+                } else {
+                    val batch = firestore.batch()
+                    chunk.forEach { batch.delete(it) }
+                    batch.commit()
+                }
+            }
+        }
+        return chain
+    }
+
+    /**
+     * Firestore is already gone by the time this runs — this is the last
+     * step, not a parallel one. Deleting Auth before the Firestore cleanup
+     * (the ordering this replaces) would revoke the credentials those writes
+     * are authorised by, leaving the documents behind with no signed-in user
+     * able to remove them.
+     */
+    private fun deleteAuthAccount(user: FirebaseUser) {
+        val uid = user.uid
+        user.delete()
+            .addOnSuccessListener { onAccountDeleted(uid) }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Firestore data deleted but failed to delete auth account for $uid", e)
+                setBusy(false)
+                Toast.makeText(
+                    this, R.string.error_account_delete_failed, Toast.LENGTH_LONG
+                ).show()
             }
     }
 
