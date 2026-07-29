@@ -1,0 +1,37 @@
+// ============================================================================
+//  ⚠️  DEPLOY AFTER EVERY CHANGE  ⚠️
+//
+//      firebase deploy --only storage
+//
+//  Editing this file does NOTHING until it's deployed — same as
+//  firestore.rules, see that file's own warning.
+// ============================================================================
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // One profile photo per user, always at the same path — see
+    // PhotoUploadService, which overwrites this object in place on a
+    // re-upload rather than accumulating new ones.
+    //
+    // Read is any signed-in user (including an anonymous guest session —
+    // see FirebaseAuth.realUid): the whole point of this file is that OTHER
+    // users' devices load it (their feed cards, chat headers, etc.), the
+    // same reasoning firestore.rules' own isOwner() comment gives for why
+    // the users collection is readable by anyone authenticated.
+    //
+    // Write is owner-only, and capped at 10MB with an image/* content type
+    // check — matches the kind of file this endpoint is actually for
+    // (a picked/captured JPEG), not an open drop point for arbitrary
+    // uploads under someone else's uid.
+    match /profile_photos/{uid}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.size < 10 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

@@ -185,7 +185,7 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      * (genuinely UI) is guarded by isFinishing.
      */
     private fun uploadThenSaveUrl(file: File) {
-        PhotoUploadService.uploadProfilePhoto(this, file.absolutePath, uid) { success, url, error ->
+        PhotoUploadService.uploadProfilePhoto(file.absolutePath, uid) { success, url, error ->
             if (success && url != null) {
                 firestore.collection(UserProfile.COLLECTION).document(uid)
                     .set(mapOf(UserProfile.FIELD_PHOTO_URL to url), SetOptions.merge())

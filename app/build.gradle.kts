@@ -96,6 +96,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    // Profile photo hosting — see PhotoUploadService.
+    implementation("com.google.firebase:firebase-storage-ktx")
     // Push notifications — see WedoraFirebaseMessagingService.
     implementation("com.google.firebase:firebase-messaging-ktx")
     // The disableUserAccount admin callable — see AdminReportDetailActivity.

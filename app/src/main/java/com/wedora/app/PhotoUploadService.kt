@@ -1,156 +1,83 @@
 package com.wedora.app
 
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
-import android.util.Base64
+import android.net.Uri
 import android.util.Log
-import org.json.JSONException
-import org.json.JSONObject
-import java.io.DataOutputStream
+import com.google.firebase.storage.FirebaseStorage
 import java.io.File
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.SocketTimeoutException
-import java.net.URL
-import java.util.concurrent.Executors
+
+private const val TAG = "WedoraPhotoUpload"
 
 /**
- * Uploads a profile photo to the hosted endpoint so other users' devices —
+ * Uploads a profile photo to Firebase Storage so other users' devices —
  * which have no access to this device's local filesDir — have something to
  * load. The local copy in [LocalProfilePrefs] stays the source of truth for
  * this device's own Profile screen; this is purely so OTHER users can see it
  * (see HomeActivity/ProfileDetailActivity/etc. loading `photoUrl` via Glide).
  *
- * Plain [HttpURLConnection] rather than OkHttp/Retrofit: this is the only
- * network call in the app that isn't Firebase, so pulling in a whole HTTP
- * client for one multipart POST would be a much bigger dependency than the
- * problem calls for. Multipart is built by hand for the same reason.
+ * Previously uploaded to a custom Hostinger-hosted PHP endpoint
+ * (upload.php); replaced with Firebase Storage after that host proved
+ * unreliable — connections to it started intermittently timing out/refusing
+ * outright, breaking photo loading app-wide with no code-side fix possible,
+ * since the app was never the problem. Storage rides on the same Firebase
+ * project (Blaze plan) already backing Auth/Firestore, so there's no
+ * separate host to go down independently of the rest of the app.
+ *
+ * One fixed object path per user (`profile_photos/{uid}/photo.jpg`, see
+ * storage.rules for the matching owner-write rule) — same "overwrite in
+ * place" shape [LocalProfilePrefs] already uses for the local copy, so a
+ * re-upload replaces the previous photo rather than accumulating orphaned
+ * files. Firebase's own download URL for a given path doesn't change when
+ * the object is overwritten (same token), which would otherwise mean Glide
+ * keeps serving whatever it cached under that exact URL string after a
+ * re-upload — a `v=<timestamp>` query param is appended before the URL is
+ * stored to force a fresh load each time, the same role the old Hostinger
+ * endpoint's own `?v=` param served.
  */
 object PhotoUploadService {
 
-    private const val TAG = "WedoraPhotoUpload"
-
-    private const val UPLOAD_URL =
-        "https://tuberstec.com/wedora/upload.php"
-
-    /**
-     * The endpoint's shared secret (upload.php's SECRET_KEY), Base64-encoded
-     * so it isn't a bare grep hit for the literal string — NOT real security
-     * (anyone who decompiles the APK has it in seconds either way); actual
-     * access control has to live server-side.
-     */
-    private const val ENCODED_UPLOAD_KEY = "V2Vkb3JhcGFzc3dvcmRfYWJjMTIzeHl6Nzg5"
-
-    private const val CONNECT_TIMEOUT_MS = 15_000
-    private const val READ_TIMEOUT_MS = 30_000
-
-    private const val BOUNDARY = "----WedoraPhotoUploadBoundary"
-    private const val LINE_END = "\r\n"
-    private const val TWO_HYPHENS = "--"
-
-    /** One background thread is plenty — photo uploads don't overlap in practice. */
-    private val executor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper())
-
-    private fun uploadKey(): String =
-        String(Base64.decode(ENCODED_UPLOAD_KEY, Base64.NO_WRAP), Charsets.UTF_8)
-
     /**
      * Uploads the JPEG at [localFilePath] for [uid]. [callback] always fires
-     * on the main thread, exactly once: [success] true only when the server
-     * reported success AND returned a usable `url`; [error] is a short,
-     * English, log-friendly reason — callers show their own fixed, localized
-     * toast rather than displaying this directly (matches how every other
-     * failure listener in this app reports to the user).
+     * on the main thread, exactly once: [success] true only when both the
+     * upload and the subsequent download-URL fetch succeeded; [error] is a
+     * short, English, log-friendly reason — callers show their own fixed,
+     * localized toast rather than displaying this directly (matches how
+     * every other failure listener in this app reports to the user).
      *
-     * Network work runs entirely on [executor]; nothing here ever touches
-     * the main thread except the final [callback] delivery.
+     * Firebase's Task listeners already run on the main thread by default
+     * (no executor given), so unlike the old HttpURLConnection-based
+     * implementation this needs no explicit background thread or main-thread
+     * hop of its own.
      */
     fun uploadProfilePhoto(
-        context: Context,
         localFilePath: String,
         uid: String,
         callback: (success: Boolean, url: String?, error: String?) -> Unit
     ) {
-        executor.execute {
-            val file = File(localFilePath)
-            if (!file.exists()) {
-                deliver(callback, false, null, "Local photo file does not exist")
-                return@execute
+        val file = File(localFilePath)
+        if (!file.exists()) {
+            deliver(callback, false, null, "Local photo file does not exist")
+            return
+        }
+
+        val photoRef = FirebaseStorage.getInstance().reference
+            .child("profile_photos/$uid/photo.jpg")
+
+        photoRef.putFile(Uri.fromFile(file))
+            .addOnSuccessListener {
+                photoRef.downloadUrl
+                    .addOnSuccessListener { uri ->
+                        val cacheBustedUrl = "$uri&v=${System.currentTimeMillis()}"
+                        deliver(callback, true, cacheBustedUrl, null)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Uploaded photo but failed to fetch its download URL", e)
+                        deliver(callback, false, null, "Upload succeeded but URL fetch failed")
+                    }
             }
-
-            var connection: HttpURLConnection? = null
-            try {
-                connection = (URL(UPLOAD_URL).openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    doOutput = true
-                    doInput = true
-                    useCaches = false
-                    connectTimeout = CONNECT_TIMEOUT_MS
-                    readTimeout = READ_TIMEOUT_MS
-                    setRequestProperty("Connection", "Keep-Alive")
-                    setRequestProperty("Content-Type", "multipart/form-data; boundary=$BOUNDARY")
-                    // Java's default User-Agent ("Java/<version>") is a known
-                    // bot signature some hosting WAFs reject outright, so a
-                    // normal-looking one is set here instead. Confirmed via
-                    // on-device diagnostics NOT to be the whole story for this
-                    // endpoint's 403 (see PhotoUploadService's git history) —
-                    // left in regardless since it's harmless and still good
-                    // practice for a plain HttpURLConnection call.
-                    setRequestProperty("User-Agent", "Mozilla/5.0 (Android) WedoraApp")
-                }
-
-                DataOutputStream(connection.outputStream).use { out ->
-                    writeFormField(out, "key", uploadKey())
-                    writeFormField(out, "uid", uid)
-                    writeFileField(out, "photo", file)
-                    out.writeBytes("$TWO_HYPHENS$BOUNDARY$TWO_HYPHENS$LINE_END")
-                }
-
-                val responseCode = connection.responseCode
-                val body = (if (responseCode in 200..299) connection.inputStream else connection.errorStream)
-                    ?.bufferedReader()?.use { it.readText() }
-                    .orEmpty()
-
-                if (responseCode !in 200..299) {
-                    deliver(callback, false, null, "Upload failed: HTTP $responseCode")
-                    return@execute
-                }
-
-                parseResponse(body, callback)
-            } catch (e: SocketTimeoutException) {
-                Log.w(TAG, "Photo upload timed out", e)
-                deliver(callback, false, null, "Upload timed out")
-            } catch (e: IOException) {
+            .addOnFailureListener { e ->
                 Log.w(TAG, "Photo upload failed", e)
-                deliver(callback, false, null, "No connection")
-            } finally {
-                connection?.disconnect()
+                deliver(callback, false, null, "Upload failed")
             }
-        }
-    }
-
-    private fun parseResponse(
-        body: String,
-        callback: (success: Boolean, url: String?, error: String?) -> Unit
-    ) {
-        try {
-            val json = JSONObject(body)
-            val success = json.optBoolean("success", false)
-            val url = json.optString("url").takeIf { it.isNotBlank() }
-            when {
-                success && url != null -> deliver(callback, true, url, null)
-                success -> deliver(callback, false, null, "Server reported success but returned no url")
-                else -> deliver(
-                    callback, false, null,
-                    json.optString("message").takeIf { it.isNotBlank() } ?: "Upload failed"
-                )
-            }
-        } catch (e: JSONException) {
-            Log.w(TAG, "Photo upload returned invalid JSON: $body", e)
-            deliver(callback, false, null, "Invalid server response")
-        }
     }
 
     private fun deliver(
@@ -160,25 +87,6 @@ object PhotoUploadService {
         error: String?
     ) {
         if (!success) Log.w(TAG, "Photo upload unsuccessful: $error")
-        mainHandler.post { callback(success, url, error) }
-    }
-
-    private fun writeFormField(out: DataOutputStream, name: String, value: String) {
-        out.writeBytes("$TWO_HYPHENS$BOUNDARY$LINE_END")
-        out.writeBytes("Content-Disposition: form-data; name=\"$name\"$LINE_END")
-        out.writeBytes(LINE_END)
-        out.writeBytes(value)
-        out.writeBytes(LINE_END)
-    }
-
-    private fun writeFileField(out: DataOutputStream, name: String, file: File) {
-        out.writeBytes("$TWO_HYPHENS$BOUNDARY$LINE_END")
-        out.writeBytes(
-            "Content-Disposition: form-data; name=\"$name\"; filename=\"${file.name}\"$LINE_END"
-        )
-        out.writeBytes("Content-Type: image/jpeg$LINE_END")
-        out.writeBytes(LINE_END)
-        file.inputStream().use { it.copyTo(out) }
-        out.writeBytes(LINE_END)
+        callback(success, url, error)
     }
 }
