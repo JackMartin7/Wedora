@@ -34,8 +34,8 @@ android {
         // is what actually covers that now, wired app-wide across every
         // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.0.2"
+        versionCode = 6
+        versionName = "1.0.5"
     }
 
     signingConfigs {
