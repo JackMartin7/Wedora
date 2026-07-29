@@ -133,7 +133,7 @@ object PushNotificationSender {
                 return@execute
             }
 
-            while (recentSendTimes.isNotEmpty() && now - recentSendTimes.peek() > RATE_LIMIT_WINDOW_MS) {
+            while (recentSendTimes.isNotEmpty() && now - recentSendTimes.peek()!! > RATE_LIMIT_WINDOW_MS) {
                 recentSendTimes.poll()
             }
             if (recentSendTimes.size >= RATE_LIMIT_MAX_SENDS) {
