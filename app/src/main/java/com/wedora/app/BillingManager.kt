@@ -151,8 +151,6 @@ object BillingManager {
             if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                 productDetailsList.forEach { productDetailsCache[it.productId] = it }
             } else {
-                // Expected until the two product IDs above actually exist in
-                // Play Console — see this feature's own rollout note.
                 Log.w(TAG, "queryProductDetails failed: ${billingResult.debugMessage}")
             }
         }
@@ -263,11 +261,10 @@ object BillingManager {
      * refund. Called on every cold start and sign-in ([attach]) and every
      * successful billing connection ([connect]), which is as close to "on
      * every app open" as a client-only integration can get.
-     */
-    /**
+     *
      * [onFoundActive], if given, reports whether an active subscription was
      * found — used by "Restore Purchase" to tell the user something actually
-     * happened. The app-launch call site (no callback) doesn't need that;
+     * happened. The app-launch call sites (no callback) don't need that;
      * silently reconciling in the background is the whole point there.
      */
     fun syncEntitlement(onFoundActive: ((Boolean) -> Unit)? = null) {
