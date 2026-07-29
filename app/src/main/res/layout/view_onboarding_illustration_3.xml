@@ -20,6 +20,7 @@
 
     <!-- Photo — female (left) : 140x140 @ (24,36), circular mask -->
     <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/photoLeft"
         android:layout_width="140dp"
         android:layout_height="140dp"
         android:layout_marginStart="24dp"
@@ -31,6 +32,7 @@
 
     <!-- Photo — male (right) : 140x140 @ (184,36), circular mask -->
     <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/photoRight"
         android:layout_width="140dp"
         android:layout_height="140dp"
         android:layout_marginStart="184dp"
@@ -42,6 +44,7 @@
 
     <!-- "80%" match badge : 80x80 @ (134,100), overlaps both photos -->
     <TextView
+        android:id="@+id/matchBadge"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:layout_marginStart="134dp"

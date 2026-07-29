@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Expanding pulse ring behind the splash heart logo — see SplashActivity's
+     ringPulse animation. White stroke; opacity is animated on the View
+     itself, not baked into the drawable. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@android:color/transparent" />
+    <stroke
+        android:width="1.5dp"
+        android:color="@color/white" />
+</shape>

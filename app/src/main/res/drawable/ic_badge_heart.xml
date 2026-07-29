@@ -4,10 +4,13 @@
     android:viewportWidth="32"
     android:viewportHeight="32">
 
-    <!-- Accent disc -->
+    <!-- Accent disc. Centred at (16,16), not (16,0): the original centred it
+         on y=0, which put the disc's whole top half outside the 0..32
+         viewport and rendered it as a flat-topped half-disc everywhere this
+         drawable is used. -->
     <path
         android:fillColor="@color/wedora_accent"
-        android:pathData="M16,0 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
+        android:pathData="M16,16 m-16,0 a16,16 0 1,0 32,0 a16,16 0 1,0 -32,0" />
 
     <!-- Heart -->
     <path

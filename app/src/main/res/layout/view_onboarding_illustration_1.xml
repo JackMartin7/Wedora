@@ -22,6 +22,7 @@
     <!-- ===== Background rings (concentric, centered) ===== -->
 
     <View
+        android:id="@+id/ringOuter"
         android:layout_width="280dp"
         android:layout_height="280dp"
         android:background="@drawable/bg_ring_outer" />
@@ -34,6 +35,7 @@
         android:background="@drawable/bg_ring_mid" />
 
     <View
+        android:id="@+id/ringInner"
         android:layout_width="180dp"
         android:layout_height="180dp"
         android:layout_marginStart="50dp"
@@ -44,6 +46,7 @@
 
     <!-- top-left : 58x58 @ (0,18), inner 52 -->
     <ImageView
+        android:id="@+id/avatarTL"
         android:layout_width="58dp"
         android:layout_height="58dp"
         android:layout_marginStart="0dp"
@@ -56,6 +59,7 @@
 
     <!-- top-right : 62x62 @ (186,20), inner 56 -->
     <ImageView
+        android:id="@+id/avatarTR"
         android:layout_width="62dp"
         android:layout_height="62dp"
         android:layout_marginStart="186dp"
@@ -68,6 +72,7 @@
 
     <!-- right-mid : 62x62 @ (232,105), inner 56 — overflows right edge ~14dp -->
     <ImageView
+        android:id="@+id/avatarRM"
         android:layout_width="62dp"
         android:layout_height="62dp"
         android:layout_marginStart="232dp"
@@ -80,6 +85,7 @@
 
     <!-- bottom-left : 62x62 @ (-6,198), inner 56 — overflows left edge ~6dp -->
     <ImageView
+        android:id="@+id/avatarBL"
         android:layout_width="62dp"
         android:layout_height="62dp"
         android:layout_marginStart="-6dp"
@@ -92,6 +98,7 @@
 
     <!-- bottom-center : 44x44 @ (80,201), inner 38 -->
     <ImageView
+        android:id="@+id/avatarBC"
         android:layout_width="44dp"
         android:layout_height="44dp"
         android:layout_marginStart="80dp"
@@ -105,6 +112,7 @@
     <!-- ===== Hero (dead-center: (280-118)/2 = 81) ===== -->
 
     <ImageView
+        android:id="@+id/avatarCenter"
         android:layout_width="118dp"
         android:layout_height="118dp"
         android:layout_marginStart="81dp"
@@ -119,6 +127,7 @@
 
     <!-- heart badge : 32x32 @ (124,-14) — floats above the top edge -->
     <ImageView
+        android:id="@+id/heartBadge"
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_marginStart="124dp"
@@ -128,6 +137,7 @@
 
     <!-- dot_1 : 36x36 @ (8,120) -->
     <View
+        android:id="@+id/dot1"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginStart="8dp"
@@ -136,6 +146,7 @@
 
     <!-- dot_2 : 34x34 @ (202,244) -->
     <View
+        android:id="@+id/dot2"
         android:layout_width="34dp"
         android:layout_height="34dp"
         android:layout_marginStart="202dp"

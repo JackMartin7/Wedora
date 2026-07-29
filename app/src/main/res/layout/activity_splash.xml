@@ -1,17 +1,181 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Splash — see SplashActivity for the full timed animation sequence this
+    layout exists to drive (rings, heart pop+beat, wordmark typewriter
+    reveal, tagline/dots fade-up, progress bar). Every view below starts in
+    its pre-animation state (invisible/zero-scale/zero-width) and is driven
+    entirely from code; nothing here plays on its own.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg_splash_gradient">
+    android:layout_height="match_parent">
 
-    <!-- App logo / name centered; replace with your logo ImageView if you have one -->
-    <TextView
+    <!-- Separate from the root so wd-bg-drift's scale animation doesn't
+         also scale (and thus letterbox) everything else on screen. -->
+    <View
+        android:id="@+id/bgDrift"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_splash_gradient" />
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="@string/app_name"
-        android:textColor="@color/white"
-        android:textSize="32sp"
-        android:fontFamily="@font/poppins_medium" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- clipChildren/clipToPadding disabled: the heart pop-in's bouncy
+             overshoot curve transiently scales past 1.0 (up to ~1.56x per
+             cubic-bezier(.34,1.56,.64,1)'s own peak), which would otherwise
+             get clipped flat against this container's fixed bounds. -->
+        <FrameLayout
+            android:id="@+id/heartContainer"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <View
+                android:id="@+id/ring1"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:alpha="0"
+                android:background="@drawable/bg_splash_ring" />
+
+            <View
+                android:id="@+id/ring2"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_gravity="center"
+                android:alpha="0"
+                android:background="@drawable/bg_splash_ring" />
+
+            <ImageView
+                android:id="@+id/heartLogo"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center"
+                android:scaleX="0"
+                android:scaleY="0"
+                android:alpha="0"
+                android:src="@drawable/ic_badge_heart"
+                android:contentDescription="@null" />
+
+        </FrameLayout>
+
+        <!-- Wordmark: wordmarkClip's width is animated 0 -> its measured
+             content width in SplashActivity (the typewriter reveal), with
+             wordmarkText itself never moving — the clip is what shows/hides
+             letters, not a translation.
+
+             wordmarkText is given an explicit pixel width in code (and
+             singleLine) rather than wrap_content: a FrameLayout passes its
+             own width down as the child's measure constraint, so while the
+             clip is mid-reveal a wrap_content child re-wraps its text to fit
+             ("W / ed / or / a") instead of being clipped. A fixed width makes
+             the child measure at full size regardless and leaves the parent
+             to do the clipping, which is the whole point. -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <FrameLayout
+                android:id="@+id/wordmarkClip"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:clipChildren="true">
+
+                <TextView
+                    android:id="@+id/wordmarkText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:singleLine="true"
+                    android:text="@string/app_name"
+                    android:textColor="@color/white"
+                    android:textSize="34sp"
+                    android:fontFamily="@font/poppins_semibold" />
+
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/caret"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:alpha="0"
+                android:text="@string/splash_caret"
+                android:textColor="@color/white"
+                android:textSize="34sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tagline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:alpha="0"
+            android:text="@string/splash_tagline"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:fontFamily="@font/poppins_medium" />
+
+        <LinearLayout
+            android:id="@+id/loadingDots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:orientation="horizontal"
+            android:alpha="0"
+            android:gravity="center">
+
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:background="@drawable/bg_loading_dot" />
+
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_loading_dot" />
+
+            <View
+                android:layout_width="7dp"
+                android:layout_height="7dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_loading_dot" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Progress bar: fixed-width track, progressFill's width is animated
+         0 -> match_parent-of-track in SplashActivity. -->
+    <FrameLayout
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="56dp">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@drawable/bg_loading_dot"
+            android:alpha="0.25" />
+
+        <View
+            android:id="@+id/progressFill"
+            android:layout_width="0dp"
+            android:layout_height="3dp"
+            android:layout_gravity="start"
+            android:background="@drawable/bg_loading_dot" />
+
+    </FrameLayout>
 
 </FrameLayout>

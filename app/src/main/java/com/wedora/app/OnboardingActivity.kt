@@ -40,13 +40,43 @@ class OnboardingActivity : WedoraBaseActivity() {
         setContentView(binding.root)
         applyEdgeInsets(binding.root)
 
-        binding.viewPager.adapter = OnboardingAdapter(pages)
+        val adapter = OnboardingAdapter(pages)
+        binding.viewPager.adapter = adapter
+        // Keeps all three pages alive rather than recycling them, which is
+        // what lets OnboardingAdapter hold onto its holders to drive
+        // per-page entrance animations. Trivial cost for 3 static pages.
+        binding.viewPager.offscreenPageLimit = pages.size
 
         buildIndicators()
         updateIndicators(0)
 
+        // Pagination dots / Next button rise in once, on first entry — the
+        // motion spec only lists these in screen 1's own animation table,
+        // matching how they're persistent chrome here (outside the pager),
+        // not per-page content that should re-animate on every swipe.
+        Motion.riseUp(binding.indicatorContainer, durationMs = 500, delayMs = 1200)
+        Motion.riseUp(binding.btnNext, durationMs = 550, delayMs = 1300)
+
         binding.viewPager.registerOnPageChangeCallback(
             object : ViewPager2.OnPageChangeCallback() {
+                /**
+                 * Entrance animations are driven from here, not from
+                 * onPageSelected: that only fires once a swipe settles, so a
+                 * page would sit visibly blank for the whole drag before
+                 * animating. Firing as soon as a page is even partially
+                 * scrolled into view means its choreography starts with the
+                 * swipe. [OnboardingAdapter.playEntranceIfNeeded] is
+                 * idempotent, so being called on every scroll frame is fine.
+                 */
+                override fun onPageScrolled(
+                    position: Int,
+                    positionOffset: Float,
+                    positionOffsetPixels: Int
+                ) {
+                    adapter.playEntranceIfNeeded(position)
+                    if (positionOffset > 0f) adapter.playEntranceIfNeeded(position + 1)
+                }
+
                 override fun onPageSelected(position: Int) {
                     updateIndicators(position)
                     binding.btnNext.setText(
@@ -56,6 +86,11 @@ class OnboardingActivity : WedoraBaseActivity() {
                 }
             }
         )
+
+        // Page 0's own entrance: onPageScrolled normally fires after the
+        // first layout pass, but posting it too is cheap insurance against
+        // the first page ever sitting at prepareHidden()'s alpha 0.
+        binding.viewPager.post { adapter.playEntranceIfNeeded(0) }
 
         binding.tvSkip.setOnClickListener { finishOnboarding() }
 

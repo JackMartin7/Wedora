@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Wedora</string>
+    <string name="splash_tagline">Find your soul mate</string>
+    <string name="splash_caret" translatable="false">|</string>
 
     <!-- Login -->
     <string name="login_title">Login</string>
