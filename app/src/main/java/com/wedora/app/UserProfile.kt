@@ -167,6 +167,16 @@ data class UserProfile(
         const val FIELD_IS_BANNED = "isBanned"
         const val FIELD_BAN_REASON = "banReason"
 
+        /**
+         * Reference-only fields from the last Play Billing purchase that set
+         * [FIELD_IS_PREMIUM] — see BillingManager. Nothing in the app reads
+         * these back; they exist for support/debugging (e.g. confirming
+         * which plan a user is on, or looking a purchase up in the Play
+         * Console) rather than as inputs to any decision.
+         */
+        const val FIELD_PURCHASE_TOKEN = "purchaseToken"
+        const val FIELD_PRODUCT_ID = "productId"
+
         /** Character cap on [bio], enforced by the editor's input filter too. */
         const val MAX_BIO_LENGTH = 150
 

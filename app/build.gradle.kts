@@ -114,4 +114,7 @@ dependencies {
     // Native ads in the Home swipe stack (free users only) — see
     // NativeAdLoader.kt for the test-vs-real ad unit ID setup.
     implementation("com.google.android.gms:play-services-ads:23.3.0")
+
+    // Play Billing for Premium subscriptions — see BillingManager.
+    implementation("com.android.billingclient:billing-ktx:7.1.1")
 }

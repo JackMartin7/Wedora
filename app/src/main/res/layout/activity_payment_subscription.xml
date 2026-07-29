@@ -213,6 +213,8 @@
                         android:id="@+id/tvMonthlyTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:maxLines="1"
+                        android:ellipsize="end"
                         android:text="@string/plan_monthly_title"
                         android:textColor="@color/wedora_text"
                         android:textSize="15sp"
@@ -223,6 +225,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
                         android:gravity="center"
                         android:text="@string/plan_monthly_price"
                         android:textColor="@color/wedora_text_secondary"
@@ -230,15 +234,20 @@
 
                 </LinearLayout>
 
-                <!-- Yearly. The badge overlaps the card's top-right corner, so
-                     the card and badge sit in a FrameLayout with clipping off. -->
+                <!-- Yearly. The badge sits in a FrameLayout over cardYearly,
+                     positioned within the row's normal bounds (no negative
+                     margin — that used to poke it above the FrameLayout's
+                     parent LinearLayout, which clips children by default and
+                     was chopping the badge's own top off). cardYearly's own
+                     paddingTop is inflated well past the badge's rendered
+                     height so its title/price never sit underneath it,
+                     regardless of the badge's exact size or the card's
+                     width. -->
                 <FrameLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="12dp"
-                    android:clipChildren="false"
-                    android:clipToPadding="false">
+                    android:layout_marginStart="12dp">
 
                     <LinearLayout
                         android:id="@+id/cardYearly"
@@ -256,6 +265,8 @@
                             android:id="@+id/tvYearlyTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:text="@string/plan_yearly_title"
                             android:textColor="@color/white"
                             android:textSize="15sp"
@@ -266,27 +277,14 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
                             android:gravity="center"
                             android:text="@string/plan_yearly_price"
                             android:textColor="@color/white"
                             android:textSize="13sp" />
 
                     </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvBestValue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="-8dp"
-                        android:layout_marginEnd="-4dp"
-                        android:background="@drawable/bg_badge_on_accent"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="3dp"
-                        android:text="@string/plan_best_value"
-                        android:textColor="@color/wedora_accent"
-                        android:textSize="10sp"
-                        android:fontFamily="@font/poppins_semibold" />
 
                 </FrameLayout>
 
@@ -313,13 +311,30 @@
 
             <!-- ===== Subscribe ===== -->
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnSubscribe"
-                style="@style/WedoraPrimaryButton"
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_height="54dp"
-                android:layout_marginTop="24dp"
-                android:text="@string/plan_subscribe" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnSubscribe"
+                    style="@style/WedoraPrimaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:text="@string/plan_subscribe" />
+
+                <!-- Shown instead of btnSubscribe's label while a purchase is
+                     in flight — the button itself is disabled, not hidden, so
+                     its bounds don't jump. -->
+                <ProgressBar
+                    android:id="@+id/progressSubscribe"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/white"
+                    android:visibility="gone" />
+
+            </FrameLayout>
 
             <TextView
                 android:layout_width="match_parent"

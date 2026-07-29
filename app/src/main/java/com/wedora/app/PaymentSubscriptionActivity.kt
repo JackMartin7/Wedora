@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -11,17 +12,14 @@ import com.wedora.app.databinding.ActivityPaymentSubscriptionBinding
 import com.wedora.app.databinding.ItemPremiumFeatureBinding
 
 /**
- * Premium plans and the (not yet built) subscribe flow.
+ * Premium plans and the subscribe flow — see [BillingManager] for the actual
+ * Play Billing integration this screen drives.
  *
- * Nothing here transacts. There is no Play Billing integration, no product
- * IDs and no entitlement stored anywhere, so both Subscribe and Restore land
- * on a "Coming Soon" dialog rather than pretending to charge or unlock
- * something. The plan selection is real UI state but is not persisted — it
- * would only be read by a purchase flow that doesn't exist yet.
- *
- * The prices are the design's placeholder copy. Real prices have to come from
- * the Play Console at runtime (they're per-country and can change), so treat
- * these as layout, not as a source of truth.
+ * The prices shown while a card is just being browsed are the design's
+ * placeholder copy; [BillingManager.formattedPrice] overwrites them with the
+ * real, per-country Play Console price once product details resolve (it may
+ * not have resolved yet by the time this screen opens, hence the
+ * placeholder-first approach rather than blocking on it).
  */
 class PaymentSubscriptionActivity : WedoraBaseActivity() {
 
@@ -29,6 +27,9 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
 
     /** Yearly is preselected, matching the design's default emphasis. */
     private var yearlySelected = true
+
+    /** True while a purchase is in flight — guards against a double-tap launching two billing flows. */
+    private var purchaseInProgress = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,12 +42,13 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
         binding.cardMonthly.setOnClickListener { selectPlan(yearly = false) }
         binding.cardYearly.setOnClickListener { selectPlan(yearly = true) }
 
-        binding.btnSubscribe.setOnClickListener { showComingSoon() }
+        binding.btnSubscribe.setOnClickListener { subscribe() }
         binding.btnSubscribe.addPressScale()
-        binding.tvRestorePurchase.setOnClickListener { showComingSoon() }
+        binding.tvRestorePurchase.setOnClickListener { restorePurchase() }
 
         buildFeatureList()
         applyPlanSelection()
+        applyLivePrices()
     }
 
     /**
@@ -113,13 +115,7 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
         // with it: white-on-accent while that card is filled, accent-on-white
         // once it isn't. A single fixed treatment would vanish into one state
         // or the other.
-        binding.tvBestValue.setBackgroundResource(
-            if (yearlySelected) R.drawable.bg_badge_on_accent
-            else R.drawable.bg_badge_on_surface
-        )
-        binding.tvBestValue.setTextColor(
-            color(if (yearlySelected) R.color.wedora_accent else R.color.white)
-        )
+
     }
 
     private fun styleCard(
@@ -139,12 +135,83 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
 
     private fun color(@ColorRes resId: Int) = ContextCompat.getColor(this, resId)
 
-    // ----- Not yet available ----------------------------------------------
+    // ----- Live prices -------------------------------------------------
 
-    private fun showComingSoon() {
+    /**
+     * Overwrites the placeholder price copy with Play Console's real,
+     * per-country price once product details have resolved — a no-op (the
+     * placeholder keeps showing) if they haven't resolved yet, which is the
+     * common case right after a fresh install since BillingManager only
+     * starts querying once its connection finishes (see its own doc
+     * comment). There's no callback for "details just arrived" to re-run
+     * this against, so a user who opens this screen in that window keeps
+     * the placeholder for this visit — acceptable since it's the same
+     * currency/ballpark copy the design already shipped with.
+     */
+    private fun applyLivePrices() {
+        BillingManager.formattedPrice(BillingManager.PRODUCT_ID_MONTHLY)?.let {
+            binding.tvMonthlyPrice.text = getString(R.string.plan_monthly_price_format, it)
+        }
+        BillingManager.formattedPrice(BillingManager.PRODUCT_ID_YEARLY)?.let {
+            binding.tvYearlyPrice.text = getString(R.string.plan_yearly_price_format, it)
+        }
+    }
+
+    // ----- Purchase ------------------------------------------------------
+
+    private fun subscribe() {
+        if (purchaseInProgress) return
+        val productId = if (yearlySelected) BillingManager.PRODUCT_ID_YEARLY else BillingManager.PRODUCT_ID_MONTHLY
+
+        setPurchaseLoading(true)
+        BillingManager.launchBillingFlow(this, productId) { result ->
+            setPurchaseLoading(false)
+            when (result) {
+                BillingManager.PurchaseResult.Success -> {
+                    // The Firestore write BillingManager just made will also
+                    // reach PremiumStatus's own listener, but that's a
+                    // separate async round trip — applying it here too means
+                    // this screen flips to premiumMemberSection immediately
+                    // rather than waiting on it.
+                    applyPremiumState()
+                }
+                BillingManager.PurchaseResult.Cancelled -> {
+                    // The user backed out of Google's own payment sheet —
+                    // not an error, so no dialog/toast, matching how this
+                    // app treats every other user-initiated cancel (e.g.
+                    // dismissing a photo picker).
+                }
+                is BillingManager.PurchaseResult.Failed -> showPurchaseFailed()
+            }
+        }
+    }
+
+    private fun restorePurchase() {
+        if (purchaseInProgress) return
+        setPurchaseLoading(true)
+        BillingManager.syncEntitlement { foundActive ->
+            setPurchaseLoading(false)
+            applyPremiumState()
+            Toast.makeText(
+                this,
+                if (foundActive) R.string.plan_restore_success else R.string.plan_restore_none_found,
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun setPurchaseLoading(loading: Boolean) {
+        purchaseInProgress = loading
+        binding.btnSubscribe.isEnabled = !loading
+        binding.tvRestorePurchase.isEnabled = !loading
+        binding.progressSubscribe.visibility = if (loading) View.VISIBLE else View.GONE
+        binding.btnSubscribe.text = if (loading) "" else getString(R.string.plan_subscribe)
+    }
+
+    private fun showPurchaseFailed() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.plan_coming_soon_title)
-            .setMessage(R.string.plan_coming_soon_message)
+            .setTitle(R.string.plan_purchase_failed_title)
+            .setMessage(R.string.plan_purchase_failed_message)
             .setPositiveButton(R.string.action_ok, null)
             .show()
     }

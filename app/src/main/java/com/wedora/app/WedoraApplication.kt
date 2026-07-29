@@ -30,6 +30,11 @@ class WedoraApplication : Application() {
         // doesn't each run its own Firestore read to decide whether to show.
         PremiumStatus.attach()
 
+        // Play Billing connection + entitlement sync — see BillingManager's
+        // own doc comment for why this has to run from cold start, not
+        // lazily from PaymentSubscriptionActivity.
+        BillingManager.attach(this)
+
         // Native ads in Home's swipe stack (free users only). Init is
         // fire-and-forget — the SDK queues ad requests made before it
         // finishes, so nothing has to wait on the completion callback.
