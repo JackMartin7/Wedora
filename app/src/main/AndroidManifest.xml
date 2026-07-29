@@ -17,14 +17,11 @@
         android:theme="@style/Theme.Wedora"
         android:supportsRtl="true">
 
-        <!--
-            Google's public test App ID — shows test ads only, never real
-            revenue, safe to ship during development. See NativeAdLoader.kt
-            for the full swap-to-real-IDs checklist before release.
-        -->
+        <!-- Real AdMob App ID — see NativeAdLoader.kt for the three
+             placements' own ad unit IDs. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-6998303779941960~4404028839" />
 
         <!-- Push notifications — see WedoraFirebaseMessagingService's own
              doc comment for why send_notification.php sends data-only

@@ -1,7 +1,3 @@
-// Intentionally using test ad IDs through internal/closed testing to avoid
-// invalid-traffic risk on real ad units. Swap to real IDs immediately before
-// public release.
-
 package com.wedora.app
 
 import android.content.Context
@@ -13,19 +9,25 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.nativead.NativeAd
 
 /**
- * Loads one native ad at a time for Home's swipe stack (see
- * HomeActivity.refillAdPool). Google's public test native ad unit ID —
- * always resolves to a real, renderable test ad, so callers can develop and
- * test the actual insertion/binding/dismiss flow without an AdMob account.
+ * Loads one native ad at a time for whichever placement calls it — see
+ * [NativeAdPool], which owns picking the right ad unit ID per screen and
+ * passes it in here.
  */
 object NativeAdLoader {
 
     private const val TAG = "WedoraAds"
 
-    private const val TEST_NATIVE_AD_UNIT_ID = "ca-app-pub-3940256099942544/2247696110"
+    /** Home's swipe stack — AdMob console name "Native swaping". */
+    const val AD_UNIT_ID_HOME_SWIPE = "ca-app-pub-6998303779941960/6974351853"
 
-    fun loadAd(context: Context, onLoaded: (NativeAd) -> Unit, onFailed: () -> Unit) {
-        val loader = AdLoader.Builder(context, TEST_NATIVE_AD_UNIT_ID)
+    /** Explore's Discover grid — AdMob console name "Native explore". */
+    const val AD_UNIT_ID_EXPLORE = "ca-app-pub-6998303779941960/3186436074"
+
+    /** Likes screen's list — AdMob console name "Native likes". */
+    const val AD_UNIT_ID_LIKES = "ca-app-pub-6998303779941960/1649993126"
+
+    fun loadAd(context: Context, adUnitId: String, onLoaded: (NativeAd) -> Unit, onFailed: () -> Unit) {
+        val loader = AdLoader.Builder(context, adUnitId)
             .forNativeAd { nativeAd -> onLoaded(nativeAd) }
             .withAdListener(object : AdListener() {
                 override fun onAdFailedToLoad(adError: LoadAdError) {

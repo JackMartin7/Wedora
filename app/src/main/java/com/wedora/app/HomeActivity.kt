@@ -70,7 +70,7 @@ class HomeActivity :
      * buildDisplayItems). Shared implementation with ExploreActivity's own
      * pool — see [NativeAdPool].
      */
-    private val adPool = NativeAdPool(this)
+    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_HOME_SWIPE)
 
     /**
      * Positions in [displayItems] where [buildDisplayItems] wanted to insert
@@ -106,12 +106,11 @@ class HomeActivity :
      * An ad's [NativeAd.destroy] fires the moment its card leaves the stack
      * (either direction — a dismissed ad and a swiped one are the same exit),
      * not deferred to [onDestroy]. Left any longer, a swiped-away ad's
-     * rendered resources (creative assets, click tracking, and — with the
-     * test ad unit this still uses, see NativeAdLoader — possibly the test
-     * SDK's own debug overlay) stayed alive on screen until the whole
-     * Activity closed. [onDestroy] still calls destroy() on every ad in
-     * [displayItems]/[adPool] too, for anything never swiped — a repeat call
-     * on one already destroyed here is a documented no-op, not an error.
+     * rendered resources (creative assets, click tracking) stayed alive on
+     * screen until the whole Activity closed. [onDestroy] still calls
+     * destroy() on every ad in [displayItems]/[adPool] too, for anything
+     * never swiped — a repeat call on one already destroyed here is a
+     * documented no-op, not an error.
      */
     private val stackListener = object : SwipeCardStackView.Listener {
         override fun onBindCard(cardView: View, position: Int) {

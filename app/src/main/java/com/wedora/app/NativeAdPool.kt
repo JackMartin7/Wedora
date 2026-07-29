@@ -104,6 +104,7 @@ class FirstTwoThenFourAdGap {
  */
 class NativeAdPool(
     private val context: Context,
+    private val adUnitId: String,
     private val target: Int = DEFAULT_TARGET
 ) {
     private companion object {
@@ -136,6 +137,7 @@ class NativeAdPool(
             inFlight++
             NativeAdLoader.loadAd(
                 context,
+                adUnitId,
                 onLoaded = { ad ->
                     inFlight--
                     if (onBackfilled(ad)) refill(onBackfilled) else pool.addLast(ad)

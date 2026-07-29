@@ -65,7 +65,7 @@ class LikesActivity : WedoraBaseActivity() {
      * [NativeAdPool]), a separate instance since each screen manages its own
      * display list.
      */
-    private val adPool = NativeAdPool(this)
+    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_LIKES)
 
     /**
      * Positions in the grid where [buildLikesGridItems] wanted to insert an

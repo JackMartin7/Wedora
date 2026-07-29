@@ -50,7 +50,7 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
      * implementation HomeActivity's swipe stack uses (see [NativeAdPool]),
      * a separate instance since each screen manages its own display list.
      */
-    private val adPool = NativeAdPool(this)
+    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_EXPLORE)
 
     /**
      * Positions in the grid where [buildDiscoverGridItems] wanted to insert

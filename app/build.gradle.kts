@@ -34,8 +34,8 @@ android {
         // is what actually covers that now, wired app-wide across every
         // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 8
-        versionName = "1.1.1"
+        versionCode = 9
+        versionName = "1.1.2"
     }
 
     signingConfigs {
@@ -111,8 +111,9 @@ dependencies {
     // Fused location provider, for city-level location detection on Complete Profile
     implementation("com.google.android.gms:play-services-location:21.3.0")
 
-    // Native ads in the Home swipe stack (free users only) — see
-    // NativeAdLoader.kt for the test-vs-real ad unit ID setup.
+    // Native ads in the Home swipe stack, Explore grid, and Likes list
+    // (free users only) — see NativeAdLoader.kt for the three placements'
+    // ad unit IDs.
     implementation("com.google.android.gms:play-services-ads:23.3.0")
 
     // Play Billing for Premium subscriptions — see BillingManager.
