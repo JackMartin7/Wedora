@@ -223,6 +223,20 @@ object UpdateRepository {
     }
 
     private fun onInfo(info: AppUpdateInfo) {
+        // The raw Play answer, before any of our own interpretation. Pairs with
+        // update_path_decision: together they separate "Play said no update"
+        // from "Play said yes and we chose not to interrupt", which otherwise
+        // look identical from the outside.
+        Log.i(
+            TAG,
+            "appUpdateInfo availability=${availabilityName(info.updateAvailability())} " +
+                "install_status=${installStatusName(info.installStatus())} " +
+                "available_version=${info.availableVersionCode()} " +
+                "priority=${info.updatePriority()} " +
+                "staleness_days=${info.clientVersionStalenessDays() ?: -1} " +
+                "total_bytes=${info.totalBytesToDownload()}"
+        )
+
         // Bytes already on disk outrank everything else, and this is checked
         // BEFORE updateAvailability rather than inside the in-progress branch.
         // Play's documented flexible-resume contract is "on every resume, if
@@ -296,21 +310,33 @@ object UpdateRepository {
      */
     fun pathFor(versionCode: Int, priority: Int, stalenessDays: Int): UpdatePath {
         val minSupported = UpdateCopy.minSupportedVersion()
-        if (minSupported > 0 && currentVersionCode() < minSupported) {
-            return UpdatePath.IMMEDIATE_BLOCKING
-        }
-        if (priority >= PRIORITY_IMMEDIATE) return UpdatePath.IMMEDIATE_BLOCKING
+        val budgetOk = UpdatePrefs.mayPrompt(appContext, versionCode)
+        val promptCount = UpdatePrefs.promptCount(appContext, versionCode)
 
-        val earnsSheet = priority >= PRIORITY_SHEET || stalenessDays >= STALENESS_SHEET_DAYS
-        if (!earnsSheet) return UpdatePath.PASSIVE_ROW
-
-        // Interruption is allowed only if the budget has room; otherwise the
-        // update is real but demoted to the row.
-        return if (UpdatePrefs.mayPrompt(appContext, versionCode)) {
-            UpdatePath.FLEXIBLE_SHEET
-        } else {
-            UpdatePath.PASSIVE_ROW
+        val path = when {
+            minSupported > 0 && currentVersionCode() < minSupported -> UpdatePath.IMMEDIATE_BLOCKING
+            priority >= PRIORITY_IMMEDIATE -> UpdatePath.IMMEDIATE_BLOCKING
+            // Routine release: real, but it does not earn an interruption.
+            priority < PRIORITY_SHEET && stalenessDays < STALENESS_SHEET_DAYS -> UpdatePath.PASSIVE_ROW
+            // Earned a sheet, but the nag budget decides whether it gets one.
+            budgetOk -> UpdatePath.FLEXIBLE_SHEET
+            else -> UpdatePath.PASSIVE_ROW
         }
+
+        // Why a given update did or did not interrupt is otherwise invisible:
+        // an update can be genuinely available and still (correctly) show
+        // nothing but the App Version row, and without this the two look
+        // identical from outside. Logged at every decision, including the
+        // budget inputs, so "no sheet appeared" can be attributed to priority,
+        // staleness or the budget rather than guessed at.
+        Log.i(
+            TAG,
+            "update_path_decision path=$path priority=$priority staleness_days=$stalenessDays " +
+                "min_supported=$minSupported current=${currentVersionCode()} available=$versionCode " +
+                "budget_ok=$budgetOk prompt_count=$promptCount/${UpdatePrefs.MAX_PROMPTS_PER_VERSION} " +
+                "(priority>=$PRIORITY_IMMEDIATE blocks, >=$PRIORITY_SHEET or staleness>=$STALENESS_SHEET_DAYS earns a sheet)"
+        )
+        return path
     }
 
     private fun isBlocking(info: AppUpdateInfo?): Boolean =
@@ -520,6 +546,27 @@ object UpdateRepository {
     private fun cancelStallCheck() {
         stallCheck?.let(handler::removeCallbacks)
         stallCheck = null
+    }
+
+    /** Play's int constants are opaque in a log; these make them readable. */
+    private fun availabilityName(value: Int) = when (value) {
+        UpdateAvailability.UPDATE_AVAILABLE -> "UPDATE_AVAILABLE"
+        UpdateAvailability.UPDATE_NOT_AVAILABLE -> "UPDATE_NOT_AVAILABLE"
+        UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> "DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS"
+        UpdateAvailability.UNKNOWN -> "UNKNOWN"
+        else -> "UNRECOGNISED($value)"
+    }
+
+    private fun installStatusName(value: Int) = when (value) {
+        InstallStatus.DOWNLOADED -> "DOWNLOADED"
+        InstallStatus.DOWNLOADING -> "DOWNLOADING"
+        InstallStatus.INSTALLED -> "INSTALLED"
+        InstallStatus.INSTALLING -> "INSTALLING"
+        InstallStatus.FAILED -> "FAILED"
+        InstallStatus.CANCELED -> "CANCELED"
+        InstallStatus.PENDING -> "PENDING"
+        InstallStatus.UNKNOWN -> "UNKNOWN"
+        else -> "UNRECOGNISED($value)"
     }
 
     /** Test seam for [UpdateDebug]; never called in production code. */
