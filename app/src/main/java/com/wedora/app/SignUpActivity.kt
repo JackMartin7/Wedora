@@ -228,10 +228,10 @@ class SignUpActivity : WedoraBaseActivity() {
     }
 
     /**
-     * Builds the "…Terms of Service and Privacy Policy" line with the two
-     * document names as tappable, accent-coloured links, assembled from parts
-     * so the spans land on the right ranges without counting characters by
-     * hand.
+     * Builds the "I agree to the Terms & Privacy Policy" line sitting beside
+     * the consent checkbox, with the two document names as tappable,
+     * accent-coloured links — assembled from parts so the spans land on the
+     * right ranges without counting characters by hand.
      */
     private fun setUpAgreementLinks() {
         val prefix = getString(R.string.signup_agreement_prefix)
@@ -268,6 +268,16 @@ class SignUpActivity : WedoraBaseActivity() {
         binding.tvAgreementLinks.text = spannable
         // Without this the ClickableSpans render but don't receive taps.
         binding.tvAgreementLinks.movementMethod = LinkMovementMethod.getInstance()
+
+        // Tapping the wording anywhere that isn't one of the two links
+        // toggles the box, which is what a plain CheckBox with its own
+        // android:text would give for free — the row shouldn't lose that just
+        // because the text moved into a separate view to carry the links.
+        // LinkMovementMethod reports the touch as unhandled when no span was
+        // hit, so this still runs for the non-link parts of the line.
+        binding.tvAgreementLinks.setOnClickListener {
+            binding.cbAgreeTerms.isChecked = !binding.cbAgreeTerms.isChecked
+        }
     }
 
     private fun togglePasswordVisibility() {

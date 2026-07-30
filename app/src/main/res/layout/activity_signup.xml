@@ -129,35 +129,42 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms" />
 
-        <!-- The agreement, with the two documents as tappable links. Sits above
-             the checkbox, which restates it as the thing Sign Up is gated on. -->
-        <TextView
-            android:id="@+id/tvAgreementLinks"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:textColor="@color/wedora_text_secondary"
-            android:textSize="12sp"
-            android:lineSpacingExtra="2sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etPassword" />
+        <!--
+            Consent row: a bare checkbox with the agreement wording beside it
+            on ONE line, both document names tappable. Sign Up stays disabled
+            until this is ticked (and email + password are filled).
 
-        <!-- Agreement checkbox, directly above Sign Up which stays disabled
-             until it's ticked (and email + password are filled). -->
+            The wording is its own TextView rather than the CheckBox's own
+            android:text because ClickableSpans need a movementMethod, and
+            setting one on a CheckBox swallows the touch that toggles it.
+            SignUpActivity re-adds tap-to-toggle on the wording so the row
+            still behaves like a normal labelled checkbox.
+
+            This replaces what used to be two stacked blocks — a "By signing
+            up, you agree to our…" paragraph plus a checkbox restating it —
+            each of which wrapped onto two lines.
+        -->
         <CheckBox
             android:id="@+id/cbAgreeTerms"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="@string/signup_agreement_checkbox"
-            android:textColor="@color/wedora_text"
-            android:textSize="13sp"
+            android:layout_marginTop="20dp"
             android:buttonTint="@color/wedora_accent"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/etPassword" />
+
+        <TextView
+            android:id="@+id/tvAgreementLinks"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:maxLines="1"
+            android:textColor="@color/wedora_text"
+            android:textSize="13sp"
+            app:layout_constraintStart_toEndOf="@id/cbAgreeTerms"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0"
-            app:layout_constraintTop_toBottomOf="@id/tvAgreementLinks" />
+            app:layout_constraintTop_toTopOf="@id/cbAgreeTerms"
+            app:layout_constraintBottom_toBottomOf="@id/cbAgreeTerms" />
 
         <!-- Divider "Or continue with" -->
         <View
