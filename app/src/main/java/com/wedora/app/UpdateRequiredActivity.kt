@@ -7,6 +7,7 @@ import android.net.ConnectivityManager
 import android.os.Bundle
 import android.text.format.Formatter
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import com.wedora.app.databinding.ActivityUpdateRequiredBinding
 
 /**
@@ -25,7 +26,16 @@ import com.wedora.app.databinding.ActivityUpdateRequiredBinding
  * uninstalls — which is exactly why the copy states a concrete reason and shows
  * the version delta rather than just demanding compliance.
  */
-class UpdateRequiredActivity : WedoraBaseActivity(), UpdateRepository.Observer {
+class UpdateRequiredActivity : WedoraBaseActivity(), UpdateRepository.Observer, UpdateFlowHost {
+
+    /**
+     * A decline here does not release the gate — the user lands back on this
+     * screen, which is the one place re-prompting is legitimate because the
+     * app genuinely cannot run on this build.
+     */
+    override val updateFlowLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result -> UpdateRepository.onFlowResult(result.resultCode) }
 
     // The coral gradient sits behind both system bars in either theme, so this
     // never follows @bool/wedora_light_status_bar the way normal screens do —
@@ -75,9 +85,10 @@ class UpdateRequiredActivity : WedoraBaseActivity(), UpdateRepository.Observer {
 
     override fun onResume() {
         super.onResume()
-        // If Play reports a flow already underway, resume it immediately rather
-        // than letting the user sit on a screen they cannot leave.
-        UpdateRepository.check(force = true)
+        // Actually re-enters the flow when Play reports one already underway —
+        // querying alone would leave the user parked on a screen they cannot
+        // dismiss. Falls back to a normal refresh when nothing is in progress.
+        UpdateRepository.resumeImmediateIfInProgress(this)
     }
 
     override fun onStop() {

@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -20,7 +21,13 @@ import com.wedora.app.databinding.ActivityProfileBinding
 import com.wedora.app.databinding.ItemAppVersionRowBinding
 import com.wedora.app.databinding.ItemSettingsRowBinding
 
-class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host, UpdateRepository.Observer {
+class ProfileActivity :
+    WedoraBaseActivity(), LogoutBottomSheet.Host, UpdateRepository.Observer, UpdateFlowHost {
+
+    /** Receives the outcome of a flow started from the App Version row. */
+    override val updateFlowLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result -> UpdateRepository.onFlowResult(result.resultCode) }
 
     private companion object {
         const val TAG = "WedoraProfile"

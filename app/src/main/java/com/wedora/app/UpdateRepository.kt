@@ -2,18 +2,40 @@ package com.wedora.app
 
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManager
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.appupdate.AppUpdateOptions
+import com.google.android.play.core.common.IntentSenderForResultStarter
 import com.google.android.play.core.install.InstallStateUpdatedListener
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.InstallStatus
 import com.google.android.play.core.install.model.UpdateAvailability
+
+/**
+ * Implemented by any Activity that can start a Play update flow.
+ *
+ * Play's UI returns its outcome through the Activity Result API, so a host
+ * has to register a launcher before it can observe a decline. Without one the
+ * flow still runs, but its result is unobservable — see
+ * [UpdateRepository.launchFlow].
+ *
+ * Register in the Activity like:
+ * ```
+ * override val updateFlowLauncher =
+ *     registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+ *         UpdateRepository.onFlowResult(it.resultCode)
+ *     }
+ * ```
+ */
+interface UpdateFlowHost {
+    val updateFlowLauncher: ActivityResultLauncher<IntentSenderRequest>
+}
 
 /**
  * The one place that talks to Play Core.
@@ -68,6 +90,9 @@ object UpdateRepository {
 
     private var downloadStartedAt = 0L
     private var stallCheck: Runnable? = null
+
+    /** Which flow is awaiting a result, so [onFlowResult] can label it. */
+    private var pendingFlowType: Int? = null
 
     var state: UpdateState = UpdateState.Idle
         private set(value) {
@@ -198,18 +223,27 @@ object UpdateRepository {
     }
 
     private fun onInfo(info: AppUpdateInfo) {
+        // Bytes already on disk outrank everything else, and this is checked
+        // BEFORE updateAvailability rather than inside the in-progress branch.
+        // Play's documented flexible-resume contract is "on every resume, if
+        // installStatus() == DOWNLOADED, prompt to complete" — availability is
+        // not guaranteed to still read as in-progress at that point, and
+        // gating on it meant an update that had finished downloading before
+        // the app was last closed could come back as a fresh "update
+        // available" nudge instead of "restart to install".
+        if (info.installStatus() == InstallStatus.DOWNLOADED) {
+            state = UpdateState.Downloaded(info.availableVersionCode())
+            return
+        }
+
         // A flow already in progress outranks a fresh decision — the user is
         // mid-update and must not be dropped back to a nudge.
         if (info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
-            state = if (info.installStatus() == InstallStatus.DOWNLOADED) {
-                UpdateState.Downloaded(info.availableVersionCode())
-            } else {
-                UpdateState.Downloading(
-                    versionCode = info.availableVersionCode(),
-                    bytesDownloaded = info.bytesDownloaded(),
-                    totalBytes = info.totalBytesToDownload()
-                )
-            }
+            state = UpdateState.Downloading(
+                versionCode = info.availableVersionCode(),
+                bytesDownloaded = info.bytesDownloaded(),
+                totalBytes = info.totalBytesToDownload()
+            )
             return
         }
 
@@ -289,38 +323,118 @@ object UpdateRepository {
      * confirmation; our sheet is the invitation, not the consent dialog.
      */
     fun startFlexible(activity: Activity, surface: String) {
-        val mgr = manager ?: return
         val info = cachedInfo ?: return
-        userStartedFlow = true
         UpdateAnalytics.accepted(
             info.availableVersionCode(), UpdateAnalytics.TYPE_FLEXIBLE, surface
         )
-        runCatching {
-            mgr.startUpdateFlowForResult(
-                info,
-                activity,
-                AppUpdateOptions.newBuilder(AppUpdateType.FLEXIBLE).build(),
-                REQUEST_CODE
-            )
-        }.onFailure { Log.w(TAG, "startUpdateFlowForResult(FLEXIBLE) failed", it) }
+        launchFlow(activity, info, AppUpdateType.FLEXIBLE)
     }
 
     /** Starts the blocking flow; after this Play owns the whole screen. */
     fun startImmediate(activity: Activity, surface: String = UpdateAnalytics.SURFACE_BLOCKING) {
-        val mgr = manager ?: return
         val info = cachedInfo ?: return
-        userStartedFlow = true
         UpdateAnalytics.accepted(
             info.availableVersionCode(), UpdateAnalytics.TYPE_IMMEDIATE, surface
         )
+        launchFlow(activity, info, AppUpdateType.IMMEDIATE)
+    }
+
+    /**
+     * Re-enters a blocking flow Play says is already underway.
+     *
+     * Required by the immediate contract: if the user backgrounds the app
+     * mid-update and returns, Play reports
+     * DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS and the app is expected to put
+     * them straight back into the flow rather than leave them sitting on a
+     * screen they cannot dismiss. Querying alone does not do that — this has
+     * to actually re-launch.
+     */
+    fun resumeImmediateIfInProgress(activity: Activity) {
+        val mgr = manager ?: return
+        // Guard against re-entry: launching Play's UI pauses this Activity, so
+        // returning from it fires onResume again. Without this, a flow still
+        // reporting as in-progress would be relaunched on top of itself —
+        // exactly the "infinite-loop the prompt" failure mode. A result always
+        // clears pendingFlowType, so a genuine resume still gets through.
+        if (pendingFlowType != null) return
+
+        mgr.appUpdateInfo.addOnSuccessListener { info ->
+            cachedInfo = info
+            if (info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                launchFlow(activity, info, AppUpdateType.IMMEDIATE)
+            } else {
+                onInfo(info)
+            }
+        }
+    }
+
+    /**
+     * Hands off to Play's UI, routing the result back through the hosting
+     * Activity's [UpdateFlowHost.updateFlowLauncher].
+     *
+     * Deliberately NOT the startUpdateFlowForResult(info, activity, …)
+     * overload: that delivers to Activity.onActivityResult, which nothing in
+     * this app implements, so a user declining or backing out of Play's sheet
+     * was silently invisible — update_flow_cancelled could never fire and the
+     * immediate path had no way to know it had been refused.
+     */
+    private fun launchFlow(activity: Activity, info: AppUpdateInfo, @AppUpdateType type: Int) {
+        val mgr = manager ?: return
+        val host = activity as? UpdateFlowHost
+        if (host == null) {
+            // Not fatal, but it means results are unobservable — worth shouting
+            // about, since it silently disables cancel handling.
+            Log.w(TAG, "${activity.javaClass.simpleName} is not an UpdateFlowHost; update result will be ignored")
+            return
+        }
+
+        userStartedFlow = true
+        pendingFlowType = type
+
+        val starter = IntentSenderForResultStarter { intentSender, _, fillInIntent, flagsMask, flagsValues, _, _ ->
+            host.updateFlowLauncher.launch(
+                IntentSenderRequest.Builder(intentSender)
+                    .setFillInIntent(fillInIntent)
+                    .setFlags(flagsValues, flagsMask)
+                    .build()
+            )
+        }
+
         runCatching {
             mgr.startUpdateFlowForResult(
                 info,
-                activity,
-                AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
+                starter,
+                AppUpdateOptions.newBuilder(type).build(),
                 REQUEST_CODE
             )
-        }.onFailure { Log.w(TAG, "startUpdateFlowForResult(IMMEDIATE) failed", it) }
+        }.onFailure { Log.w(TAG, "startUpdateFlowForResult($type) failed", it) }
+    }
+
+    /**
+     * Result of Play's own update UI, delivered by the host Activity.
+     *
+     * A decline is a normal outcome, not an error: nothing is retried
+     * automatically and no prompt is re-shown in a loop. For the flexible
+     * path the update simply stays available and the App Version row carries
+     * it; for the immediate path the user lands back on the blocking screen,
+     * which is the one place a re-prompt is legitimate because the app cannot
+     * run on this build at all.
+     */
+    fun onFlowResult(resultCode: Int) {
+        val type = pendingFlowType
+        pendingFlowType = null
+        if (resultCode == Activity.RESULT_OK) return
+
+        val immediate = type == AppUpdateType.IMMEDIATE
+        onFlowCancelled(resultCode, immediate)
+
+        if (!immediate) {
+            // Declining a flexible update is a dismissal like any other, and
+            // consumes budget so it can't immediately ask again.
+            (state as? UpdateState.Available)?.let {
+                onDismissed(it.versionCode, UpdateAnalytics.METHOD_LATER)
+            }
+        }
     }
 
     /** Hands off to Play's install + relaunch. Save in-flight drafts first. */

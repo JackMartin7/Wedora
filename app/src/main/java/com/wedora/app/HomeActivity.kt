@@ -24,7 +24,17 @@ import java.util.Calendar
 class HomeActivity :
     WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
-    GuestProfileLimitBottomSheet.Host {
+    GuestProfileLimitBottomSheet.Host,
+    UpdateFlowHost {
+
+    /**
+     * Receives the outcome of a flow started from the nudge sheet or the
+     * retry dialog, both of which run against this Activity. A decline is
+     * recorded as a dismissal and nothing is re-prompted in a loop.
+     */
+    override val updateFlowLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result -> UpdateRepository.onFlowResult(result.resultCode) }
 
     private companion object {
         const val TAG = "WedoraMatching"
