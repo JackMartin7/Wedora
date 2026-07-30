@@ -666,4 +666,68 @@
     <string name="admin_unban_confirm_message">%1$s will be able to sign in to Wedora again.</string>
 
     <string name="error_account_suspended">Your account has been suspended</string>
+
+    <!-- ===== In-app update (see UpdateRepository and the six surfaces) ===== -->
+
+    <!-- 01 flexible nudge -->
+    <string name="update_nudge_title">A new Wedora is ready</string>
+    <!-- versionName · formatted size, e.g. "Version 1.2.0 · 18 MB" -->
+    <string name="update_nudge_subtitle">Version %1$s · %2$s</string>
+    <!--
+        Used when Remote Config has no versionName for the build Play is
+        offering. Play exposes only its versionCode, so the size is the one
+        honest thing left to show — naming the installed version here would
+        read as offering the user what they already have.
+    -->
+    <string name="update_nudge_subtitle_size_only">%1$s download</string>
+    <string name="update_nudge_primary">Update now</string>
+    <string name="update_nudge_later">Later</string>
+    <string name="update_notes_generic">Performance improvements and bug fixes</string>
+
+    <!-- 02 downloading -->
+    <string name="update_downloading_title">Downloading update</string>
+    <string name="update_downloading_body">Keep using Wedora — we\'ll let you know when it\'s ready.</string>
+    <string name="update_downloading_stalled">Still downloading…</string>
+    <string name="update_downloading_background">Continue in background</string>
+    <!-- e.g. "6.2 MB of 18 MB downloaded" -->
+    <string name="update_downloading_bytes">%1$s of %2$s downloaded</string>
+    <string name="update_downloading_percent">%1$d%%</string>
+    <!-- Shown once per download on a metered connection; informs, never blocks. -->
+    <string name="update_downloading_metered">Uses %1$s of data</string>
+
+    <!-- 03 ready to install -->
+    <string name="update_ready_title">Update downloaded</string>
+    <string name="update_ready_body">Restart to finish installing</string>
+    <string name="update_ready_action">Restart</string>
+    <string name="update_ready_announcement">Update downloaded. Restart to finish installing.</string>
+
+    <!-- 04 immediate / required -->
+    <string name="update_required_title">Update required to continue</string>
+    <!-- Fallback only; the real reason comes from Remote Config (UpdateCopy). -->
+    <string name="update_required_reason_default">This release fixes a security issue in how we protect your messages.</string>
+    <!-- e.g. "Update now · 18 MB" -->
+    <string name="update_required_cta">Update now · %1$s</string>
+    <string name="update_required_cta_plain">Update now</string>
+    <string name="update_required_footnote">Takes about 30 seconds on Wi-Fi</string>
+    <string name="update_required_offline">You\'ll need a connection to update</string>
+    <string name="update_required_retry">Retry</string>
+
+    <!-- 05 failed / retry -->
+    <string name="update_failed_title">Download didn\'t finish</string>
+    <!-- The two facts that decide whether a user retries: where it stopped,
+         and that retrying resumes rather than restarts. -->
+    <string name="update_failed_body">Your connection dropped at %1$d%%. We saved what downloaded — retrying will resume, not restart.</string>
+    <string name="update_failed_body_no_progress">Your connection dropped before the download started. Retrying will pick up from here.</string>
+    <string name="update_failed_retry">Retry</string>
+    <string name="update_failed_later">Not now</string>
+
+    <!-- 06 settings entry -->
+    <string name="settings_app_version">App Version</string>
+    <!-- e.g. "1.2.0 · Up to date" -->
+    <string name="update_row_up_to_date">%1$s · Up to date</string>
+    <!-- e.g. "1.1.2 · Update available" -->
+    <string name="update_row_available">%1$s · Update available</string>
+    <string name="update_row_unreachable">%1$s · Can\'t check right now</string>
+    <string name="update_row_action">Update</string>
+    <string name="update_row_checking">Checking…</string>
 </resources>

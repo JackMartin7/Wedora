@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Highlight band swept across the pending App Version row by
+     Motion.shimmer. Transparent at both ends so the sweep has no hard edge. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:type="linear"
+        android:angle="0"
+        android:startColor="#00FFFFFF"
+        android:centerColor="#BFFFFFFF"
+        android:endColor="#00FFFFFF" />
+</shape>

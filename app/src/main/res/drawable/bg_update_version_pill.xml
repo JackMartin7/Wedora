@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The "3.1.2 -> 3.4.0" delta pill on the blocking screen. Showing the
+     version the user is on next to the one they are getting is what makes a
+     forced update feel like information rather than a demand. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#29FFFFFF" />
+    <corners android:radius="14dp" />
+</shape>

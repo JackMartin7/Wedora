@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    03 · Ready to install — see UpdateReadySnackbar.
+
+    Success is a snackbar, never a wall: the download finished while the user
+    was browsing, so the reward is the smallest possible interruption.
+
+    Hosted inside a Snackbar's own content frame, so this is the card itself
+    with no positioning of its own.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:android_tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_update_snackbar"
+    android:padding="15dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <!-- clipChildren off so the ripple can expand past the disc's bounds. -->
+    <FrameLayout
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <View
+            android:id="@+id/ripple"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:background="@drawable/bg_update_icon_disc" />
+
+        <View
+            android:id="@+id/disc"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:scaleX="0"
+            android:scaleY="0"
+            android:background="@drawable/bg_update_icon_disc" />
+
+        <!-- Drawn on rather than popped: stroking the tick is what reads as
+             "finished". Uses an AnimatedVectorDrawable so trimPathEnd can be
+             animated on the path itself. -->
+        <ImageView
+            android:id="@+id/ivTick"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:src="@drawable/avd_update_tick"
+            android:contentDescription="@null" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="13dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/update_ready_title"
+            android:textColor="@color/white"
+            android:textSize="14.5sp"
+            android:fontFamily="@font/poppins_semibold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:alpha="0.66"
+            android:text="@string/update_ready_body"
+            android:textColor="@color/white"
+            android:textSize="12.5sp" />
+
+    </LinearLayout>
+
+    <!--
+        38dp visual on a 48dp touch target: minHeight/minWidth give the
+        accessible size without inflating the chip the design specifies.
+    -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnRestart"
+        android:layout_width="wrap_content"
+        android:layout_height="38dp"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:paddingHorizontal="16dp"
+        android:background="@drawable/bg_update_inline_button"
+        android:text="@string/update_ready_action"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="13.5sp"
+        android:fontFamily="@font/poppins_semibold"
+        android:stateListAnimator="@null"
+        android:alpha="0"
+        android_tools:alpha="1" />
+
+</LinearLayout>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One release-note line on the update nudge sheet: ticked disc + copy.
+     Inflated up to 3 times by UpdateNudgeBottomSheet. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="5dp">
+
+    <ImageView
+        android:layout_width="19dp"
+        android:layout_height="19dp"
+        android:layout_marginTop="1dp"
+        android:padding="4dp"
+        android:background="@drawable/bg_update_icon_disc_tint"
+        android:src="@drawable/ic_check_thin"
+        android:tint="@color/wedora_accent"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/tvNote"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:lineSpacingExtra="2sp"
+        android:textColor="@color/wedora_text"
+        android:textSize="14sp"
+        tools:text="Faster match loading — up to 3× on slow networks" />
+
+</LinearLayout>

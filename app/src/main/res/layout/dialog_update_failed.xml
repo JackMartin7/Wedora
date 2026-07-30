@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    05 · Download failed — see UpdateFailedDialog.
+
+    Same card shape and spring entry as the download dialog: a failure is not a
+    different kind of surface, and re-skinning it would make a recoverable
+    hiccup feel like a crash. Coral only — no red, no alarm iconography.
+-->
+<!-- Full-screen transparent wrapper + centred card — see
+     dialog_update_download.xml for why the wrapper is required. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogScrim"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:id="@+id/card"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="@drawable/bg_update_dialog"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="30dp"
+    android:paddingBottom="10dp">
+
+    <ImageView
+        android:id="@+id/ivIcon"
+        android:layout_width="74dp"
+        android:layout_height="74dp"
+        android:alpha="0"
+        android:scaleX="0"
+        android:scaleY="0"
+        android:padding="20dp"
+        android:background="@drawable/bg_update_icon_disc_tint"
+        android:src="@drawable/ic_wifi_off"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:text="@string/update_failed_title"
+        android:textColor="@color/wedora_text"
+        android:textSize="18sp"
+        android:fontFamily="@font/poppins_semibold" />
+
+    <!--
+        Carries the two facts that decide whether the user retries: where it
+        stopped, and that retrying resumes rather than restarts from zero.
+    -->
+    <TextView
+        android:id="@+id/tvBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3sp"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13.5sp"
+        tools:text="Your connection dropped at 41%. We saved what downloaded — retrying will resume, not restart." />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnRetry"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="22dp"
+        android:alpha="0"
+        android:drawableStart="@drawable/ic_refresh"
+        android:drawablePadding="9dp"
+        android:paddingHorizontal="24dp"
+        android:text="@string/update_failed_retry" />
+
+    <!--
+        Dropped entirely under a forced update, where Retry is the only action —
+        UpdateFailedDialog hides this rather than the layout omitting it, so
+        both paths share one file.
+    -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnLater"
+        style="@style/WedoraSecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:alpha="0"
+        android:textColor="@color/wedora_text_secondary"
+        android:text="@string/update_failed_later" />
+
+</LinearLayout>
+
+</FrameLayout>

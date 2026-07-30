@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    01 · Flexible update nudge — see UpdateNudgeBottomSheet for the timeline
+    that drives it.
+
+    Not built on sheet_confirm.xml: this one needs a release-notes list and a
+    looping arrow that no other confirm sheet has, and the icon is a plain
+    ImageView on a disc rather than confirm's padded icon so the arrow can be
+    animated independently of its backdrop.
+
+    Every animated child starts in its pre-animation state (alpha 0 /
+    scale 0) and is driven entirely from code.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="26dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_marginBottom="20dp"
+        android:background="@color/wedora_border" />
+
+    <!-- clipChildren off: the disc pops past its bounds on the spring curve. -->
+    <FrameLayout
+        android:layout_width="78dp"
+        android:layout_height="78dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <View
+            android:id="@+id/iconDisc"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0"
+            android:scaleX="0"
+            android:scaleY="0"
+            android:background="@drawable/bg_update_icon_disc_tint" />
+
+        <ImageView
+            android:id="@+id/ivArrow"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_update_arrow"
+            android:importantForAccessibility="no"
+            android:contentDescription="@null" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:alpha="0"
+        android:text="@string/update_nudge_title"
+        android:textColor="@color/wedora_text"
+        android:textSize="21sp"
+        android:fontFamily="@font/poppins_semibold" />
+
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:alpha="0"
+        android:gravity="center"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        tools:text="Version 1.2.0 · 18 MB" />
+
+    <!-- Release-note rows inflated here by UpdateNudgeBottomSheet (max 3). -->
+    <LinearLayout
+        android:id="@+id/notesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:alpha="0"
+        android:orientation="vertical" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnUpdate"
+        style="@style/WedoraPrimaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="54dp"
+        android:layout_marginTop="20dp"
+        android:alpha="0"
+        android:text="@string/update_nudge_primary" />
+
+    <!-- A real, low-emphasis exit. Never hidden on a flexible update. -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnLater"
+        style="@style/WedoraSecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="4dp"
+        android:alpha="0"
+        android:text="@string/update_nudge_later" />
+
+</LinearLayout>

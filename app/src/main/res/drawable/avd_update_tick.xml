@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The "update downloaded" tick, stroked on rather than faded in.
+
+    Drawing the tick is what reads as "finished" — a tick that simply appears
+    reads as a static icon. trimPathEnd 0 -> 1 over 400 ms is the stroke.
+-->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="18dp"
+            android:height="18dp"
+            android:viewportWidth="24"
+            android:viewportHeight="24">
+            <path
+                android:name="tick"
+                android:pathData="M5,12.5 L9.5,17 L19,7"
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="2.6"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:trimPathEnd="0" />
+        </vector>
+    </aapt:attr>
+
+    <target android:name="tick">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="trimPathEnd"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:duration="400"
+                android:interpolator="@android:interpolator/decelerate_quad" />
+        </aapt:attr>
+    </target>
+
+</animated-vector>

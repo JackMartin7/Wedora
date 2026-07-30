@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    02 · Downloading — see UpdateDownloadDialog.
+
+    A real number, not a spinner: the ring sweeps to actual bytes downloaded and
+    the megabyte counter runs underneath, so a stalled download is visibly
+    stalled rather than looking like a slow one.
+
+    Background content stays at reduced opacity behind this (handled by the
+    dialog's own dim) rather than a full scrim, so the app still feels present
+    while it downloads.
+-->
+<!--
+    Full-screen transparent wrapper with the card centred inside.
+
+    Necessary because DialogFragment hands its view to Dialog.setContentView(),
+    which REPLACES the root's LayoutParams with MATCH_PARENT — that force-fitted
+    the card to a 213dp window and made it clamp its own children, squeezing the
+    ring and cutting the bottom button in half. With a wrapper, MATCH_PARENT is
+    exactly what the root wants, and the card keeps its real 272dp/wrap_content.
+
+    dialogScrim carries the tap-outside-to-dismiss that a full-screen window
+    loses (there is no longer any "outside" for the platform to detect).
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dialogScrim"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:id="@+id/card"
+    android:layout_width="272dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:clickable="true"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="@drawable/bg_update_dialog"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="30dp"
+    android:paddingBottom="8dp">
+
+    <FrameLayout
+        android:layout_width="118dp"
+        android:layout_height="118dp">
+
+        <com.wedora.app.UpdateProgressRingView
+            android:id="@+id/ring"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/tvPercent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@color/wedora_text"
+            android:textSize="31sp"
+            android:fontFamily="@font/poppins_bold"
+            tools:text="42%" />
+
+    </FrameLayout>
+
+    <!-- The figure that makes a stall legible. -->
+    <TextView
+        android:id="@+id/tvBytes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12.5sp"
+        tools:text="7.6 MB of 18 MB downloaded" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/update_downloading_title"
+        android:textColor="@color/wedora_text"
+        android:textSize="17sp"
+        android:fontFamily="@font/poppins_semibold" />
+
+    <TextView
+        android:id="@+id/tvBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2sp"
+        android:text="@string/update_downloading_body"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="13.5sp" />
+
+    <!-- Shown once, only on a metered connection. Informs; never blocks —
+         Play already honours the user's own data preferences. -->
+    <TextView
+        android:id="@+id/tvMetered"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="12.5sp"
+        android:visibility="gone"
+        tools:text="Uses 18 MB of data"
+        tools:visibility="visible" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="20dp"
+        android:background="@color/wedora_border" />
+
+    <!--
+        Dismisses the dialog only; the download continues. A true cancel is
+        deliberately not here — an accidental tap on the obvious button must
+        not throw away a part-finished download.
+    -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnBackground"
+        style="@style/WedoraSecondaryButton"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/update_downloading_background"
+        android:textColor="@color/wedora_accent" />
+
+</LinearLayout>
+
+</FrameLayout>

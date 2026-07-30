@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    04 · Immediate (required) update — see UpdateRequiredActivity.
+
+    Full-bleed coral so it is unmistakably a stop, not a nudge: no dismiss, no
+    back exit, one action. Crucially it states WHY and shows the version delta —
+    a forced update with no reason is the fastest route to an uninstall.
+
+    The gradient is fixed in both themes (see bg_update_required_gradient).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_update_required_gradient">
+
+    <!-- Decorative bleed circles, top-right and bottom-left. -->
+    <View
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_marginTop="-80dp"
+        android:layout_marginEnd="-80dp"
+        android:alpha="0.09"
+        android:background="@drawable/bg_update_icon_disc"
+        android:backgroundTint="@color/white"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <View
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_marginBottom="-110dp"
+        android:layout_marginStart="-90dp"
+        android:alpha="0.07"
+        android:background="@drawable/bg_update_icon_disc"
+        android:backgroundTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!--
+        Shield, headline, reason and version pill are one block, centred in the
+        space above the CTA — the spec's flex:1 spacers top and bottom. Grouped
+        in a LinearLayout rather than a ConstraintLayout chain because a chain
+        across four views (two of which can be GONE) collapses to the top the
+        moment one link is missing, which is exactly what happened here.
+    -->
+    <LinearLayout
+        android:id="@+id/centreBlock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/ctaGroup">
+
+    <!-- clipChildren off because the drop-in overshoots past 1.0. -->
+    <FrameLayout
+        android:id="@+id/shieldFrame"
+        android:layout_width="124dp"
+        android:layout_height="124dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!-- Drifts on a slow loop so the blocking screen never reads as frozen. -->
+        <View
+            android:id="@+id/halo"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_update_halo" />
+
+        <ImageView
+            android:id="@+id/ivShield"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center"
+            android:padding="24dp"
+            android:background="@drawable/bg_update_icon_tile"
+            android:src="@drawable/ic_shield_lock"
+            android:contentDescription="@null" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="28dp"
+        android:layout_marginTop="32dp"
+        android:alpha="0"
+        android:gravity="center"
+        android:lineSpacingExtra="4sp"
+        android:text="@string/update_required_title"
+        android:textColor="@color/white"
+        android:textSize="26sp"
+        android:fontFamily="@font/poppins_bold" />
+
+    <!-- Concrete reason, from Remote Config. Never a bare "please update". -->
+    <TextView
+        android:id="@+id/tvReason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="36dp"
+        android:layout_marginTop="12dp"
+        android:alpha="0"
+        android:gravity="center"
+        android:lineSpacingExtra="5sp"
+        android:textColor="@color/white"
+        android:textSize="14.5sp"
+        tools:text="This release fixes a security issue in how we protect your messages." />
+
+    <!-- "1.1.2 -> 1.2.0": what you're on next to what you're getting. GONE
+         unless Remote Config supplies the target's versionName. -->
+    <LinearLayout
+        android:id="@+id/versionPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="26dp"
+        android:alpha="0"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_update_version_pill"
+        android:paddingHorizontal="18dp"
+        android:paddingVertical="11dp">
+
+        <TextView
+            android:id="@+id/tvVersionFrom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.8"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium"
+            tools:text="1.1.2" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginHorizontal="8dp"
+            android:alpha="0.8"
+            android:rotation="90"
+            android:src="@drawable/ic_update_arrow"
+            android:tint="@color/white"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/tvVersionTo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_semibold"
+            tools:text="1.2.0" />
+
+    </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/ctaGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="28dp"
+        android:layout_marginBottom="34dp"
+        android:alpha="0"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnUpdate"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_update_cta_light"
+            android:textAllCaps="false"
+            android:textColor="@color/wedora_accent"
+            android:textSize="16.5sp"
+            android:fontFamily="@font/poppins_bold"
+            android:stateListAnimator="@null"
+            tools:text="Update now · 18 MB" />
+
+        <TextView
+            android:id="@+id/tvFootnote"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:alpha="0.72"
+            android:gravity="center"
+            android:lineSpacingExtra="2sp"
+            android:text="@string/update_required_footnote"
+            android:textColor="@color/white"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -35,6 +35,16 @@ class WedoraApplication : Application() {
         // lazily from PaymentSubscriptionActivity.
         BillingManager.attach(this)
 
+        // In-app updates. Attached here (not in an Activity) because
+        // UpdateRepository is the single source of truth every update surface
+        // renders from, and its install listener has to outlive any one screen
+        // so a download that finishes while the user is elsewhere still lands.
+        // The Play query itself is NOT made here — see HomeActivity, which
+        // triggers it on first resume so the splash budget is untouched.
+        UpdateAnalytics.attach(this)
+        UpdateCopy.attach()
+        UpdateRepository.attach(this)
+
         // Native ads in Home's swipe stack (free users only). Init is
         // fire-and-forget — the SDK queues ad requests made before it
         // finishes, so nothing has to wait on the completion callback.

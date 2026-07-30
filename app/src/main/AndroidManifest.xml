@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Coarse is deliberate: city-level accuracy is all Complete Profile needs,
@@ -22,6 +23,17 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-6998303779941960~4404028839" />
+
+        <!--
+            Ads and Analytics each ship their own AD_SERVICES_CONFIG pointing at
+            a different resource, which the manifest merger cannot reconcile on
+            its own. tools:replace picks ours — see the file's own comment for
+            why it's a local union rather than either SDK's internal resource.
+        -->
+        <property
+            android:name="android.adservices.AD_SERVICES_CONFIG"
+            android:resource="@xml/ad_services_config"
+            tools:replace="android:resource" />
 
         <!-- Push notifications — see WedoraFirebaseMessagingService's own
              doc comment for why send_notification.php sends data-only
@@ -155,6 +167,18 @@
             android:name=".PaymentSubscriptionActivity"
             android:exported="false" />
 
+        <!--
+            The blocking forced-update gate. noHistory so it can never be
+            returned to via recents once the requirement is satisfied, and
+            excludeFromRecents so a user cannot resume straight back into a
+            dead-end screen after swiping the app away.
+        -->
+        <activity
+            android:name=".UpdateRequiredActivity"
+            android:exported="false"
+            android:noHistory="true"
+            android:excludeFromRecents="true" />
+
         <activity
             android:name=".FilterActivity"
             android:exported="false" />
@@ -203,7 +227,27 @@
 
         <activity
             android:name=".ProfileActivity"
-            android:exported="false" />
+            android:exported="true">
+            <!--
+                wedora://settings/version — the update spec's deep link, and the
+                target for the profile-avatar update badge and any push nudge.
+                Lands on Profile, where the App Version row lives.
+
+                exported="true" is required for a browsable filter to work at
+                all; the Activity itself shows only the signed-in user's own
+                profile and takes no data from the intent, so an external
+                caller gains nothing beyond opening the screen.
+            -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="wedora"
+                    android:host="settings"
+                    android:path="/version" />
+            </intent-filter>
+        </activity>
 
         <!-- Hidden admin-only screens — see WedoraAdmin.UID and
              ProfileActivity's own hidden settings row. Not exported: only

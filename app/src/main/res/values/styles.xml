@@ -146,6 +146,22 @@
         <item name="backgroundTint">@null</item>
     </style>
 
+    <!--
+        Dialog theme for the update download/failure cards.
+
+        Transparent window background with no frame, because those layouts
+        already draw their own rounded surface (bg_update_dialog) — leaving the
+        platform background in would put a second, square card behind it. The
+        dim is kept lighter than a full scrim so the app still reads as present
+        behind a download that the user is invited to leave running.
+    -->
+    <style name="WedoraUpdateDialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimAmount">0.42</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
     <!-- Secondary (Cancel) action inside a sheet: transparent, accent text. -->
     <style name="WedoraSecondaryButton">
         <item name="android:background">@drawable/bg_button_ghost</item>

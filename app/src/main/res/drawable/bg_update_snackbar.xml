@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark surface for the "update downloaded" snackbar. wedora_snackbar_bg is
+     fixed near-black in both themes — wedora_text would have inverted to
+     near-white in dark mode, leaving white text on a white chip. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_snackbar_bg" />
+    <corners android:radius="18dp" />
+</shape>

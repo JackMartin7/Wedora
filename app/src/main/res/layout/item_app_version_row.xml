@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    06 · The App Version row in the Profile menu — see ProfileActivity.
+
+    A permanent home for the update: once the user taps "Later" the nudge must
+    not be the only route. This row is always present and carries two states:
+
+      up to date  plain row, neutral icon, "1.2.0 · Up to date", not tappable
+      pending     tinted fill, coral icon, subtitle, inline Update, shimmer
+
+    Both live in this one layout with pieces shown/hidden, rather than two
+    layouts, so the row can flip state in place while Profile is open.
+
+    FrameLayout root because the shimmer has to be OVERLAID on the row: as a
+    LinearLayout sibling it would take real horizontal space and shove the
+    content across.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rowRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <ImageView
+            android:id="@+id/ivRowIcon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:background="@drawable/bg_icon_pink_square"
+            android:src="@drawable/ic_update_arrow"
+            android:contentDescription="@null" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="14dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_app_version"
+                android:textColor="@color/wedora_text"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium" />
+
+            <TextView
+                android:id="@+id/tvRowSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12.5sp"
+                tools:text="1.1.2 · Update available" />
+
+        </LinearLayout>
+
+        <!-- Pending only. 34dp visual on a 48dp touch target. -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnRowUpdate"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:paddingHorizontal="15dp"
+            android:background="@drawable/bg_update_inline_button"
+            android:text="@string/update_row_action"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:stateListAnimator="@null"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+    <!--
+        Shimmer band, swept across the row by Motion.shimmer. Last child so it
+        draws over the content, and GONE rather than transparent when idle so it
+        can never intercept the row's touches.
+    -->
+    <View
+        android:id="@+id/shimmer"
+        android:layout_width="140dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_shimmer_sweep"
+        android:visibility="gone" />
+
+</FrameLayout>

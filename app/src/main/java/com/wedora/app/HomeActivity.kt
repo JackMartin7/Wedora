@@ -5,6 +5,7 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.constraintlayout.widget.ConstraintLayout
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -283,6 +284,13 @@ class HomeActivity :
         super.onStart()
         observeMatches()
         applyPremiumCrownTint()
+
+        UpdateRepository.addObserver(updateObserver)
+        // First Home resume after a cold start is where the Play check runs —
+        // deliberately not during the splash, whose 3 s budget is already fully
+        // spent on the branded timeline. check() self-limits to once per
+        // 4 hours, so later returns to Home cost nothing.
+        UpdateRepository.check()
     }
 
     /**
@@ -304,7 +312,76 @@ class HomeActivity :
     override fun onStop() {
         matchesListener?.remove()
         matchesListener = null
+        UpdateRepository.removeObserver(updateObserver)
         super.onStop()
+    }
+
+    /**
+     * Routes [UpdateState] to whichever surface owns it. Home is the host
+     * because it is the first real screen after launch and the one the user
+     * returns to — but every surface renders from [UpdateRepository], so none
+     * of this decides anything, it only shows.
+     */
+    private val updateObserver = UpdateRepository.Observer { state ->
+        when (state) {
+            is UpdateState.Available -> when (state.path) {
+                // Blocking gate: leave Home entirely.
+                UpdatePath.IMMEDIATE_BLOCKING ->
+                    startActivity(UpdateRequiredActivity.intent(this))
+                UpdatePath.FLEXIBLE_SHEET -> showUpdateNudge()
+                // Passive row and silent both mean "nothing on Home" — the
+                // App Version row in Profile carries it instead.
+                UpdatePath.PASSIVE_ROW, UpdatePath.SILENT -> Unit
+            }
+
+            is UpdateState.Downloading -> renderUpdateHairline(state)
+
+            is UpdateState.Downloaded -> {
+                hideUpdateHairline()
+                // Re-shown on every resume if previously swiped away, so a
+                // downloaded update can't be stranded with no way to install.
+                UpdateReadySnackbar.show(this, state.versionCode)
+            }
+
+            is UpdateState.Failed -> {
+                hideUpdateHairline()
+                if (supportFragmentManager.findFragmentByTag(UpdateFailedDialog.TAG) == null) {
+                    UpdateFailedDialog().show(supportFragmentManager, UpdateFailedDialog.TAG)
+                }
+            }
+
+            is UpdateState.UpToDate, UpdateState.Idle -> hideUpdateHairline()
+        }
+    }
+
+    private fun showUpdateNudge() {
+        // Only ever one sheet: the observer fires on every state emission, and
+        // re-showing would restart its motion and re-log the impression.
+        if (supportFragmentManager.findFragmentByTag(UpdateNudgeBottomSheet.TAG) != null) return
+        UpdateNudgeBottomSheet().show(supportFragmentManager, UpdateNudgeBottomSheet.TAG)
+    }
+
+    /**
+     * The 3dp mirror of download progress pinned to the top of the window —
+     * what remains after "Continue in background" dismisses the dialog.
+     */
+    private fun renderUpdateHairline(state: UpdateState.Downloading) {
+        binding.updateHairlineTrack.visibility = View.VISIBLE
+        binding.updateHairlineFill.visibility = View.VISIBLE
+        val fraction = if (state.totalBytes > 0) {
+            state.bytesDownloaded.toFloat() / state.totalBytes
+        } else {
+            0f
+        }
+        (binding.updateHairlineFill.layoutParams as ConstraintLayout.LayoutParams).let { lp ->
+            lp.matchConstraintPercentWidth = fraction.coerceIn(0f, 1f)
+            binding.updateHairlineFill.layoutParams = lp
+        }
+    }
+
+    private fun hideUpdateHairline() {
+        binding.updateHairlineTrack.visibility = View.GONE
+        binding.updateHairlineFill.visibility = View.GONE
     }
 
     /**

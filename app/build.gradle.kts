@@ -96,6 +96,10 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")
+    // In-app update analytics and remotely-controlled update copy — see
+    // UpdateAnalytics / UpdateCopy.
+    implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-config-ktx")
     // Profile photo hosting — see PhotoUploadService.
     implementation("com.google.firebase:firebase-storage-ktx")
     // Push notifications — see WedoraFirebaseMessagingService.
@@ -118,4 +122,9 @@ dependencies {
 
     // Play Billing for Premium subscriptions — see BillingManager.
     implementation("com.android.billingclient:billing-ktx:7.1.1")
+
+    // Play In-App Updates — see UpdateRepository. The flexible/immediate flows
+    // only ever resolve against a Play-installed build; a locally-signed APK
+    // reports the install source as unavailable and every surface stays silent.
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }

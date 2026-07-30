@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Privacy Sandbox Ad Services config for the whole app.
+
+    Exists to resolve a manifest-merger conflict: play-services-measurement-api
+    (pulled in by firebase-analytics) and play-services-ads-lite each declare
+    the android.adservices.AD_SERVICES_CONFIG property pointing at their own
+    resource — ga_ad_services_config.xml and gma_ad_services_config.xml — and
+    the merger cannot pick between two different values.
+
+    This is the union of both, which is just the ads one: analytics asks only
+    for Attribution, ads asks for Attribution + Topics. Declaring our own file
+    and overriding with tools:replace (see AndroidManifest) rather than
+    pointing at either library's resource, because those names are the SDKs'
+    internals and can change under us on a version bump.
+-->
+<ad-services-config>
+    <!-- Attribution API — required by both Analytics and Ads. -->
+    <attribution allowAllToAccess="true" />
+
+    <!-- Topics API — Ads only. -->
+    <topics allowAllToAccess="true" />
+</ad-services-config>

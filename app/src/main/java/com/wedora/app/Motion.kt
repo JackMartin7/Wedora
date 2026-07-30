@@ -177,6 +177,86 @@ object Motion {
     }
 
     /**
+     * up-arrow-loop: a slow upward travel that fades in at the bottom and out
+     * at the top, forever — the update nudge sheet's one sustained motion.
+     *
+     * A translate+fade loop rather than a bounce: the arrow is asking the user
+     * to move something upward, and a bouncing arrow reads as decoration
+     * instead of instruction. Returns the animator so the host can cancel it
+     * on teardown; an uncancelled infinite animator outlives the sheet.
+     */
+    fun arrowLoop(view: View, durationMs: Long = 1900, delayMs: Long = 0): Animator? {
+        if (reducedMotion(view)) return null
+        val d = view.dp(1f)
+        val pvhY = PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 9f * d, 0f, 0f, -11f * d)
+        // Fades match the travel: invisible at both extremes, solid in the
+        // middle 44% where the arrow is actually legible.
+        val pvhA = PropertyValuesHolder.ofFloat(View.ALPHA, 0f, 1f, 1f, 0f)
+        return ObjectAnimator.ofPropertyValuesHolder(view, pvhY, pvhA).apply {
+            duration = durationMs
+            startDelay = delayMs
+            interpolator = STANDARD
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            start()
+        }
+    }
+
+    /**
+     * up-shake: one decaying horizontal shake, then done — the update failure
+     * dialog's whole emotional cue. Deliberately single-shot and amplitude-
+     * decaying (8 -> 7 -> 5 -> 4 -> 2 dp): a looping shake reads as an ongoing
+     * error, and the spec is explicit that the failure never loops and never
+     * turns red.
+     *
+     * Under reduced motion this does nothing and the caller is expected to
+     * fire its haptic instead — see UpdateFailedDialog.
+     */
+    fun shake(view: View, durationMs: Long = 550) {
+        if (reducedMotion(view)) return
+        val d = view.dp(1f)
+        val pvh = PropertyValuesHolder.ofFloat(
+            View.TRANSLATION_X,
+            0f, -8f * d, 7f * d, -5f * d, 4f * d, -2f * d, 0f
+        )
+        ObjectAnimator.ofPropertyValuesHolder(view, pvh).apply {
+            duration = durationMs
+            interpolator = PathInterpolator(0.36f, 0.07f, 0.19f, 0.97f)
+            start()
+        }
+    }
+
+    /**
+     * up-shimmer: a highlight band sweeping across [view]'s width, looping.
+     * Used only on the App Version row's pending state.
+     *
+     * [view] is the band itself (a gradient strip), swept from fully off the
+     * left edge to fully off the right of [containerWidthPx]. Returns the
+     * animator so the caller can stop it once the user has seen the row —
+     * a settings row that shimmers forever is noise, not a cue.
+     */
+    fun shimmer(
+        view: View,
+        containerWidthPx: Int,
+        durationMs: Long = 2400,
+        delayMs: Long = 1000
+    ): Animator? {
+        if (reducedMotion(view)) return null
+        val bandWidth = view.width.takeIf { it > 0 } ?: (containerWidthPx / 2)
+        return ObjectAnimator.ofFloat(
+            view, View.TRANSLATION_X,
+            -bandWidth.toFloat(), containerWidthPx.toFloat()
+        ).apply {
+            duration = durationMs
+            startDelay = delayMs
+            interpolator = AccelerateDecelerateInterpolator()
+            repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
+            start()
+        }
+    }
+
+    /**
      * A view's width grows from 0 to [targetWidthPx] continuously under
      * [interpolator] — used for the splash progress bar. [view]'s
      * layoutParams.width is mutated directly each frame since plain

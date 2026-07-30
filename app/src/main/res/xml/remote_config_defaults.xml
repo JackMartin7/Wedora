@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bundled fallbacks for the update flow's remotely-controlled copy — see
+    UpdateCopy. Every one of these is what ships in the APK and what is used
+    on a first launch, on a fetch failure, and in a project where Remote
+    Config has never been configured at all.
+-->
+<defaultsMap>
+
+    <!--
+        JSON object keyed by versionCode:
+        {"11": ["Faster match loading", "Read receipts in chat"]}
+        Empty by default so UpdateCopy falls through to the generic
+        update_notes_generic string rather than describing a release that
+        may not match what is actually being downloaded.
+    -->
+    <entry>
+        <key>update_release_notes</key>
+        <value></value>
+    </entry>
+
+    <!--
+        JSON object mapping versionCode -> versionName: {"11": "1.2.0"}.
+        Empty by default, which makes the nudge show only the download size —
+        Play never tells the app the target's versionName, and labelling the
+        download with the INSTALLED version would read as offering the user
+        the build they already have.
+    -->
+    <entry>
+        <key>update_version_names</key>
+        <value></value>
+    </entry>
+
+    <entry>
+        <key>update_forced_reason</key>
+        <value></value>
+    </entry>
+
+    <entry>
+        <key>update_forced_reason_code</key>
+        <value>unspecified</value>
+    </entry>
+
+    <!--
+        THE KILL SWITCH. 0 = block nobody.
+
+        Any build below this versionCode is locked out of the app entirely.
+        Raising it above the live versionCode locks out the whole install
+        base, and the app itself cannot be used to recover — only another
+        Remote Config publish can. Only ever raise this to a versionCode that
+        is already live and confirmed rolled out.
+    -->
+    <entry>
+        <key>update_min_supported_version</key>
+        <value>0</value>
+    </entry>
+
+</defaultsMap>

@@ -17,16 +17,27 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityProfileBinding
+import com.wedora.app.databinding.ItemAppVersionRowBinding
 import com.wedora.app.databinding.ItemSettingsRowBinding
 
-class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host {
+class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host, UpdateRepository.Observer {
 
     private companion object {
         const val TAG = "WedoraProfile"
+
+        /**
+         * Where App Version lands in settingsContainer: after Account Settings
+         * (0) and Notifications (1), before Privacy & Safety — the placement
+         * the update spec asks for.
+         */
+        const val APP_VERSION_ROW_INDEX = 2
     }
 
     private lateinit var binding: ActivityProfileBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
+    private var appVersionRow: ItemAppVersionRowBinding? = null
+    private var rowShimmer: android.animation.Animator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -503,10 +514,140 @@ class ProfileActivity : WedoraBaseActivity(), LogoutBottomSheet.Host {
                 rowBinding.root.setOnClickListener { row.onClick() }
             }
         }
+
+        insertAppVersionRow()
+    }
+
+    /**
+     * The App Version row (spec surface 06), inserted between Notifications and
+     * Privacy & Safety.
+     *
+     * Added by index after the loop rather than as a [SettingsRow] because it
+     * needs a subtitle, an inline button and a shimmer overlay that
+     * item_settings_row has no slots for — and because it must sit OUTSIDE the
+     * guest treatment: the installed app version is device information, not
+     * account data, so it stays readable for a guest exactly like the Dark Mode
+     * switch does.
+     */
+    private fun insertAppVersionRow() {
+        appVersionRow = ItemAppVersionRowBinding.inflate(
+            LayoutInflater.from(this), binding.settingsContainer, false
+        ).also { row ->
+            binding.settingsContainer.addView(row.root, APP_VERSION_ROW_INDEX)
+
+            row.btnRowUpdate.setOnClickListener {
+                UpdateRepository.startFlexible(this, UpdateAnalytics.SURFACE_SETTINGS_ROW)
+            }
+            // Support affordance from the spec: force a fresh check, bypassing
+            // the 4-hour cache. In a debug build this opens the state previewer
+            // instead — see UpdateDebug.
+            row.root.setOnLongClickListener {
+                if (UpdateDebug.ENABLED) {
+                    UpdateDebug.showPicker(this)
+                } else {
+                    row.tvRowSubtitle.setText(R.string.update_row_checking)
+                    UpdateRepository.check(force = true)
+                }
+                true
+            }
+        }
+        renderAppVersionRow(UpdateRepository.state)
+    }
+
+    /**
+     * Paints the row for [state]. Called on every state change while Profile is
+     * open, so the row flips in place rather than needing a revisit.
+     */
+    private fun renderAppVersionRow(state: UpdateState) {
+        val row = appVersionRow ?: return
+        val versionName = UpdateRepository.currentVersionName()
+        val pending = state is UpdateState.Available ||
+            state is UpdateState.Downloading ||
+            state is UpdateState.Downloaded
+
+        row.rowRoot.setBackgroundResource(
+            if (pending) R.drawable.bg_update_row_pending else 0
+        )
+        row.btnRowUpdate.visibility = if (state is UpdateState.Available) View.VISIBLE else View.GONE
+
+        row.tvRowSubtitle.text = when (state) {
+            is UpdateState.Available ->
+                getString(R.string.update_row_available, versionName)
+            is UpdateState.Downloading ->
+                getString(R.string.update_downloading_percent, state.percent)
+            is UpdateState.Downloaded ->
+                getString(R.string.update_ready_body)
+            is UpdateState.UpToDate ->
+                if (state.reachable) {
+                    getString(R.string.update_row_up_to_date, versionName)
+                } else {
+                    // Distinct from "up to date": we genuinely don't know.
+                    getString(R.string.update_row_unreachable, versionName)
+                }
+            // Idle (not checked yet) and Failed both read as the plain version.
+            else -> getString(R.string.update_row_up_to_date, versionName)
+        }
+
+        row.tvRowSubtitle.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (pending) R.color.wedora_accent else R.color.wedora_text_secondary
+            )
+        )
+
+        applyRowShimmer(row, state)
+    }
+
+    /**
+     * Runs the shimmer only for a pending update the user hasn't looked at yet,
+     * once per versionCode. A settings row that shimmers forever is noise
+     * rather than a cue, so seeing it here is what switches it off.
+     */
+    private fun applyRowShimmer(row: ItemAppVersionRowBinding, state: UpdateState) {
+        val available = state as? UpdateState.Available
+        if (available == null || UpdatePrefs.hasSeenRow(this, available.versionCode)) {
+            rowShimmer?.cancel()
+            rowShimmer = null
+            row.shimmer.visibility = View.GONE
+            return
+        }
+        if (rowShimmer != null) return
+
+        row.shimmer.visibility = View.VISIBLE
+        row.rowRoot.post {
+            rowShimmer = Motion.shimmer(row.shimmer, row.rowRoot.width)
+            // Null means reduced motion — no sweep, so no band either.
+            if (rowShimmer == null) row.shimmer.visibility = View.GONE
+        }
+        // Seen now — the next visit for this same version shows a static row.
+        UpdatePrefs.recordRowSeen(this, available.versionCode)
     }
 
     private fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // The row reflects whatever the repository already knows; no check is
+        // forced here, so opening Profile never costs a Play round trip.
+        UpdateRepository.addObserver(this)
+    }
+
+    override fun onStop() {
+        UpdateRepository.removeObserver(this)
+        super.onStop()
+    }
+
+    override fun onUpdateState(state: UpdateState) {
+        renderAppVersionRow(state)
+    }
+
+    override fun onDestroy() {
+        rowShimmer?.cancel()
+        rowShimmer = null
+        appVersionRow = null
+        super.onDestroy()
     }
 
     /** From [LogoutBottomSheet] once the user confirms. */
