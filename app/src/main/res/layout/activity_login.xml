@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/wedora_bg"
@@ -243,3 +247,9 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
+
+    <include
+        android:id="@+id/authLoading"
+        layout="@layout/layout_auth_loading_overlay" />
+
+</FrameLayout>

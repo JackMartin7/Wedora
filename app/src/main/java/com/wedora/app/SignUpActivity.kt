@@ -60,17 +60,27 @@ class SignUpActivity : WedoraBaseActivity() {
         setContentView(binding.root)
         applyEdgeInsets(binding.root, applyIme = true)
 
+        binding.authLoading.tvAuthLoadingText.setText(R.string.auth_signing_up)
+
         googleAuthHelper = GoogleAuthHelper(
             activity = this,
             onSignedIn = { uid -> routeAfterGoogleSignIn(uid) },
-            onCancelled = { binding.btnGoogle.isEnabled = true },
+            onCancelled = {
+                binding.btnGoogle.isEnabled = true
+                setGoogleLoading(false)
+            },
             onError = {
                 binding.btnGoogle.isEnabled = true
+                setGoogleLoading(false)
                 Toast.makeText(this, R.string.error_google_sign_in_failed, Toast.LENGTH_LONG).show()
             }
         )
         binding.btnGoogle.setOnClickListener {
             binding.btnGoogle.isEnabled = false
+            // Covers the whole chain — intent launch, token exchange, Firebase
+            // sign-in, Firestore profile-completeness check, navigate — not
+            // just the initial tap, since that chain can take a few seconds.
+            setGoogleLoading(true)
             googleAuthHelper.launch()
         }
 
@@ -196,12 +206,14 @@ class SignUpActivity : WedoraBaseActivity() {
         resolveSignedInDestination(firestore, uid) { routing ->
             when (routing) {
                 is SignedInRouting.Allowed -> {
+                    setGoogleLoading(false)
                     startActivity(Intent(this, routing.destination))
                     finish()
                     applyHandoffTransition()
                 }
                 SignedInRouting.Banned -> {
                     binding.btnGoogle.isEnabled = true
+                    setGoogleLoading(false)
                     Toast.makeText(this, R.string.error_account_suspended, Toast.LENGTH_LONG).show()
                 }
             }
@@ -225,6 +237,12 @@ class SignUpActivity : WedoraBaseActivity() {
         // re-enabling — otherwise a failed attempt would leave Sign Up tappable
         // even if the box were somehow unticked.
         if (loading) binding.btnSignUp.isEnabled = false else updateSignUpEnabled()
+    }
+
+    /** Full-chain overlay for Sign Up with Google — see layout_auth_loading_overlay.xml. */
+    private fun setGoogleLoading(loading: Boolean) {
+        binding.authLoading.authLoadingOverlay.visibility =
+            if (loading) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     /**

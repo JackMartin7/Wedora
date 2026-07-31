@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-flow loading overlay for Login/Sign Up's "Continue with Google" chain:
+    launch intent -> token exchange -> Firebase sign-in -> Firestore profile
+    check -> navigate. The chain can take a few seconds; a dimmed button alone
+    (the pre-existing feedback) leaves the user staring at an inert screen for
+    the middle of it. Included into activity_login.xml / activity_signup.xml
+    and toggled for the whole chain, not just the initial tap.
+
+    Root id (authLoadingOverlay) and text id (tvAuthLoadingText) are shared by
+    both hosts so AuthLoadingOverlay.kt can drive either from one helper.
+-->
+<!-- Note: root is a plain FrameLayout, not <merge> — ViewBinding does not
+     hoist a merged include's child ids into the host layout's binding, so a
+     <merge> root here would leave binding.authLoadingOverlay unresolved.
+     Give the <include> its own id in the host layout and reach these views
+     via that nested binding instead (e.g. binding.authLoading.root). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/authLoadingOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#66000000"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone"
+    tools:visibility="visible">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_card"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="24dp">
+
+        <ProgressBar
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:indeterminateTint="@color/wedora_accent" />
+
+        <TextView
+            android:id="@+id/tvAuthLoadingText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/auth_signing_in"
+            android:textColor="@color/wedora_text"
+            android:textSize="14sp"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
+</FrameLayout>

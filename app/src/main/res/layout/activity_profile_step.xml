@@ -91,12 +91,30 @@
                 android:lineSpacingExtra="3sp"
                 tools:text="This is how you'll appear to others" />
 
-            <!-- Each step's own fields land here. -->
+            <!-- Each step's own fields land here. Wrapped so the load spinner
+                 can overlay it while loadExistingProfile()'s read is in
+                 flight — otherwise fields simply pop in once it lands. -->
             <FrameLayout
-                android:id="@+id/stepContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp" />
+                android:layout_marginTop="28dp">
+
+                <FrameLayout
+                    android:id="@+id/stepContent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <ProgressBar
+                    android:id="@+id/progressStepLoad"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="24dp"
+                    android:indeterminateTint="@color/wedora_accent"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+            </FrameLayout>
 
         </LinearLayout>
 

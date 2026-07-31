@@ -117,14 +117,23 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
      * is a merge.
      */
     private fun loadExistingProfile() {
+        binding.stepContent.visibility = View.INVISIBLE
+        binding.progressStepLoad.visibility = View.VISIBLE
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 onExistingProfile(UserProfile.from(snapshot))
                 updateContinueEnabled()
+                revealStepContent()
             }
             .addOnFailureListener { e ->
                 Log.i(TAG, "No existing profile to prefill step $stepNumber", e)
+                revealStepContent()
             }
+    }
+
+    private fun revealStepContent() {
+        binding.progressStepLoad.visibility = View.GONE
+        binding.stepContent.visibility = View.VISIBLE
     }
 
     /** Pre-fill from what's already stored. Default: nothing to restore. */

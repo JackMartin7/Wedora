@@ -31,22 +31,30 @@ class BlockConfirmBottomSheet : ConfirmBottomSheet() {
     override val subtitleRes = R.string.block_confirm_message
     override val primaryLabelRes = R.string.block_confirm_button
 
+    // The sheet stays open and busy until the write resolves, rather than
+    // dismissing instantly with no feedback and a toast landing afterwards.
+    override val dismissImmediately = false
+
     override fun onPrimary() {
         val selfUid = FirebaseAuth.getInstance().realUid ?: return
         val targetUid = requireArguments().getString(ARG_TARGET_UID).orEmpty()
-        // Captured before the base dismisses this sheet — the async callback
-        // below can't reach them once it's detached.
+        // Captured before the sheet can be dismissed out from under this
+        // callback — dismiss() here happens on success/failure, not before.
         val fm = parentFragmentManager
         val context = requireContext().applicationContext
 
+        setBusy(true, R.string.block_confirm_button_busy)
         blockUser(FirebaseFirestore.getInstance(), selfUid, targetUid)
             .addOnSuccessListener {
                 Toast.makeText(context, R.string.block_success, Toast.LENGTH_SHORT).show()
                 fm.setFragmentResult(RESULT_BLOCKED, bundleOf())
+                dismiss()
             }
             .addOnFailureListener { e ->
                 Log.w("WedoraModeration", "Failed to block user", e)
                 Toast.makeText(context, R.string.block_failed, Toast.LENGTH_LONG).show()
+                setBusy(false)
+                dismiss()
             }
     }
 }

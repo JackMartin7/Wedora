@@ -22,6 +22,8 @@
     <string name="auth_divider_or">Or continue with</string>
     <string name="btn_continue_with_google">Continue with Google</string>
     <string name="error_google_sign_in_failed">Google sign-in failed. Please try again.</string>
+    <string name="auth_signing_in">Signing in…</string>
+    <string name="auth_signing_up">Signing up…</string>
 
     <!-- Forgot Password -->
     <string name="forgot_password_title">Forgot Password</string>
@@ -230,11 +232,13 @@
     <string name="action_cancel">Cancel</string>
     <string name="report_reason_title">Why are you reporting this?</string>
     <string name="report_submit">Submit</string>
+    <string name="report_submitting">Submitting…</string>
     <string name="report_submitted">Report submitted — thank you</string>
     <string name="report_failed">Couldn\'t submit the report. Please try again.</string>
     <string name="block_confirm_title">Block this user?</string>
     <string name="block_confirm_message">They won\'t be able to see your profile or contact you.</string>
     <string name="block_confirm_button">Block</string>
+    <string name="block_confirm_button_busy">Blocking…</string>
     <string name="block_success">User blocked</string>
     <string name="block_failed">Couldn\'t block this user. Please try again.</string>
 

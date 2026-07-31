@@ -7,8 +7,12 @@
     a time. Asking for all of it before an account exists made this the longest
     screen in the app and put the whole thing behind a single Sign Up button.
 -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<ScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/wedora_bg"
@@ -234,3 +238,9 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
+
+    <include
+        android:id="@+id/authLoading"
+        layout="@layout/layout_auth_loading_overlay" />
+
+</FrameLayout>

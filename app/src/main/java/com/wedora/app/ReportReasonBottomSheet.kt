@@ -51,21 +51,34 @@ class ReportReasonBottomSheet : WedoraBottomSheetDialog() {
         b.btnSubmitReport.setOnClickListener {
             val reason = b.chipsReasons.selectedOption() ?: return@setOnClickListener
             submit(reason)
-            dismiss()
         }
         springIn(view)
     }
 
+    // Stays open, disabled and busy, until the write resolves — dismissing
+    // immediately on tap gave no feedback that anything was happening before
+    // the toast eventually landed.
     private fun submit(reason: String) {
         val selfUid = FirebaseAuth.getInstance().realUid ?: return
         val context = requireContext().applicationContext
+        val b = binding ?: return
+
+        b.btnSubmitReport.isEnabled = false
+        b.btnSubmitReport.setText(R.string.report_submitting)
+        for (i in 0 until b.chipsReasons.childCount) {
+            b.chipsReasons.getChildAt(i).isEnabled = false
+        }
+        isCancelable = false
+
         submitReport(FirebaseFirestore.getInstance(), selfUid, targetUid, reason)
             .addOnSuccessListener {
                 Toast.makeText(context, R.string.report_submitted, Toast.LENGTH_SHORT).show()
+                dismiss()
             }
             .addOnFailureListener { e ->
                 Log.w("WedoraModeration", "Failed to submit report", e)
                 Toast.makeText(context, R.string.report_failed, Toast.LENGTH_LONG).show()
+                dismiss()
             }
     }
 

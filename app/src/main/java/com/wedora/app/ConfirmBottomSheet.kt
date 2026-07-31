@@ -26,8 +26,33 @@ abstract class ConfirmBottomSheet : WedoraBottomSheetDialog() {
     /** "Cancel" fits every existing sheet; override only where the copy differs. */
     @get:StringRes protected open val secondaryLabelRes: Int = R.string.action_cancel
 
-    /** Runs when the primary button is tapped; the sheet dismisses afterwards. */
+    /** Runs when the primary button is tapped; the sheet dismisses afterwards
+     *  unless [dismissImmediately] is false, in which case [onPrimary] is
+     *  responsible for calling [dismiss] once its async work resolves. */
     protected abstract fun onPrimary()
+
+    /**
+     * True (the default) dismisses right after [onPrimary] fires, matching
+     * every prior use of this base (Log Out, Delete Account confirm — both
+     * synchronous or handled by an overlay elsewhere). A subclass whose
+     * [onPrimary] itself issues the async write — e.g. Block — sets this to
+     * false so the sheet stays open, busy, until the write resolves, rather
+     * than dismissing with no feedback that anything happened.
+     */
+    protected open val dismissImmediately: Boolean = true
+
+    /** Swaps the primary button to a busy label and disables both buttons. */
+    protected fun setBusy(busy: Boolean, @StringRes busyLabelRes: Int? = null) {
+        val b = binding ?: return
+        b.btnSheetPrimary.isEnabled = !busy
+        b.btnSheetSecondary.isEnabled = !busy
+        isCancelable = !busy
+        if (busy && busyLabelRes != null) {
+            b.btnSheetPrimary.setText(busyLabelRes)
+        } else if (!busy) {
+            b.btnSheetPrimary.setText(primaryLabelRes)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +71,7 @@ abstract class ConfirmBottomSheet : WedoraBottomSheetDialog() {
         b.btnSheetPrimary.addPressScale()
         b.btnSheetPrimary.setOnClickListener {
             onPrimary()
-            dismiss()
+            if (dismissImmediately) dismiss()
         }
         b.btnSheetSecondary.setOnClickListener { dismiss() }
 

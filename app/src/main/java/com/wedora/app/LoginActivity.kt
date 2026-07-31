@@ -44,16 +44,26 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
                 // Guest state and routing are exactly what a successful
                 // email/password sign-in already does below (onSignInSuccess)
                 // — this joins that same path rather than duplicating it.
+                // The overlay stays up through routeAfterSignIn's Firestore
+                // check; goTo()/the Banned branch clear it.
                 routeAfterSignIn(uid)
             },
-            onCancelled = { binding.btnGoogle.isEnabled = true },
+            onCancelled = {
+                binding.btnGoogle.isEnabled = true
+                setGoogleLoading(false)
+            },
             onError = {
                 binding.btnGoogle.isEnabled = true
+                setGoogleLoading(false)
                 Toast.makeText(this, R.string.error_google_sign_in_failed, Toast.LENGTH_LONG).show()
             }
         )
         binding.btnGoogle.setOnClickListener {
             binding.btnGoogle.isEnabled = false
+            // Covers the whole chain — intent launch, token exchange, Firebase
+            // sign-in, Firestore profile-completeness check, navigate — not
+            // just the initial tap, since that chain can take a few seconds.
+            setGoogleLoading(true)
             googleAuthHelper.launch()
         }
 
@@ -216,6 +226,7 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
                 // is — just stop the spinner and say why.
                 SignedInRouting.Banned -> {
                     setLoading(false)
+                    setGoogleLoading(false)
                     Toast.makeText(this, R.string.error_account_suspended, Toast.LENGTH_LONG).show()
                 }
             }
@@ -228,6 +239,7 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
      */
     private fun goTo(destination: Class<*>) {
         setLoading(false)
+        setGoogleLoading(false)
         startActivity(Intent(this, destination))
         finish()
         applyHandoffTransition()
@@ -288,6 +300,12 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         // re-enabling, so a failed attempt doesn't leave Login tappable on a
         // form the user has since cleared.
         if (loading) binding.btnLogin.isEnabled = false else updateLoginEnabled()
+    }
+
+    /** Full-chain overlay for Google Sign-In — see layout_auth_loading_overlay.xml. */
+    private fun setGoogleLoading(loading: Boolean) {
+        binding.authLoading.authLoadingOverlay.visibility =
+            if (loading) android.view.View.VISIBLE else android.view.View.GONE
     }
 
     private fun togglePasswordVisibility() {
