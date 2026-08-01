@@ -62,7 +62,9 @@ class NearbyListActivity : WedoraBaseActivity() {
         binding.emptyState.hide()
         binding.rvNearbyList.visibility = View.VISIBLE
         adapter.submitList(
-            cards.map { NearbyRow(it.id, it.name, it.ageLocationLine(this), it.distanceBadge()) }
+            cards.map {
+                NearbyRow(it.id, it.name, it.ageLocationLine(this), it.distanceBadge(), it.photoUrl)
+            }
         )
     }
 

@@ -17,7 +17,8 @@ data class NearbyRow(
     val userId: String,
     val name: String,
     val meta: String?,
-    val distanceBadge: String?
+    val distanceBadge: String?,
+    val photoUrl: String?
 )
 
 /** Single-column list of discoverable people, sorted closest first. */
@@ -37,8 +38,7 @@ class NearbyListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(row: NearbyRow) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the neutral
-            // placeholder set in the layout.
+            ivNearbyAvatar.loadRemoteProfilePhoto(row.photoUrl)
             tvNearbyName.text = row.name
 
             if (row.meta == null) {
