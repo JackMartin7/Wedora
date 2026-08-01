@@ -30,8 +30,7 @@ class ProfileViewerStripAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(viewer: ProfileViewer) = with(binding) {
-            // No photo backend for other users, so the avatar keeps the
-            // neutral placeholder set in the layout.
+            ivMatchedAvatar.loadRemoteProfilePhoto(viewer.photoUrl)
             tvMatchedName.text = viewer.name
             onlineDot.root.bindOnlineDot(viewer.lastSeen)
 
