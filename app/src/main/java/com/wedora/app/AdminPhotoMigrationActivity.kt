@@ -36,9 +36,9 @@ private const val TAG = "WedoraPhotoMigration"
 class AdminPhotoMigrationActivity : WedoraBaseActivity() {
 
     private companion object {
-        // Matches PushNotificationSender's ENDPOINT host and PhotoUploadService's
-        // git history (the pre-Firebase upload target) — the one host every
-        // legacy photoUrl was ever written pointing at.
+        // Matches PhotoUploadService's git history (the pre-Firebase upload
+        // target) — the one host every legacy photoUrl was ever written
+        // pointing at.
         const val HOSTINGER_HOST = "tuberstec.com"
 
         const val CONNECT_TIMEOUT_MS = 15_000

@@ -20,10 +20,9 @@ import com.google.firebase.firestore.SetOptions
 /**
  * Play Billing for Premium subscriptions.
  *
- * There is no backend for this app (see PhotoUploadService/PushNotificationSender
- * for the same "custom PHP endpoint, no server-side authority" shape elsewhere in
- * this project) — so unlike a typical subscription integration, purchases are
- * never verified server-side against Google's Play Developer API. A signed-in
+ * Unlike a typical subscription integration, purchases are never verified
+ * server-side against Google's Play Developer API — the Cloud Functions this
+ * project does have (see functions/src/index.ts) don't cover billing. A signed-in
  * user's own Firestore write is what grants [UserProfile.FIELD_IS_PREMIUM], the
  * same as it always could be by hand via Console; firestore.rules has to trust
  * that write coming from a client holding a real (if unverified) purchase token

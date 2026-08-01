@@ -58,14 +58,13 @@ fun likeUserRespectingDailyLimit(
         .addOnSuccessListener { matchSnapshot ->
             if (!matchSnapshot.isEmpty) {
                 // Already matched — just the harmless createdAt refresh,
-                // never counted against the daily limit. Still worth a push
-                // if it's the write that actually completes the match for
-                // otherUid (see sendLikeOrMatchPush) — a pure re-like
-                // refresh sends nothing, since nothing new happened for
-                // otherUid to hear about.
-                val existing = matchSnapshot.documents.firstOrNull()?.let { Match.from(it) }
+                // never counted against the daily limit. Whether this write
+                // is actually news to otherUid (a re-like refresh vs. the
+                // update that completes a mutual match) is exactly what the
+                // onMatchWritten Cloud Function itself now works out from
+                // the before/after likedUsers diff — see its own doc
+                // comment in functions/src/index.ts.
                 val task = createMatchDocument(firestore, selfUid, otherUid)
-                task.addOnSuccessListener { sendLikeOrMatchPush(selfUid, otherUid, existing) }
                 onResult(LikeAttempt.Started(task))
                 return@addOnSuccessListener
             }
@@ -81,48 +80,12 @@ fun likeUserRespectingDailyLimit(
 }
 
 /**
- * Push for [otherUid] once a like write actually succeeds — not optimistic,
- * matching how [PushNotificationSender] is called everywhere else in this
- * app: only after the corresponding Firestore write has confirmed.
- *
- * [existingMatch] is whatever [likeUserRespectingDailyLimit] already read
- * via matchExistsQuery — deliberately not a fresh lookup, since
- * [createMatchDocument] is a blind write by design (see its own doc comment
- * on why a pre-read there would weaken the match-read rule); this reuses
- * the read that call site already had a legitimate reason to make instead
- * of adding a new one just for this.
- *
- * Same three-way split [MatchNotificationWatcher] makes for the in-app
- * bell, just evaluated here instead of via a live listener diff:
- *  - [selfUid] had already liked (a pure re-like refresh) -> nothing new
- *    for [otherUid], no push.
- *  - [otherUid] had already liked [selfUid] -> this like completes a
- *    mutual match [otherUid] started -> "New Match!"
- *  - neither had liked yet ([existingMatch] null, or otherUid not in it)
- *    -> a fresh one-sided like for [otherUid] -> "Someone liked your
- *    profile!"
- */
-private fun sendLikeOrMatchPush(selfUid: String, otherUid: String, existingMatch: Match?) {
-    if (existingMatch?.isLikeBy(selfUid) == true) return
-
-    if (existingMatch?.isLikeBy(otherUid) == true) {
-        PushNotificationSender.send(
-            otherUid, "New Match! 🎉", "You matched with someone new",
-            PushNotificationSender.TYPE_MATCH, selfUid
-        )
-    } else {
-        PushNotificationSender.send(
-            otherUid, "Someone liked your profile! ❤️", "",
-            PushNotificationSender.TYPE_LIKE, selfUid
-        )
-    }
-}
-
-/**
- * The original daily-limit-gated flow, for a pair confirmed not yet matched
- * — so any match doc this writes is always brand new, meaning a like push
- * (never a match push; see [sendLikeOrMatchPush]) once the write succeeds
- * is the only possible outcome here.
+ * The original daily-limit-gated flow, for a pair confirmed not yet matched.
+ * Any match doc this writes is always brand new — the onMatchWritten Cloud
+ * Function's own create-vs-update split (see functions/src/index.ts) means
+ * that's the only case that can ever produce a "Someone liked your profile!"
+ * push rather than a "New Match!" one, but nothing here needs to know that;
+ * the push itself is entirely the Cloud Function's concern now.
  */
 private fun likeNewUserRespectingDailyLimit(
     firestore: FirebaseFirestore,
@@ -136,7 +99,6 @@ private fun likeNewUserRespectingDailyLimit(
             val profile = UserProfile.from(snapshot)
             if (profile.isPremium) {
                 val task = createMatchDocument(firestore, selfUid, otherUid)
-                task.addOnSuccessListener { sendLikeOrMatchPush(selfUid, otherUid, existingMatch = null) }
                 onResult(LikeAttempt.Started(task))
                 return@addOnSuccessListener
             }
@@ -164,16 +126,12 @@ private fun likeNewUserRespectingDailyLimit(
                 SetOptions.merge()
             )
             val task = batch.commit()
-            task.addOnSuccessListener { sendLikeOrMatchPush(selfUid, otherUid, existingMatch = null) }
             onResult(LikeAttempt.Started(task))
         }
         .addOnFailureListener {
             // Can't confirm the limit — fail open rather than blocking a like
             // over a transient read error. Unlimited like-attempt failures are
-            // still handled by whatever the caller attaches to the task. No
-            // push here either: this path has no reliable prior-match state
-            // to classify against (see sendLikeOrMatchPush), and a push is a
-            // nice-to-have, not worth guessing at.
+            // still handled by whatever the caller attaches to the task.
             onResult(LikeAttempt.Started(createMatchDocument(firestore, selfUid, otherUid)))
         }
 }

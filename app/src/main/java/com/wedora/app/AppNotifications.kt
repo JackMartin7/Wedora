@@ -25,6 +25,17 @@ object AppNotifications {
     private const val TAG = "WedoraNotify"
 
     /**
+     * The `type` values a push's data payload carries — written by the
+     * onMatchWritten/onMessageSent Cloud Functions (functions/src/index.ts),
+     * read back here in [notifyFromPush]. Kept in sync by hand across
+     * languages, same as every other client/server constant pair in this
+     * project (WedoraAdmin.UID, Match's field names).
+     */
+    const val TYPE_MATCH = "match"
+    const val TYPE_LIKE = "like"
+    const val TYPE_MESSAGE = "message"
+
+    /**
      * Distinct id ranges per category so a match/like/message about the same
      * matchId can't silently overwrite one another's notification — while a
      * second event of the *same* category for the same match still correctly
@@ -118,14 +129,12 @@ object AppNotifications {
      * [WedoraFirebaseMessagingService.onMessageReceived]), using its title/
      * body verbatim rather than re-deriving them the way notifyNewMatch/
      * notifyNewLike/notifyNewMessage do for a *locally observed* event — a
-     * push already carries exactly what the sending device's
-     * [PushNotificationSender] call decided to say.
+     * push already carries exactly what the sending Cloud Function decided
+     * to say (see functions/src/index.ts's sendPush).
      *
-     * [type] is one of [PushNotificationSender.TYPE_MATCH]/
-     * [PushNotificationSender.TYPE_LIKE]/[PushNotificationSender.TYPE_MESSAGE]
-     * and picks the channel/toggle/tap-destination, mirroring the three
-     * local-notification functions above; an unrecognized type is dropped
-     * rather than guessed at.
+     * [type] is one of [TYPE_MATCH]/[TYPE_LIKE]/[TYPE_MESSAGE] and picks the
+     * channel/toggle/tap-destination, mirroring the three local-notification
+     * functions above; an unrecognized type is dropped rather than guessed at.
      *
      * Reuses the exact same [idFor] scheme those local paths use, so a push
      * and MatchNotificationWatcher's own live detection for the *same*
@@ -142,7 +151,7 @@ object AppNotifications {
         body: String
     ) {
         when (type) {
-            PushNotificationSender.TYPE_MATCH -> {
+            TYPE_MATCH -> {
                 if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.NEW_MATCHES)) {
                     Log.d(TAG, "Skipping push match notification for $matchId: category disabled in Settings")
                     return
@@ -152,7 +161,7 @@ object AppNotifications {
                     title, body, ProfileDetailActivity.intent(context, otherUid)
                 )
             }
-            PushNotificationSender.TYPE_LIKE -> {
+            TYPE_LIKE -> {
                 if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.LIKES)) {
                     Log.d(TAG, "Skipping push like notification for $matchId: category disabled in Settings")
                     return
@@ -162,14 +171,14 @@ object AppNotifications {
                     title, body, Intent(context, LikesActivity::class.java)
                 )
             }
-            PushNotificationSender.TYPE_MESSAGE -> {
+            TYPE_MESSAGE -> {
                 if (!NotificationPrefs.isEnabled(context, NotificationPrefs.Toggle.MESSAGES)) {
                     Log.d(TAG, "Skipping push message notification for $matchId: category disabled in Settings")
                     return
                 }
                 // title doubles as the sender's display name here — that's
-                // what PushNotificationSender.send's message call site
-                // passes as title, matching notifyNewMessage's own shape.
+                // what onMessageSent's sendPush call passes as title,
+                // matching notifyNewMessage's own shape.
                 show(
                     context, NotificationChannels.MESSAGES, idFor(matchId, ID_OFFSET_MESSAGE),
                     title, body, ChatThreadActivity.intent(context, otherUid, title)

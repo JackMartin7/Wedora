@@ -10,13 +10,15 @@ import com.google.firebase.messaging.RemoteMessage
 /**
  * Receives FCM token refreshes and incoming push messages.
  *
- * send_notification.php always sends a data-only payload (no "notification"
- * block) so [onMessageReceived] is the single place a push becomes a shown
- * system notification on every app state (foreground, backgrounded, or
- * killed but not force-stopped) — a "notification" payload would instead let
- * the OS auto-display it while backgrounded, bypassing NotificationPrefs and
- * the shared notification-ID dedup [AppNotifications.notifyFromPush] relies
- * on. The data payload's keys are documented on [PushNotificationSender.send].
+ * The onMatchWritten/onMessageSent Cloud Functions (functions/src/index.ts)
+ * always send a data-only payload (no "notification" block) so
+ * [onMessageReceived] is the single place a push becomes a shown system
+ * notification on every app state (foreground, backgrounded, or killed but
+ * not force-stopped) — a "notification" payload would instead let the OS
+ * auto-display it while backgrounded, bypassing NotificationPrefs and the
+ * shared notification-ID dedup [AppNotifications.notifyFromPush] relies on.
+ * The data payload's keys are documented on that same Cloud Functions file's
+ * sendPush helper.
  */
 class WedoraFirebaseMessagingService : FirebaseMessagingService() {
 
