@@ -33,8 +33,8 @@ android {
         // is what actually covers that now, wired app-wide across every
         // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 12
-        versionName = "1.2.2"
+        versionCode = 14
+        versionName = "1.2.4"
     }
 
     signingConfigs {
@@ -90,6 +90,18 @@ dependencies {
 
     // App-level foreground/background detection, for presence (lastSeen)
     implementation("androidx.lifecycle:lifecycle-process:2.8.4")
+
+    // Pinned directly rather than left to firebase-messaging's transitive
+    // pull, which otherwise resolves to work-runtime 2.7.0 (Room 2.2.5) —
+    // old enough that its generated WorkDatabase_Impl doesn't survive R8
+    // under this project's current toolchain. Release builds crashed at
+    // startup with "Failed to create an instance of
+    // androidx.work.impl.WorkDatabase" from androidx.startup's
+    // WorkManagerInitializer, reproducible with zero custom ProGuard rules
+    // involved — this override, not the Play Console "Automatic app
+    // protection" toggle we suspected first, is the actual fix. Debug
+    // builds never hit this: minification is what exposes it.
+    implementation("androidx.work:work-runtime:2.11.2")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
