@@ -142,8 +142,24 @@ service cloud.firestore {
 
       // Membership is read off the stored document, so this only applies to
       // operations on a document that already exists.
+      //
+      // The `resource != null` guard matters beyond the obvious missing-
+      // document case: matchExistsQuery (LikeLimit.kt) deliberately queries
+      // by document ID rather than get()-ing it, specifically so a match
+      // that doesn't exist yet returns an empty result instead of being
+      // denied outright — resource.data.users can't be evaluated on a null
+      // resource. Without this guard, that field access throws during rule
+      // evaluation rather than cleanly returning false, and an unhandled
+      // throw makes Firestore reject the whole query with PERMISSION_DENIED
+      // instead of just excluding the (nonexistent) candidate document and
+      // returning empty — exactly the failure this function is supposed to
+      // avoid. The same applies to a match doc deleted via unlike while a
+      // messages subcollection under it still lingers (Firestore doesn't
+      // cascade-delete subcollections), which hits this same null-resource
+      // path on a genuinely still-relevant matchId.
       function isMember() {
         return request.auth != null
+            && resource != null
             && request.auth.uid in resource.data.users;
       }
 
