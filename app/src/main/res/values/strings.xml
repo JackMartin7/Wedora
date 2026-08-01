@@ -638,6 +638,17 @@
     <!-- ===== Admin: Reports (hidden, WedoraAdmin.UID only) ===== -->
     <string name="settings_admin_reports">Admin: Reports</string>
 
+    <!-- ===== Admin: one-time Hostinger -> Firebase Storage photo migration ===== -->
+    <string name="settings_admin_migrate_photos">Admin: Migrate Photos</string>
+    <string name="admin_migration_title">Migrate Photos</string>
+    <string name="admin_migration_description">One-time move of profile photos still hosted on the old Hostinger endpoint into Firebase Storage. Safe to re-run — it only touches photoUrl values that still point at the old host.</string>
+    <string name="admin_migration_start">Start Migration</string>
+    <string name="admin_migration_running">Migrating…</string>
+    <string name="admin_migration_scanning">Scanning user profiles…</string>
+    <string name="admin_migration_none_found">No photos found on the old host — nothing to migrate.</string>
+    <string name="admin_migration_summary">Found %1$d · Migrated %2$d · Failed %3$d</string>
+    <string name="admin_migration_scan_failed">Couldn\'t read the users collection: %1$s</string>
+
     <string name="admin_reports_title">Reports</string>
     <string name="admin_reports_empty_title">No reports</string>
     <string name="admin_reports_empty_subtitle">Nothing has been reported yet.</string>

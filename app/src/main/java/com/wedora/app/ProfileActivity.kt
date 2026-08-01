@@ -482,6 +482,16 @@ class ProfileActivity :
             listOf(
                 SettingsRow(R.drawable.ic_flag, R.string.settings_admin_reports) {
                     startActivity(Intent(this, AdminReportsActivity::class.java))
+                },
+                // One-time Hostinger -> Firebase Storage photo migration (see
+                // AdminPhotoMigrationActivity). Left in place rather than
+                // deleted after use: harmless to re-run (it only ever
+                // touches photoUrl values still pointing at the old host,
+                // so a completed migration finds nothing left to do), and
+                // removing it is a five-minute follow-up once there's no
+                // reason to keep it reachable.
+                SettingsRow(R.drawable.ic_flag, R.string.settings_admin_migrate_photos) {
+                    startActivity(Intent(this, AdminPhotoMigrationActivity::class.java))
                 }
             )
         } else {

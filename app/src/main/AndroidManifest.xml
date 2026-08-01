@@ -261,6 +261,10 @@
             android:name=".AdminReportDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".AdminPhotoMigrationActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>
