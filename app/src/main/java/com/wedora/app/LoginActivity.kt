@@ -90,6 +90,22 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         updateLoginEnabled()
 
         binding.tvContinueAsGuest.setOnClickListener { continueAsGuest() }
+
+        playEntranceTimeline()
+    }
+
+    /**
+     * Brand mark, headline, subline and the card rise in on a light stagger —
+     * the same rise-up/decelerate language the splash and onboarding screens
+     * already use (see Motion.riseUp), just applied to this screen's own
+     * elements. Motion.reducedMotion is checked inside riseUp itself, so
+     * there's nothing extra to guard here.
+     */
+    private fun playEntranceTimeline() {
+        Motion.riseUp(binding.ivAuthMark, durationMs = 500, delayMs = 0, fromYDp = 16f)
+        Motion.riseUp(binding.tvTitle, durationMs = 500, delayMs = 60, fromYDp = 16f)
+        Motion.riseUp(binding.tvSubtitle, durationMs = 500, delayMs = 100, fromYDp = 16f)
+        Motion.riseUp(binding.authCard, durationMs = 550, delayMs = 160, fromYDp = 16f)
     }
 
     /**

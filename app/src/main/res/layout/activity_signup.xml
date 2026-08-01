@@ -35,195 +35,223 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- Brand mark -->
+        <ImageView
+            android:id="@+id/ivAuthMark"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="4dp"
+            android:src="@drawable/ic_badge_heart"
+            android:contentDescription="@null"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnBack" />
+
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="20dp"
             android:text="@string/signup_title"
-            android:textColor="@color/wedora_accent"
+            android:textColor="@color/wedora_text"
             android:textSize="26sp"
-            android:fontFamily="@font/poppins_medium"
+            android:fontFamily="@font/poppins_semibold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnBack" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivAuthMark" />
 
         <TextView
             android:id="@+id/tvSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:text="@string/signup_subtitle"
             android:textColor="@color/wedora_text_secondary"
-            android:textSize="12sp"
+            android:textSize="13sp"
             app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
-        <!-- Email field -->
-        <TextView
-            android:id="@+id/labelEmail"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
+        <!-- Card: everything interactive lives inside one elevated surface,
+             Google-first, legal text inside the card ahead of the "or continue
+             with" login link — same nesting note as activity_login.xml: every
+             id below is unchanged, SignUpActivity binds them exactly as before. -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/authCard"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
-            android:text="@string/label_email"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvSubtitle" />
-
-        <EditText
-            android:id="@+id/etEmail"
-            style="@style/WedoraInputField"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="@string/hint_email"
-            android:inputType="textEmailAddress"
-            android:autofillHints="emailAddress"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
+            android:background="@drawable/bg_card"
+            android:elevation="8dp"
+            android:padding="20dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelEmail" />
+            app:layout_constraintTop_toBottomOf="@+id/tvSubtitle">
 
-        <!-- Password field -->
-        <TextView
-            android:id="@+id/labelPassword"
-            style="@style/WedoraFieldLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/label_password"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etEmail" />
+            <!-- Google sign-in -->
+            <TextView
+                android:id="@+id/btnGoogle"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_button_google"
+                android:gravity="center"
+                android:drawableStart="@drawable/ic_google"
+                android:drawablePadding="10dp"
+                android:paddingHorizontal="16dp"
+                android:text="@string/btn_continue_with_google"
+                android:textColor="@color/wedora_text"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_medium"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <EditText
-            android:id="@+id/etPassword"
-            style="@style/WedoraInputField"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="@string/hint_password"
-            android:inputType="textPassword"
-            android:paddingEnd="48dp"
-            android:autofillHints="newPassword"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/labelPassword" />
+            <!-- Divider "Or continue with" -->
+            <View
+                android:id="@+id/dividerLeft"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_marginTop="18dp"
+                android:background="@color/wedora_border"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/tvDividerOr"
+                app:layout_constraintTop_toBottomOf="@id/btnGoogle"
+                app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
 
-        <ImageButton
-            android:id="@+id/btnTogglePassword"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="12dp"
-            android:background="@null"
-            android:src="@drawable/ic_hide"
-            android:contentDescription="@null"
-            app:layout_constraintEnd_toEndOf="@id/etPassword"
-            app:layout_constraintTop_toTopOf="@id/etPassword"
-            app:layout_constraintBottom_toBottomOf="@id/etPassword" />
+            <TextView
+                android:id="@+id/tvDividerOr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="@string/auth_divider_or"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp"
+                app:layout_constraintStart_toEndOf="@id/dividerLeft"
+                app:layout_constraintEnd_toStartOf="@id/dividerRight"
+                app:layout_constraintTop_toBottomOf="@id/btnGoogle" />
 
-        <!-- Sign Up button.
-             Explicitly AppCompatButton: under a Theme.MaterialComponents.* theme a
-             plain <Button> is auto-inflated as MaterialButton, which manages its own
-             background and ignores android:background (our ripple/corners/shadow). -->
-        <androidx.appcompat.widget.AppCompatButton
-            android:id="@+id/btnSignUp"
-            style="@style/WedoraPrimaryButton"
-            android:layout_width="match_parent"
-            android:layout_marginTop="24dp"
-            android:text="@string/btn_signup"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms" />
+            <View
+                android:id="@+id/dividerRight"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:background="@color/wedora_border"
+                app:layout_constraintStart_toEndOf="@id/tvDividerOr"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvDividerOr"
+                app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
 
-        <!--
-            Consent row: a bare checkbox with the agreement wording beside it
-            on ONE line, both document names tappable. Sign Up stays disabled
-            until this is ticked (and email + password are filled).
+            <!-- Email field -->
+            <TextView
+                android:id="@+id/labelEmail"
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/label_email"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvDividerOr" />
 
-            The wording is its own TextView rather than the CheckBox's own
-            android:text because ClickableSpans need a movementMethod, and
-            setting one on a CheckBox swallows the touch that toggles it.
-            SignUpActivity re-adds tap-to-toggle on the wording so the row
-            still behaves like a normal labelled checkbox.
+            <EditText
+                android:id="@+id/etEmail"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_email"
+                android:inputType="textEmailAddress"
+                android:autofillHints="emailAddress"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelEmail" />
 
-            This replaces what used to be two stacked blocks — a "By signing
-            up, you agree to our…" paragraph plus a checkbox restating it —
-            each of which wrapped onto two lines.
-        -->
-        <CheckBox
-            android:id="@+id/cbAgreeTerms"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:buttonTint="@color/wedora_accent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/etPassword" />
+            <!-- Password field -->
+            <TextView
+                android:id="@+id/labelPassword"
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/label_password"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etEmail" />
 
-        <TextView
-            android:id="@+id/tvAgreementLinks"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:maxLines="1"
-            android:textColor="@color/wedora_text"
-            android:textSize="13sp"
-            app:layout_constraintStart_toEndOf="@id/cbAgreeTerms"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/cbAgreeTerms"
-            app:layout_constraintBottom_toBottomOf="@id/cbAgreeTerms" />
+            <EditText
+                android:id="@+id/etPassword"
+                style="@style/WedoraInputField"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:hint="@string/hint_password"
+                android:inputType="textPassword"
+                android:paddingEnd="48dp"
+                android:autofillHints="newPassword"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelPassword" />
 
-        <!-- Divider "Or continue with" -->
-        <View
-            android:id="@+id/dividerLeft"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="24dp"
-            android:background="@color/wedora_border"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/tvDividerOr"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp"
-            app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
+            <ImageButton
+                android:id="@+id/btnTogglePassword"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:background="@null"
+                android:src="@drawable/ic_hide"
+                android:contentDescription="@null"
+                app:layout_constraintEnd_toEndOf="@id/etPassword"
+                app:layout_constraintTop_toTopOf="@id/etPassword"
+                app:layout_constraintBottom_toBottomOf="@id/etPassword" />
 
-        <TextView
-            android:id="@+id/tvDividerOr"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:text="@string/auth_divider_or"
-            android:textColor="@color/wedora_text_secondary"
-            android:textSize="12sp"
-            app:layout_constraintStart_toEndOf="@id/dividerLeft"
-            app:layout_constraintEnd_toStartOf="@id/dividerRight"
-            app:layout_constraintTop_toBottomOf="@id/btnSignUp" />
+            <!--
+                Consent row: a bare checkbox with the agreement wording beside it
+                on ONE line, both document names tappable. Sign Up stays disabled
+                until this is ticked (and email + password are filled).
 
-        <View
-            android:id="@+id/dividerRight"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:background="@color/wedora_border"
-            app:layout_constraintStart_toEndOf="@id/tvDividerOr"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvDividerOr"
-            app:layout_constraintBottom_toBottomOf="@id/tvDividerOr" />
+                The wording is its own TextView rather than the CheckBox's own
+                android:text because ClickableSpans need a movementMethod, and
+                setting one on a CheckBox swallows the touch that toggles it.
+                SignUpActivity re-adds tap-to-toggle on the wording so the row
+                still behaves like a normal labelled checkbox.
+            -->
+            <CheckBox
+                android:id="@+id/cbAgreeTerms"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:buttonTint="@color/wedora_accent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/etPassword" />
 
-        <!-- Google sign-in -->
-        <TextView
-            android:id="@+id/btnGoogle"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_button_google"
-            android:gravity="center"
-            android:drawableStart="@drawable/ic_google"
-            android:drawablePadding="10dp"
-            android:paddingHorizontal="16dp"
-            android:text="@string/btn_continue_with_google"
-            android:textColor="@color/wedora_text"
-            android:textSize="15sp"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvDividerOr" />
+            <TextView
+                android:id="@+id/tvAgreementLinks"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:maxLines="1"
+                android:textColor="@color/wedora_text"
+                android:textSize="13sp"
+                app:layout_constraintStart_toEndOf="@id/cbAgreeTerms"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/cbAgreeTerms"
+                app:layout_constraintBottom_toBottomOf="@id/cbAgreeTerms" />
+
+            <!-- Sign Up button.
+                 Explicitly AppCompatButton: under a Theme.MaterialComponents.* theme a
+                 plain <Button> is auto-inflated as MaterialButton, which manages its own
+                 background and ignores android:background (our ripple/corners/shadow). -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSignUp"
+                style="@style/WedoraPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_marginTop="20dp"
+                android:text="@string/btn_signup"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- Login prompt -->
         <TextView
@@ -234,7 +262,7 @@
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnGoogle" />
+            app:layout_constraintTop_toBottomOf="@id/authCard" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

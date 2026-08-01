@@ -99,6 +99,21 @@ class SignUpActivity : WedoraBaseActivity() {
 
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
         binding.btnSignUp.addPressScale()
+
+        playEntranceTimeline()
+    }
+
+    /**
+     * Brand mark, headline, subline and the card rise in on a light stagger —
+     * same treatment as LoginActivity's own playEntranceTimeline(), see that
+     * one's doc comment. Motion.reducedMotion is checked inside riseUp
+     * itself, so there's nothing extra to guard here.
+     */
+    private fun playEntranceTimeline() {
+        Motion.riseUp(binding.ivAuthMark, durationMs = 500, delayMs = 0, fromYDp = 16f)
+        Motion.riseUp(binding.tvTitle, durationMs = 500, delayMs = 60, fromYDp = 16f)
+        Motion.riseUp(binding.tvSubtitle, durationMs = 500, delayMs = 100, fromYDp = 16f)
+        Motion.riseUp(binding.authCard, durationMs = 550, delayMs = 160, fromYDp = 16f)
     }
 
     /**
