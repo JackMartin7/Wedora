@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -75,16 +76,24 @@ class MessageAdapter(
         @get:ColorRes
         protected abstract val normalTextColorRes: Int
 
+        /** This bubble type's ordinary background — same recycling reason as [normalTextColorRes]. */
+        @get:DrawableRes
+        protected abstract val normalBubbleBackgroundRes: Int
+
+        /** The deleted-state bubble background matching this holder's own tail-corner shape. */
+        @get:DrawableRes
+        protected abstract val deletedBubbleBackgroundRes: Int
+
         /**
-         * A deleted message renders like WhatsApp's own: a small prohibition
-         * icon, italic text, both in a single muted gray that's the same in
-         * either bubble type (deliberately overriding the sent bubble's
-         * usual white — a deleted message reads as a system notice, not
-         * content from either participant). Never shows reactions — nothing
-         * in this app's own UI offers reacting to one (see MessageAdapter's
-         * own doc comment), so a non-empty reactions map here would only
-         * ever come from a modified client; rendering it anyway would make
-         * that visible instead of just inert.
+         * A deleted message renders like WhatsApp's own: a fixed white
+         * bubble (overriding the sent bubble's usual accent fill — a
+         * deleted message reads as a system notice, not content from either
+         * participant) with a small prohibition icon and italic text, both
+         * in the same fixed gray, in either bubble type. Never shows
+         * reactions — nothing in this app's own UI offers reacting to one
+         * (see MessageAdapter's own doc comment), so a non-empty reactions
+         * map here would only ever come from a modified client; rendering
+         * it anyway would make that visible instead of just inert.
          *
          * Every branch below is set unconditionally on both paths (not just
          * when true) because the view is recycled — a row that previously
@@ -94,6 +103,7 @@ class MessageAdapter(
         protected fun bindTextAndTime(message: Message) {
             if (message.deleted) {
                 text.text = itemView.context.getString(R.string.message_deleted_placeholder)
+                text.setBackgroundResource(deletedBubbleBackgroundRes)
                 text.setTextColor(ContextCompat.getColor(itemView.context, R.color.wedora_message_deleted))
                 text.setTypeface(text.typeface, Typeface.ITALIC)
                 val icon = ContextCompat.getDrawable(itemView.context, R.drawable.ic_no_entry)?.mutate()
@@ -104,6 +114,7 @@ class MessageAdapter(
                 bindReactions(emptyMap())
             } else {
                 text.text = message.text
+                text.setBackgroundResource(normalBubbleBackgroundRes)
                 text.setTextColor(ContextCompat.getColor(itemView.context, normalTextColorRes))
                 text.setTypeface(text.typeface, Typeface.NORMAL)
                 text.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
@@ -142,6 +153,8 @@ class MessageAdapter(
 
     private class ReceivedViewHolder(view: View) : MessageViewHolder(view) {
         override val normalTextColorRes = R.color.wedora_text
+        override val normalBubbleBackgroundRes = R.drawable.bg_bubble_received
+        override val deletedBubbleBackgroundRes = R.drawable.bg_bubble_deleted_received
 
         override fun bind(message: Message, otherLastReadAt: Timestamp?) {
             bindTextAndTime(message)
@@ -159,6 +172,8 @@ class MessageAdapter(
      */
     private class SentViewHolder(view: View) : MessageViewHolder(view) {
         override val normalTextColorRes = R.color.white
+        override val normalBubbleBackgroundRes = R.drawable.bg_bubble_sent
+        override val deletedBubbleBackgroundRes = R.drawable.bg_bubble_deleted_sent
         private val status: ImageView = view.findViewById(R.id.ivMessageStatus)
 
         override fun bind(message: Message, otherLastReadAt: Timestamp?) {
