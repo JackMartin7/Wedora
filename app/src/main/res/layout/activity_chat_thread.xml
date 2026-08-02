@@ -133,6 +133,21 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/composerDivider" />
 
+    <!-- Shown briefly at the top of the list while loadOlderMessages() is in
+         flight — scrolling near the top triggers it, same spot the newly
+         loaded messages appear above once it resolves. -->
+    <ProgressBar
+        android:id="@+id/progressLoadOlder"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="10dp"
+        android:indeterminateTint="@color/wedora_accent"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/topDivider"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/tvChatEmpty"
         android:layout_width="0dp"

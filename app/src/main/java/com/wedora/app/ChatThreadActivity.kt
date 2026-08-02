@@ -9,8 +9,10 @@ import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -54,6 +56,20 @@ class ChatThreadActivity :
          */
         private const val DEMO_SELF_UID = "demo-self"
 
+        /**
+         * How many messages the live listener holds, and how many a "load
+         * older" page fetches. Loading the whole thread on every open scaled
+         * with conversation length forever — this caps the steady-state cost
+         * to "however far back the user actually scrolls."
+         */
+        private const val MESSAGES_PAGE_SIZE = 30L
+
+        /**
+         * Trigger the next older page a little before the user hits the
+         * literal top, so it's already loading by the time they get there.
+         */
+        private const val LOAD_OLDER_THRESHOLD = 5
+
         fun intent(context: Context, otherUserId: String, otherUserName: String): Intent =
             Intent(context, ChatThreadActivity::class.java)
                 .putExtra(EXTRA_OTHER_USER_ID, otherUserId)
@@ -77,6 +93,37 @@ class ChatThreadActivity :
     private lateinit var matchId: String
 
     private var messagesListener: ListenerRegistration? = null
+
+    /**
+     * Every message loaded this session — the live window plus however many
+     * older pages have been fetched — keyed by id so the live snapshot
+     * (which only ever contains the newest [MESSAGES_PAGE_SIZE]) and one-shot
+     * older-page reads can both write into the same set without duplicating
+     * anything. Nothing is ever evicted — a message that ages out of the live
+     * window stays here from whenever it was first loaded.
+     */
+    private val loadedMessages = mutableMapOf<String, Message>()
+
+    /**
+     * Pagination cursor: the oldest message loaded so far. Starts out
+     * following the live listener's own oldest doc (there's nothing older
+     * loaded yet); once [loadOlderMessages] fetches a page, its own cursor
+     * takes over — see [hasLoadedOlderPage].
+     */
+    private var oldestLoadedSnapshot: DocumentSnapshot? = null
+
+    /**
+     * False until the first manual "load older" page lands. While false, the
+     * live listener keeps [oldestLoadedSnapshot] pointed at its own oldest
+     * doc (which shifts forward as new messages push the window along) —
+     * once true, only [loadOlderMessages] moves the cursor, so a live update
+     * arriving mid-scroll-back can't yank it forward past history already
+     * fetched.
+     */
+    private var hasLoadedOlderPage = false
+
+    private var hasMoreOlderMessages = true
+    private var isLoadingOlderMessages = false
 
     /** Live view of the other user's presence, so the status updates in place. */
     private var statusListener: ListenerRegistration? = null
@@ -146,6 +193,14 @@ class ChatThreadActivity :
         adapter = MessageAdapter(selfUid)
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
         binding.rvMessages.adapter = adapter
+        binding.rvMessages.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                val lm = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                if (lm.findFirstVisibleItemPosition() in 0..LOAD_OLDER_THRESHOLD) {
+                    loadOlderMessages()
+                }
+            }
+        })
 
         observeMessages()
         observeOtherUserStatus()
@@ -353,7 +408,12 @@ class ChatThreadActivity :
 
     private fun observeMessages() {
         messagesListener = messagesCollection()
-            .orderBy(Message.FIELD_SENT_AT, Query.Direction.ASCENDING)
+            // Newest page only — the whole-history load this replaces was the
+            // one place actually driving unbounded read growth as a
+            // conversation aged. Older messages come from loadOlderMessages()
+            // instead, one page at a time, only when the user scrolls for it.
+            .orderBy(Message.FIELD_SENT_AT, Query.Direction.DESCENDING)
+            .limit(MESSAGES_PAGE_SIZE)
             // INCLUDE, not the default: a just-sent message's own snapshot
             // update — hasPendingWrites flipping false once Firestore
             // confirms it — is a metadata-only change. Without this, that
@@ -365,25 +425,90 @@ class ChatThreadActivity :
                     Toast.makeText(this, R.string.error_chat_load_failed, Toast.LENGTH_LONG).show()
                     return@addSnapshotListener
                 }
+                if (snapshot == null) return@addSnapshotListener
 
-                val messages = snapshot?.documents
-                    ?.mapNotNull { Message.from(it) }
-                    // Re-sorted locally because a message awaiting its server
-                    // timestamp is ordered by the query as though it had none,
-                    // which would briefly place a just-sent message at the top
-                    // of the thread. Message.from reads sentAt with ESTIMATE,
-                    // so sorting here puts it where the user expects.
-                    ?.sortedBy { it.sentAt?.toDate()?.time ?: Long.MAX_VALUE }
-                    .orEmpty()
+                snapshot.documents.forEach { doc ->
+                    Message.from(doc)?.let { loadedMessages[it.id] = it }
+                }
+                // Only the live window moves the cursor until a manual "load
+                // older" has happened — see hasLoadedOlderPage's own comment.
+                if (!hasLoadedOlderPage) {
+                    oldestLoadedSnapshot = snapshot.documents.lastOrNull()
+                    hasMoreOlderMessages = snapshot.documents.size.toLong() >= MESSAGES_PAGE_SIZE
+                }
 
-                showMessages(messages)
+                showMessages(sortedLoadedMessages())
             }
     }
 
-    private fun showMessages(messages: List<Message>) {
+    // Re-sorted locally, same reason as before: a message awaiting its server
+    // timestamp is ordered by the query as though it had none, which would
+    // briefly place a just-sent message at the top of the thread.
+    // Message.from reads sentAt with ESTIMATE, so sorting here puts it where
+    // the user expects.
+    private fun sortedLoadedMessages(): List<Message> =
+        loadedMessages.values.sortedBy { it.sentAt?.toDate()?.time ?: Long.MAX_VALUE }
+
+    /**
+     * Fetches the next page of older messages when the user scrolls near the
+     * top. A one-shot get(), not a listener — history that's already loaded
+     * doesn't need to stay live, only the recent window observeMessages()
+     * covers does.
+     */
+    private fun loadOlderMessages() {
+        val cursor = oldestLoadedSnapshot ?: return
+        if (isLoadingOlderMessages || !hasMoreOlderMessages) return
+        isLoadingOlderMessages = true
+        binding.progressLoadOlder.visibility = View.VISIBLE
+
+        messagesCollection()
+            .orderBy(Message.FIELD_SENT_AT, Query.Direction.DESCENDING)
+            .startAfter(cursor)
+            .limit(MESSAGES_PAGE_SIZE)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                isLoadingOlderMessages = false
+                binding.progressLoadOlder.visibility = View.GONE
+                hasLoadedOlderPage = true
+                hasMoreOlderMessages = snapshot.size().toLong() >= MESSAGES_PAGE_SIZE
+                snapshot.documents.lastOrNull()?.let { oldestLoadedSnapshot = it }
+                if (snapshot.isEmpty) return@addOnSuccessListener
+
+                snapshot.documents.forEach { doc ->
+                    Message.from(doc)?.let { loadedMessages[it.id] = it }
+                }
+                showMessages(sortedLoadedMessages(), keepScrollAnchor = true)
+            }
+            .addOnFailureListener { e ->
+                isLoadingOlderMessages = false
+                binding.progressLoadOlder.visibility = View.GONE
+                Log.w(TAG, "Failed to load older messages", e)
+            }
+    }
+
+    private fun showMessages(messages: List<Message>, keepScrollAnchor: Boolean = false) {
         markReadIfIncoming(messages)
 
         binding.tvChatEmpty.visibility = if (messages.isEmpty()) View.VISIBLE else View.GONE
+
+        // Prepending older messages: keep whatever the user was looking at in
+        // place instead of the normal scroll-to-bottom, or "load more" would
+        // yank them back down to the newest message every time.
+        if (keepScrollAnchor) {
+            val lm = binding.rvMessages.layoutManager as LinearLayoutManager
+            val anchorPosition = lm.findFirstVisibleItemPosition()
+            val anchorId = adapter.currentList.getOrNull(anchorPosition)?.id
+            val anchorOffset = lm.findViewByPosition(anchorPosition)?.top ?: 0
+
+            adapter.submitList(messages) {
+                val newPosition = anchorId?.let { id -> messages.indexOfFirst { it.id == id } } ?: -1
+                if (newPosition >= 0) {
+                    lm.scrollToPositionWithOffset(newPosition, anchorOffset)
+                }
+            }
+            return
+        }
+
         adapter.submitList(messages) {
             // Runs after the list has been diffed and laid out, so the scroll
             // target actually exists.
