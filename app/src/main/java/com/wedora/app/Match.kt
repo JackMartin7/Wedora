@@ -200,12 +200,24 @@ data class Match(
      * Snapshot of the newest message, plus how many the *recipient* (whoever is
      * not [senderId]) hasn't read. A single counter, so it always refers to the
      * side that didn't send last.
+     *
+     * [messageId] is what a delete-for-everyone write checks before touching
+     * this summary at all — only when the message being deleted is the one
+     * this preview currently reflects does that write also flip [deleted] and
+     * clear [text]. Without it there'd be no reliable way to tell "is this
+     * the newest message" from the message side alone.
+     *
+     * [deleted] is a sentinel, not literal text — Match.kt has no strings to
+     * localize, so ChatsActivity renders its own placeholder string off this
+     * flag rather than a hardcoded English sentence being stored here.
      */
     data class LastMessage(
         val text: String?,
         val sentAt: Timestamp?,
         val senderId: String?,
-        val unreadCount: Int
+        val unreadCount: Int,
+        val messageId: String? = null,
+        val deleted: Boolean = false
     )
 
     /** The other participant's UID, or null if [selfUid] isn't in this match. */
@@ -284,6 +296,10 @@ data class Match(
         const val PATH_LM_SENT_AT = "$FIELD_LAST_MESSAGE.$LM_SENT_AT"
         const val PATH_LM_SENDER_ID = "$FIELD_LAST_MESSAGE.$LM_SENDER_ID"
         const val PATH_LM_UNREAD_COUNT = "$FIELD_LAST_MESSAGE.$LM_UNREAD_COUNT"
+        const val LM_MESSAGE_ID = "messageId"
+        const val LM_DELETED = "deleted"
+        const val PATH_LM_MESSAGE_ID = "$FIELD_LAST_MESSAGE.$LM_MESSAGE_ID"
+        const val PATH_LM_DELETED = "$FIELD_LAST_MESSAGE.$LM_DELETED"
 
         /**
          * Deterministic, order-independent document ID for a pair of users.
@@ -360,7 +376,9 @@ data class Match(
                 text = map[LM_TEXT] as? String,
                 sentAt = map[LM_SENT_AT] as? Timestamp,
                 senderId = map[LM_SENDER_ID] as? String,
-                unreadCount = (map[LM_UNREAD_COUNT] as? Number)?.toInt() ?: 0
+                unreadCount = (map[LM_UNREAD_COUNT] as? Number)?.toInt() ?: 0,
+                messageId = map[LM_MESSAGE_ID] as? String,
+                deleted = map[LM_DELETED] as? Boolean ?: false
             )
         }
     }

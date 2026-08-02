@@ -39,7 +39,8 @@ import java.util.Date
 class ChatThreadActivity :
     WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
-    GuestChatBlockedBottomSheet.Host {
+    GuestChatBlockedBottomSheet.Host,
+    MessageActionsBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraChat"
@@ -135,6 +136,16 @@ class ChatThreadActivity :
      */
     private var readReceiptListener: ListenerRegistration? = null
 
+    /**
+     * Whichever message the match doc's lastMessage currently reflects, kept
+     * in step by the same live listener readReceiptListener already runs —
+     * no extra read. deleteMessageForEveryone needs this to decide whether
+     * the message being deleted IS the one shown in the Chats list preview;
+     * see that function's own doc comment for the narrow, accepted race this
+     * implies.
+     */
+    private var lastMessageId: String? = null
+
     private lateinit var adapter: MessageAdapter
 
     /**
@@ -190,7 +201,7 @@ class ChatThreadActivity :
         onBackPressedDispatcher.addCallback(this) { goToChats() }
         binding.btnSend.setOnClickListener { sendMessage() }
 
-        adapter = MessageAdapter(selfUid)
+        adapter = MessageAdapter(selfUid) { message -> showMessageActions(message) }
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
         binding.rvMessages.adapter = adapter
         binding.rvMessages.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -318,6 +329,7 @@ class ChatThreadActivity :
                     return@addSnapshotListener
                 }
                 adapter.updateReadReceipt(snapshot.getTimestamp(Match.pathLastReadAt(otherUid)))
+                lastMessageId = snapshot.getString(Match.PATH_LM_MESSAGE_ID)
             }
     }
 
@@ -446,8 +458,17 @@ class ChatThreadActivity :
     // briefly place a just-sent message at the top of the thread.
     // Message.from reads sentAt with ESTIMATE, so sorting here puts it where
     // the user expects.
+    //
+    // "Delete for me" messages are filtered out here rather than at the
+    // point they're loaded into loadedMessages — that map stays the full,
+    // canonical set of everything the live listener/pagination has ever
+    // seen, so a later snapshot (e.g. this same message's deletedFor
+    // changing) still finds it there to update rather than treating it as
+    // new. Only the outward-facing display list drops it.
     private fun sortedLoadedMessages(): List<Message> =
-        loadedMessages.values.sortedBy { it.sentAt?.toDate()?.time ?: Long.MAX_VALUE }
+        loadedMessages.values
+            .filterNot { selfUid in it.deletedFor }
+            .sortedBy { it.sentAt?.toDate()?.time ?: Long.MAX_VALUE }
 
     /**
      * Fetches the next page of older messages when the user scrolls near the
@@ -567,6 +588,51 @@ class ChatThreadActivity :
 
     override fun onUpgradeFromDailyLimitRequested() {
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+    }
+
+    private fun showMessageActions(message: Message) {
+        MessageActionsBottomSheet.show(
+            supportFragmentManager,
+            message.id,
+            isOwnMessage = message.senderId == selfUid,
+            currentReaction = message.reactions[selfUid]
+        )
+    }
+
+    /**
+     * Tapping the emoji that's already this user's reaction removes it;
+     * tapping any other one sets/replaces it — decided here, against
+     * loadedMessages' current state, since the sheet itself only knows which
+     * emoji was tapped, not what (if anything) the user already reacted
+     * with by the time they tap it.
+     */
+    override fun onReactionPicked(messageId: String, emoji: String) {
+        val current = loadedMessages[messageId]?.reactions?.get(selfUid)
+        val task = if (current == emoji) {
+            removeMessageReaction(firestore, matchId, messageId, selfUid)
+        } else {
+            setMessageReaction(firestore, matchId, messageId, selfUid, emoji)
+        }
+        task.addOnFailureListener { e ->
+            Log.w(TAG, "Failed to update reaction", e)
+            Toast.makeText(this, R.string.error_message_react_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onDeleteForMeRequested(messageId: String) {
+        deleteMessageForMe(firestore, matchId, messageId, selfUid)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to delete message for me", e)
+                Toast.makeText(this, R.string.error_message_delete_failed, Toast.LENGTH_LONG).show()
+            }
+    }
+
+    override fun onDeleteForEveryoneRequested(messageId: String) {
+        deleteMessageForEveryone(firestore, matchId, messageId, lastMessageId)
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to delete message for everyone", e)
+                Toast.makeText(this, R.string.error_message_delete_failed, Toast.LENGTH_LONG).show()
+            }
     }
 
     /**

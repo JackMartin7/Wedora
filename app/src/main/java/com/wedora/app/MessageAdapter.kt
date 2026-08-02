@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
@@ -12,14 +13,23 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Timestamp
+import com.wedora.app.databinding.ItemReactionPillBinding
 
 /**
  * Chat bubbles, with sent and received as two view types so each can use its
  * own layout (alignment, bubble drawable, text colour) rather than one layout
  * reconfigured at bind time.
+ *
+ * [onLongPress] opens [MessageActionsBottomSheet] — wired here rather than
+ * left to the Activity to attach per-row, same as every other row-level
+ * callback in this app's adapters. Not offered on an already-deleted message
+ * (nothing left to delete or react to) or on a demo thread's messages, which
+ * ChatThreadActivity's own setUpDemoThread routes through a completely
+ * separate, Firestore-free adapter instance that never calls this at all.
  */
 class MessageAdapter(
-    private val selfUid: String
+    private val selfUid: String,
+    private val onLongPress: (Message) -> Unit = {}
 ) : ListAdapter<Message, MessageAdapter.MessageViewHolder>(DIFF) {
 
     private companion object {
@@ -51,14 +61,52 @@ class MessageAdapter(
     abstract class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         private val text: TextView = view.findViewById(R.id.tvMessageText)
         private val time: TextView = view.findViewById(R.id.tvMessageTime)
+        private val reactionsRow: LinearLayout = view.findViewById(R.id.reactionsRow)
 
+        /**
+         * A deleted message shows the italic placeholder instead of its
+         * (already server-cleared) text, and never shows reactions —
+         * nothing in this app's own UI offers reacting to one (see
+         * MessageAdapter's own doc comment), so a non-empty reactions map
+         * here would only ever come from a modified client; rendering it
+         * anyway would make that visible instead of just inert.
+         */
         protected fun bindTextAndTime(message: Message) {
-            text.text = message.text
+            if (message.deleted) {
+                text.text = itemView.context.getString(R.string.message_deleted_placeholder)
+                text.alpha = 0.6f
+                bindReactions(emptyMap())
+            } else {
+                text.text = message.text
+                text.alpha = 1f
+                bindReactions(message.reactions)
+            }
+
             val stamp = formatChatTimestamp(itemView.context, message.sentAt)
             time.text = stamp
             // A message still awaiting its server timestamp has nothing
             // meaningful to show, so hide the line rather than leave a gap.
             time.visibility = if (stamp.isBlank()) View.GONE else View.VISIBLE
+        }
+
+        /** One pill per distinct emoji, e.g. "❤️ 2" — hidden entirely when nobody's reacted. */
+        private fun bindReactions(reactions: Map<String, String>) {
+            reactionsRow.removeAllViews()
+            if (reactions.isEmpty()) {
+                reactionsRow.visibility = View.GONE
+                return
+            }
+            reactionsRow.visibility = View.VISIBLE
+            reactions.values
+                .groupingBy { it }
+                .eachCount()
+                .forEach { (emoji, count) ->
+                    val pill = ItemReactionPillBinding.inflate(
+                        LayoutInflater.from(itemView.context), reactionsRow, true
+                    )
+                    pill.tvReactionPill.text =
+                        if (count > 1) "$emoji $count" else emoji
+                }
         }
 
         abstract fun bind(message: Message, otherLastReadAt: Timestamp?)
@@ -116,6 +164,11 @@ class MessageAdapter(
     }
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        holder.bind(getItem(position), otherLastReadAt)
+        val message = getItem(position)
+        holder.bind(message, otherLastReadAt)
+        holder.itemView.setOnLongClickListener {
+            if (!message.deleted) onLongPress(message)
+            true
+        }
     }
 }

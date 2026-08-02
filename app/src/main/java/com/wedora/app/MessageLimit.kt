@@ -114,17 +114,23 @@ private fun addMessageWrites(
     text: String
 ) {
     val matchDoc = firestore.collection(Match.COLLECTION).document(matchId)
+    // .document() with no id assigns a client-generated id synchronously, so
+    // it's available below for lastMessage.messageId without waiting on the
+    // batch to commit.
+    val messageDoc = matchDoc.collection(Match.SUBCOLLECTION_MESSAGES).document()
     val message = mapOf(
         Message.FIELD_SENDER_ID to selfUid,
         Message.FIELD_TEXT to text,
         Message.FIELD_SENT_AT to FieldValue.serverTimestamp()
     )
-    batch.set(matchDoc.collection(Match.SUBCOLLECTION_MESSAGES).document(), message)
+    batch.set(messageDoc, message)
     batch.update(
         matchDoc,
         Match.PATH_LM_TEXT, text,
         Match.PATH_LM_SENT_AT, FieldValue.serverTimestamp(),
         Match.PATH_LM_SENDER_ID, selfUid,
+        Match.PATH_LM_MESSAGE_ID, messageDoc.id,
+        Match.PATH_LM_DELETED, false,
         Match.PATH_LM_UNREAD_COUNT, FieldValue.increment(1),
         Match.FIELD_HIDDEN_BY, FieldValue.arrayRemove(otherUid)
     )

@@ -220,6 +220,14 @@
     <string name="error_message_send_failed">Couldn\'t send. Please try again.</string>
     <string name="error_chat_load_failed">Couldn\'t load this conversation.</string>
 
+    <!-- Message delete / react -->
+    <string name="message_deleted_placeholder">This message was deleted</string>
+    <string name="message_action_delete_for_me">Delete for me</string>
+    <string name="message_action_delete_for_everyone">Delete for everyone</string>
+    <string name="error_message_delete_failed">Couldn\'t delete this message. Please try again.</string>
+    <string name="error_message_react_failed">Couldn\'t react to this message. Please try again.</string>
+    <string name="cd_message_reactions">Reactions</string>
+
     <!-- Match radar states -->
     <string name="match_empty">No matches yet — like someone from Home to get started.</string>
     <string name="match_empty_guest">Sign up to start matching.</string>

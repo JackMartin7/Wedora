@@ -83,7 +83,11 @@ class ChatListAdapter(
             ivSelectedOverlay.visibility =
                 if (chat.matchId in selectedIds) View.VISIBLE else View.GONE
 
-            tvChatPreview.text = chat.lastMessage ?: context.getString(R.string.chat_say_hi)
+            tvChatPreview.text = when {
+                chat.lastMessageDeleted -> context.getString(R.string.message_deleted_placeholder)
+                chat.lastMessage != null -> chat.lastMessage
+                else -> context.getString(R.string.chat_say_hi)
+            }
             tvChatTimestamp.text = formatChatTimestamp(context, chat.lastMessageAt)
 
             // Both branches set every property explicitly — view holders are

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One "❤️ 2" pill in a message bubble's reactionsRow, one per distinct emoji. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tvReactionPill"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="4dp"
+    android:background="@drawable/bg_card"
+    android:paddingHorizontal="6dp"
+    android:paddingVertical="2dp"
+    android:textSize="11sp"
+    tools:text="❤️ 2" />

@@ -459,7 +459,8 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
                 distanceBadge = distanceBadgeBetween(
                     selfLat, selfLon,
                     profilesByUid[otherUid]?.latitude, profilesByUid[otherUid]?.longitude
-                )
+                ),
+                lastMessageDeleted = lastMessage?.deleted ?: false
             )
         }.sortedByDescending { it.lastMessageAt?.toDate()?.time ?: Long.MIN_VALUE }
 

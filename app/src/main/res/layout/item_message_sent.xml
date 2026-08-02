@@ -50,4 +50,16 @@
 
     </LinearLayout>
 
+    <!-- Reaction pills, e.g. "❤️ 2" — GONE when nobody's reacted. Built up in
+         MessageAdapter, one bg_card-styled pill per distinct emoji. -->
+    <LinearLayout
+        android:id="@+id/reactionsRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginEnd="4dp"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:contentDescription="@string/cd_message_reactions" />
+
 </LinearLayout>

@@ -13,6 +13,11 @@ import java.util.Date
  * [isUnread] is resolved where the signed-in UID is known, so the adapter just
  * renders it — it's true only when the newest message came from the other
  * person and hasn't been read.
+ *
+ * [lastMessageDeleted] is true when the newest message was "deleted for
+ * everyone" — the adapter renders the "This message was deleted" placeholder
+ * instead of [lastMessage] in that case (which is itself cleared/empty by
+ * then; see deleteMessageForEveryone).
  */
 data class ChatPreview(
     val matchId: String,
@@ -27,5 +32,6 @@ data class ChatPreview(
     /** The other user's hosted photo, batch-loaded the same way as [lastSeen]; null on a demo/guest row or an account with none. */
     val photoUrl: String?,
     /** Null when either this user or the other has no coordinates on file. */
-    val distanceBadge: String? = null
+    val distanceBadge: String? = null,
+    val lastMessageDeleted: Boolean = false
 )
