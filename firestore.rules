@@ -337,19 +337,118 @@ service cloud.firestore {
               && request.resource.data.text.size() <= 2000;
         }
 
+        /** The full set of top-level keys this update actually touches. */
+        function affectedKeys() {
+          return request.resource.data.diff(resource.data).affectedKeys();
+        }
+
+        /**
+         * "Delete for everyone": the sender only, and only as an exact
+         * 3-key transition — deleted/deletedAt/text change together or not
+         * at all. Write-once (resource.data.deleted must currently be
+         * false/absent) so a second attempt can't bump deletedAt forward or
+         * otherwise re-trigger this path.
+         *
+         * affectedKeys().size() == 3 alongside hasOnly() matters more than it
+         * looks: hasOnly() alone is a SUBSET check, not equality, so without
+         * the size guard an update touching only `text` — leaving
+         * deleted/deletedAt untouched — would still satisfy
+         * hasOnly(['deleted','deletedAt','text']), silently reopening free
+         * text edits for the sender. Caught writing this, verified with a
+         * dedicated emulator test rather than trusted by inspection.
+         *
+         * deletedAt must equal request.time — the one comparison that proves
+         * it came from FieldValue.serverTimestamp() rather than a
+         * client-forged value, since Firestore substitutes request.time for
+         * a pending server timestamp sentinel at rule-evaluation time.
+         *
+         * text must be entirely ABSENT from the write (FieldValue.delete()),
+         * not merely emptied to '' — keeps "deleted" from leaving a ghost
+         * empty string a client has to know to special-case.
+         */
+        function isDeleteForEveryone() {
+          return request.auth.uid == resource.data.senderId
+              && !resource.data.get('deleted', false)
+              && affectedKeys().size() == 3
+              && affectedKeys().hasOnly(['deleted', 'deletedAt', 'text'])
+              && request.resource.data.deleted == true
+              && request.resource.data.deletedAt == request.time
+              && !('text' in request.resource.data);
+        }
+
+        /**
+         * "Delete for me": append-only. A caller may add their own uid to
+         * deletedFor and nothing else — not another participant's uid, and
+         * not a removal of any uid already present (there is no "undo
+         * delete for me" in this feature, so a removal is never legitimate
+         * here, whoever it targets).
+         */
+        function isDeleteForMe() {
+          return affectedKeys().hasOnly(['deletedFor'])
+              && request.resource.data.deletedFor
+                   .hasAll(resource.data.get('deletedFor', []))
+              && request.resource.data.deletedFor
+                   .removeAll(resource.data.get('deletedFor', []))
+                   .hasOnly([request.auth.uid]);
+        }
+
+        /**
+         * A reaction, when present, must be a short non-empty string — sized
+         * generously enough for a multi-codepoint emoji (variation
+         * selectors, ZWJ sequences) without allowing arbitrary payloads.
+         * Absent (the caller's key isn't in the new map at all) is always
+         * fine — that's a removal/untap, not a value to validate.
+         */
+        function isValidReactionValue() {
+          return !(request.auth.uid in request.resource.data.reactions)
+              || (request.resource.data.reactions[request.auth.uid] is string
+                  && request.resource.data.reactions[request.auth.uid].size() > 0
+                  && request.resource.data.reactions[request.auth.uid].size() <= 8);
+        }
+
+        /**
+         * Reactions: only the caller's own key in the map may change — same
+         * self-only-map shape as the parent match doc's
+         * lastReadAtChangeIsSelfOnly(), just scoped to this field. Covers
+         * set, change, and remove (untap) uniformly, since all three show up
+         * identically as "this uid's key changed" in the diff.
+         */
+        function isReactionUpdate() {
+          return affectedKeys().hasOnly(['reactions'])
+              && request.resource.data.reactions
+                   .diff(resource.data.get('reactions', {}))
+                   .affectedKeys()
+                   .hasOnly([request.auth.uid])
+              && isValidReactionValue();
+        }
+
         allow read: if isMatchMember();
 
         // A sender can only post as themselves, with real content, and only
-        // if the recipient accepts messages from them.
+        // if the recipient accepts messages from them. None of the fields
+        // the three update paths below own may be set at creation time —
+        // closes the gap where a raw write could otherwise create an
+        // already-"deleted" message or forge another uid's reaction/hide
+        // from day one.
         allow create: if isMatchMember()
             && request.resource.data.senderId == request.auth.uid
             && isValidMessageText()
+            && !('deleted' in request.resource.data)
+            && !('deletedFor' in request.resource.data)
+            && !('reactions' in request.resource.data)
             && recipientAcceptsMessageFrom(
                  get(/databases/$(database)/documents/matches/$(matchId)).data);
 
-        // Messages are immutable — no edit or delete. Loosen deliberately if
-        // the product ever wants "unsend".
-        allow update, delete: if false;
+        // Three narrow, mutually exclusive update paths — everything else
+        // about a message (senderId, sentAt, text outside a deletion) stays
+        // immutable by construction: each function only allows its own exact
+        // key set to change, so no combination of these three can ever touch
+        // a field none of them owns.
+        allow update: if isMatchMember()
+            && (isDeleteForEveryone() || isDeleteForMe() || isReactionUpdate());
+
+        // The document itself is still never hard-deleted.
+        allow delete: if false;
       }
     }
 
