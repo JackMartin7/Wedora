@@ -195,7 +195,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:valueFrom="1"
-                android:valueTo="100"
+                android:valueTo="20020"
                 android:stepSize="1"
                 app:thumbColor="@color/wedora_accent"
                 app:trackColorActive="@color/wedora_accent"

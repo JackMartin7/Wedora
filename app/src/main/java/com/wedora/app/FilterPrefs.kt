@@ -32,7 +32,17 @@ object FilterPrefs {
 
     const val DEFAULT_DISTANCE_KM = 50
     const val MIN_DISTANCE_KM = 1
-    const val MAX_DISTANCE_KM = 100
+
+    /**
+     * The slider's top end, standing in for "worldwide" (see FilterActivity's
+     * showDistanceLabel, which swaps the label to that word once the value
+     * gets within a couple of km of this). Deliberately set above ~20,015 km
+     * — the greatest possible great-circle distance between two points on
+     * Earth (half the circumference at DistanceUtils.EARTH_RADIUS_KM) — so
+     * matchesDistanceFilter's `<= maxKm` check can never exclude a real pair
+     * of coordinates once the slider is all the way up, whatever they are.
+     */
+    const val MAX_DISTANCE_KM = 20_020
 
     /**
      * Genders to show. Empty — the default — means "don't narrow", leaving the

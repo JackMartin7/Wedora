@@ -114,6 +114,12 @@ fun matchesActiveFilters(
  * no distance to test, so the card is kept. Excluding people merely because a
  * coordinate is missing would quietly empty the feed for anyone who typed their
  * city by hand — the opposite of what a distance filter is for.
+ *
+ * No special-casing for the slider's "Worldwide" position needed: [maxKm] at
+ * that point is FilterPrefs.MAX_DISTANCE_KM, which is deliberately set above
+ * the greatest possible distance between two points on Earth (see that
+ * constant's own doc comment) — so `<=` below is already true for every real
+ * coordinate pair once the slider is at max, with no extra branch required.
  */
 fun matchesDistanceFilter(
     card: MatchCard,

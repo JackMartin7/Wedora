@@ -567,6 +567,7 @@
     <string name="filter_by_looking_for">Filter by Looking For</string>
     <string name="filter_distance">Distance</string>
     <string name="filter_distance_value">Within %1$d km</string>
+    <string name="filter_distance_worldwide">Worldwide</string>
     <string name="filter_apply">Apply Filters</string>
     <string name="cd_filter">Filter</string>
 

@@ -175,9 +175,22 @@ class FilterActivity : WedoraBaseActivity() {
             getString(R.string.filter_age_value, selectedAgeMin(), selectedAgeMax())
     }
 
+    /**
+     * "Within 50 km" for everywhere on the slider except its very top —
+     * "Within 20,020 km" would read as a strange, arbitrary number rather
+     * than the "no real limit" it actually means, so the last couple of km
+     * show "Worldwide" instead. matchesDistanceFilter needs no equivalent
+     * special case: MAX_DISTANCE_KM already exceeds any real distance on
+     * Earth, so the filter itself is already a no-op up here — this is
+     * purely how that same value reads to the user.
+     */
     private fun showDistanceLabel() {
-        binding.tvDistanceValue.text =
-            getString(R.string.filter_distance_value, selectedDistance())
+        val km = selectedDistance()
+        binding.tvDistanceValue.text = if (km >= FilterPrefs.MAX_DISTANCE_KM - 1) {
+            getString(R.string.filter_distance_worldwide)
+        } else {
+            getString(R.string.filter_distance_value, km)
+        }
     }
 
     private fun selectedAgeMin(): Int =
