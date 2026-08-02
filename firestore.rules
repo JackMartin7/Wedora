@@ -313,12 +313,37 @@ service cloud.firestore {
               || matchData.get('likedUsers', []).hasAll(matchData.users);
         }
 
+        /**
+         * A message must have real content and stay within a sane size.
+         *
+         * ChatThreadActivity.sendMessage already trims and checks
+         * text.isEmpty() before ever calling Firestore — this is that same
+         * check re-enforced server-side, since a modified client or a raw
+         * write against the API bypasses anything client-only. Rules has no
+         * trim(), so `(?s).*[^\s].*` (DOTALL, so a leading/trailing newline
+         * doesn't hide the real content from the wildcards) stands in for
+         * "non-empty once whitespace-only padding doesn't count".
+         *
+         * 2000 chars is generous for a chat message and comfortably below
+         * Firestore's own per-document limits — it exists to stop someone
+         * writing an arbitrarily large document, not to constrain normal use.
+         * It's unrelated to the 200-char cap onMessageSent (functions/src/
+         * index.ts) truncates the FCM push preview to — that's a payload-size
+         * concern for the notification, not a rule about what may be stored.
+         */
+        function isValidMessageText() {
+          return request.resource.data.text is string
+              && request.resource.data.text.matches('(?s).*[^\\s].*')
+              && request.resource.data.text.size() <= 2000;
+        }
+
         allow read: if isMatchMember();
 
-        // A sender can only post as themselves, and only if the recipient
-        // accepts messages from them.
+        // A sender can only post as themselves, with real content, and only
+        // if the recipient accepts messages from them.
         allow create: if isMatchMember()
             && request.resource.data.senderId == request.auth.uid
+            && isValidMessageText()
             && recipientAcceptsMessageFrom(
                  get(/databases/$(database)/documents/matches/$(matchId)).data);
 
