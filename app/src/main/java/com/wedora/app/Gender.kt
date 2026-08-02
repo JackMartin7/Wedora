@@ -12,3 +12,12 @@ enum class Gender(val firestoreValue: String, @StringRes val labelRes: Int) {
     MALE("male", R.string.gender_male),
     FEMALE("female", R.string.gender_female)
 }
+
+/**
+ * The gender this app pairs with a given one for matching purposes —
+ * `interestedIn` is always the opposite of `gender`, auto-derived rather
+ * than separately chosen. See ProfileStep2GenderActivity, EditProfileActivity
+ * and GuestGenderPromptActivity, the three places gender is ever set.
+ */
+val Gender.opposite: Gender
+    get() = if (this == Gender.MALE) Gender.FEMALE else Gender.MALE

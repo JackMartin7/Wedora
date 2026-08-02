@@ -307,53 +307,8 @@
 
             </LinearLayout>
 
-            <!-- ===== Interested In ===== -->
-
-            <TextView
-                android:id="@+id/labelInterestedIn"
-                style="@style/WedoraFieldLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:text="@string/label_interested_in"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/rowGender" />
-
-            <LinearLayout
-                android:id="@+id/rowInterestedIn"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/labelInterestedIn">
-
-                <TextView
-                    android:id="@+id/tvInterestedMale"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_segment_option_unselected"
-                    android:gravity="center"
-                    android:text="@string/gender_male"
-                    android:textColor="@color/wedora_text"
-                    android:textSize="13sp"
-                    android:fontFamily="@font/poppins_medium" />
-
-                <TextView
-                    android:id="@+id/tvInterestedFemale"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_segment_option_unselected"
-                    android:gravity="center"
-                    android:text="@string/gender_female"
-                    android:textColor="@color/wedora_text"
-                    android:textSize="13sp"
-                    android:fontFamily="@font/poppins_medium" />
-
-            </LinearLayout>
+            <!-- interestedIn is auto-derived as the opposite of gender (see
+                 EditProfileActivity.changedFields()) — no control for it here. -->
 
             <!-- ===== My Status ===== -->
 
@@ -365,7 +320,7 @@
                 android:layout_marginTop="20dp"
                 android:text="@string/label_my_status"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/rowInterestedIn" />
+                app:layout_constraintTop_toBottomOf="@id/rowGender" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipsMyStatus"

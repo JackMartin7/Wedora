@@ -65,7 +65,6 @@ class EditProfileActivity : WedoraBaseActivity() {
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     private lateinit var genderControl: SegmentedControl
-    private lateinit var interestedInControl: SegmentedControl
 
     private lateinit var uid: String
 
@@ -203,24 +202,19 @@ class EditProfileActivity : WedoraBaseActivity() {
                 binding.tvGenderFemale to Gender.FEMALE
             ),
             onSelected = {
-                // Both groups offer different options per gender — a man is a
-                // widower, and looks for a wife rather than a marriage — so a
-                // gender change rebuilds both. A selection absent from the new
-                // list is dropped rather than carried across; the user picks
-                // again from what now applies.
+                // The status/looking-for options are worded per gender — a man
+                // is a widower, and looks for a wife rather than a marriage —
+                // so a gender change rebuilds both. A selection absent from the
+                // new list is dropped rather than carried across; the user
+                // picks again from what now applies. interestedIn isn't shown
+                // here at all — it's auto-derived as the opposite gender (see
+                // changedFields()), not its own control.
                 showIntentOptions(
                     myStatus = binding.chipsMyStatus.selectedOption(),
                     lookingFor = binding.chipsLookingFor.selectedOption()
                 )
                 updateSaveEnabled()
             }
-        )
-        interestedInControl = SegmentedControl(
-            listOf(
-                binding.tvInterestedMale to Gender.MALE,
-                binding.tvInterestedFemale to Gender.FEMALE
-            ),
-            onSelected = { updateSaveEnabled() }
         )
 
         showIntentOptions(myStatus = null, lookingFor = null)
@@ -276,7 +270,6 @@ class EditProfileActivity : WedoraBaseActivity() {
         binding.etCountry.setText(profile.country.orEmpty())
 
         genderFrom(profile.gender)?.let { genderControl.select(it) }
-        genderFrom(profile.interestedIn)?.let { interestedInControl.select(it) }
 
         // After the gender control has been set, so the option lists match the
         // stored gender rather than the empty default.
@@ -399,14 +392,16 @@ class EditProfileActivity : WedoraBaseActivity() {
             }
         }
 
-        val gender = genderControl.selected?.firestoreValue
-        if (gender != null && gender != original.gender) {
-            changes[UserProfile.FIELD_GENDER] = gender
-        }
-
-        val interestedIn = interestedInControl.selected?.firestoreValue
-        if (interestedIn != null && interestedIn != original.interestedIn) {
-            changes[UserProfile.FIELD_INTERESTED_IN] = interestedIn
+        // interestedIn is never compared or written on its own — it isn't a
+        // control the user touches. Whenever gender actually changes, the
+        // opposite is written alongside it in the same change, keeping the
+        // pair locked together; an edit that doesn't touch gender at all
+        // leaves interestedIn untouched too, exactly like every other
+        // unrelated field here.
+        val gender = genderControl.selected
+        if (gender != null && gender.firestoreValue != original.gender) {
+            changes[UserProfile.FIELD_GENDER] = gender.firestoreValue
+            changes[UserProfile.FIELD_INTERESTED_IN] = gender.opposite.firestoreValue
         }
 
         val myStatus = binding.chipsMyStatus.selectedOption()

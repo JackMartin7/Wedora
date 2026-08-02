@@ -66,6 +66,40 @@ service cloud.firestore {
           || isValidGenderValue(request.resource.data.interestedIn);
     }
 
+    // Auto-selected opposite-gender matching: interestedIn is never picked
+    // independently client-side (see Gender.opposite and the three places
+    // gender is ever set — ProfileStep2GenderActivity, EditProfileActivity,
+    // GuestGenderPromptActivity), and this is that guarantee re-enforced
+    // server-side, since a modified client or a raw write could otherwise
+    // still pair them mismatched.
+    function isOppositeGender(g) {
+      return g == 'male' ? 'female' : 'male';
+    }
+
+    // Only meaningful once BOTH fields exist in the resulting document —
+    // gender and interestedIn arrive together at profile-setup step 2, so a
+    // write carrying just one (or neither), like step 1's displayName-only
+    // create, is still fine and this simply doesn't apply yet.
+    function genderInterestedInPairedIfBothPresent() {
+      return !('gender' in request.resource.data)
+          || !('interestedIn' in request.resource.data)
+          || request.resource.data.interestedIn
+               == isOppositeGender(request.resource.data.gender);
+    }
+
+    // On update, the pairing is only checked when THIS write actually
+    // touches gender or interestedIn — not on every future write forever,
+    // which would otherwise permanently lock out any account whose already-
+    // stored pair predates this rule (nothing retroactively fixes existing
+    // data; see the go-forward-only decision this was scoped to). A write
+    // touching neither field — a bio edit, a photo, anything else on this
+    // document — is exempt regardless of what's already stored.
+    function genderChangeKeepsPairing() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+                 .hasAny(['gender', 'interestedIn'])
+          || genderInterestedInPairedIfBothPresent();
+    }
+
     // Any authenticated user can read the users collection (needed for the
     // matching query, which reads other users' gender/interestedIn), but a
     // user may only write their own document.
@@ -140,11 +174,13 @@ service cloud.firestore {
       allow create: if isOwner(userId)
           && ageAbsentOrValid()
           && genderAbsentOrValid()
-          && interestedInAbsentOrValid();
+          && interestedInAbsentOrValid()
+          && genderInterestedInPairedIfBothPresent();
       allow update: if isOwner(userId)
           && ageAbsentOrValid()
           && genderAbsentOrValid()
           && interestedInAbsentOrValid()
+          && genderChangeKeepsPairing()
           && (isPremiumUnchanged() || isPremiumChangeFromPurchase())
           && likesLimitRespected()
           && messagesLimitRespected();

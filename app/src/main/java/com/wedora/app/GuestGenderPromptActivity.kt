@@ -6,9 +6,10 @@ import com.wedora.app.databinding.ActivityGuestGenderPromptBinding
 
 /**
  * One-time gate between "Continue as Guest" and Home: which gender the guest
- * is, and who they're interested in — the same pair ProfileStep2GenderActivity
- * collects for a real account, just written to [GuestPrefs] instead of
- * Firestore, since a guest has no document to write to.
+ * is — the same field ProfileStep2GenderActivity collects for a real account,
+ * just written to [GuestPrefs] instead of Firestore, since a guest has no
+ * document to write to. `interestedIn` is auto-derived as the opposite (see
+ * [Gender.opposite]), not a separate choice, same as the real sign-up flow.
  *
  * Skipped entirely on a later launch once both are already stored — see
  * [LoginActivity.continueAsGuest], which is the only caller and does that
@@ -18,7 +19,6 @@ class GuestGenderPromptActivity : WedoraBaseActivity() {
 
     private lateinit var binding: ActivityGuestGenderPromptBinding
     private lateinit var genderControl: SegmentedControl
-    private lateinit var interestedInControl: SegmentedControl
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,13 +34,6 @@ class GuestGenderPromptActivity : WedoraBaseActivity() {
             ),
             onSelected = ::updateContinueEnabled
         )
-        interestedInControl = SegmentedControl(
-            listOf(
-                content.tvInterestedMale to Gender.MALE,
-                content.tvInterestedFemale to Gender.FEMALE
-            ),
-            onSelected = ::updateContinueEnabled
-        )
 
         binding.btnGuestGenderContinue.setOnClickListener { continueToHome() }
         binding.btnGuestGenderContinue.addPressScale()
@@ -48,14 +41,12 @@ class GuestGenderPromptActivity : WedoraBaseActivity() {
     }
 
     private fun updateContinueEnabled() {
-        binding.btnGuestGenderContinue.isEnabled =
-            genderControl.selected != null && interestedInControl.selected != null
+        binding.btnGuestGenderContinue.isEnabled = genderControl.selected != null
     }
 
     private fun continueToHome() {
         val gender = genderControl.selected ?: return
-        val interestedIn = interestedInControl.selected ?: return
-        GuestPrefs.setGuestGenderPreferences(this, gender.firestoreValue, interestedIn.firestoreValue)
+        GuestPrefs.setGuestGenderPreferences(this, gender.firestoreValue, gender.opposite.firestoreValue)
         startActivity(Intent(this, HomeActivity::class.java))
         finish()
     }

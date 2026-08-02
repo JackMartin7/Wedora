@@ -361,9 +361,9 @@
     <string name="signup_title">Sign Up</string>
     <string name="signup_subtitle">Sign Up to continue using the app</string>
 
-    <!-- Gender / Interested In selectors — same 3 options, two separate fields -->
+    <!-- Gender selector. interestedIn is auto-derived as the opposite, not
+         its own control — see Gender.opposite. -->
     <string name="label_gender">Gender</string>
-    <string name="label_interested_in">Interested In</string>
     <string name="gender_male">Male</string>
     <string name="gender_female">Female</string>
 
