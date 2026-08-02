@@ -30,16 +30,14 @@ class GuestGenderPromptActivity : WedoraBaseActivity() {
         genderControl = SegmentedControl(
             listOf(
                 content.tvGenderMale to Gender.MALE,
-                content.tvGenderFemale to Gender.FEMALE,
-                content.tvGenderOther to Gender.OTHER
+                content.tvGenderFemale to Gender.FEMALE
             ),
             onSelected = ::updateContinueEnabled
         )
         interestedInControl = SegmentedControl(
             listOf(
                 content.tvInterestedMale to Gender.MALE,
-                content.tvInterestedFemale to Gender.FEMALE,
-                content.tvInterestedOther to Gender.OTHER
+                content.tvInterestedFemale to Gender.FEMALE
             ),
             onSelected = ::updateContinueEnabled
         )

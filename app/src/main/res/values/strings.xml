@@ -366,7 +366,6 @@
     <string name="label_interested_in">Interested In</string>
     <string name="gender_male">Male</string>
     <string name="gender_female">Female</string>
-    <string name="gender_other">Other</string>
 
     <!-- Add Photo -->
     <string name="add_photo">Add Photo</string>

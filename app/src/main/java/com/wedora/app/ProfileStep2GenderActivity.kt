@@ -24,16 +24,14 @@ class ProfileStep2GenderActivity : ProfileStepActivity() {
         genderControl = SegmentedControl(
             listOf(
                 content.findViewById<TextView>(R.id.tvGenderMale) to Gender.MALE,
-                content.findViewById<TextView>(R.id.tvGenderFemale) to Gender.FEMALE,
-                content.findViewById<TextView>(R.id.tvGenderOther) to Gender.OTHER
+                content.findViewById<TextView>(R.id.tvGenderFemale) to Gender.FEMALE
             ),
             onSelected = { updateContinueEnabled() }
         )
         interestedInControl = SegmentedControl(
             listOf(
                 content.findViewById<TextView>(R.id.tvInterestedMale) to Gender.MALE,
-                content.findViewById<TextView>(R.id.tvInterestedFemale) to Gender.FEMALE,
-                content.findViewById<TextView>(R.id.tvInterestedOther) to Gender.OTHER
+                content.findViewById<TextView>(R.id.tvInterestedFemale) to Gender.FEMALE
             ),
             onSelected = { updateContinueEnabled() }
         )

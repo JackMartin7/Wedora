@@ -44,6 +44,28 @@ service cloud.firestore {
       return !('age' in request.resource.data) || hasValidAge();
     }
 
+    // Strict two-gender policy: gender and interestedIn may only ever be
+    // "male" or "female" — enforced here, not just in the sign-up UI, since
+    // a modified client or a raw write could otherwise still store a third
+    // value. Same "absent OR valid" shape as ageAbsentOrValid() above and
+    // for the same reason: both fields are built up across profile-setup
+    // steps (gender/interestedIn arrive together at step 2, before age at
+    // step 4), so an update mid-setup that doesn't touch either field yet
+    // must still be allowed through.
+    function isValidGenderValue(value) {
+      return value in ['male', 'female'];
+    }
+
+    function genderAbsentOrValid() {
+      return !('gender' in request.resource.data)
+          || isValidGenderValue(request.resource.data.gender);
+    }
+
+    function interestedInAbsentOrValid() {
+      return !('interestedIn' in request.resource.data)
+          || isValidGenderValue(request.resource.data.interestedIn);
+    }
+
     // Any authenticated user can read the users collection (needed for the
     // matching query, which reads other users' gender/interestedIn), but a
     // user may only write their own document.
@@ -115,9 +137,14 @@ service cloud.firestore {
       // Requiring it on update would reject steps 2 and 3 outright: their
       // merged document has no age yet, so hasValidAge() is false and the
       // write is denied.
-      allow create: if isOwner(userId) && ageAbsentOrValid();
+      allow create: if isOwner(userId)
+          && ageAbsentOrValid()
+          && genderAbsentOrValid()
+          && interestedInAbsentOrValid();
       allow update: if isOwner(userId)
           && ageAbsentOrValid()
+          && genderAbsentOrValid()
+          && interestedInAbsentOrValid()
           && (isPremiumUnchanged() || isPremiumChangeFromPurchase())
           && likesLimitRespected()
           && messagesLimitRespected();

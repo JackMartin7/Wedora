@@ -88,7 +88,7 @@ object GuestPrefs {
 
     /**
      * A guest's own gender and who they're interested in, as [Gender]'s
-     * canonical firestoreValue strings — the same "male"/"female"/"other"
+     * canonical firestoreValue strings — the same "male"/"female"
      * vocabulary the signed-up profile-setup flow writes to Firestore,
      * kept consistent here even though this never leaves the device, so
      * formatting either one only ever needs one lookup table (Gender.values).

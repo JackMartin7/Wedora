@@ -32,8 +32,10 @@ object MarriageIntent {
      * Marital statuses this user can pick, given their gender — a man is a
      * widower, not widowed. Only that last option differs.
      *
-     * Unrecognised or absent gender falls back to the non-male list, matching
-     * [lookingForOptions].
+     * Unrecognised or absent gender falls back to the female list, matching
+     * [lookingForOptions]. With gender now strictly male/female, "unrecognised"
+     * shouldn't happen for a current write, but existing data or a legacy
+     * client could still send something else, so the fallback stays.
      */
     fun statusOptions(gender: String?): List<String> =
         if (gender == Gender.MALE.firestoreValue) STATUS_MALE else STATUS_OTHER
@@ -47,7 +49,7 @@ object MarriageIntent {
     /**
      * What this user can be looking for, given their gender.
      *
-     * A null or unrecognised gender falls back to the non-male list rather than
+     * A null or unrecognised gender falls back to the female list rather than
      * to an empty one: an account that somehow has no gender still needs
      * answerable options, and "Any" is present in both lists either way.
      */

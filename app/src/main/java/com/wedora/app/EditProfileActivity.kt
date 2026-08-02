@@ -200,8 +200,7 @@ class EditProfileActivity : WedoraBaseActivity() {
         genderControl = SegmentedControl(
             listOf(
                 binding.tvGenderMale to Gender.MALE,
-                binding.tvGenderFemale to Gender.FEMALE,
-                binding.tvGenderOther to Gender.OTHER
+                binding.tvGenderFemale to Gender.FEMALE
             ),
             onSelected = {
                 // Both groups offer different options per gender — a man is a
@@ -219,8 +218,7 @@ class EditProfileActivity : WedoraBaseActivity() {
         interestedInControl = SegmentedControl(
             listOf(
                 binding.tvInterestedMale to Gender.MALE,
-                binding.tvInterestedFemale to Gender.FEMALE,
-                binding.tvInterestedOther to Gender.OTHER
+                binding.tvInterestedFemale to Gender.FEMALE
             ),
             onSelected = { updateSaveEnabled() }
         )
