@@ -38,5 +38,13 @@ Thumbs.db
 # Firebase — contains project ID + API key; each environment supplies its own
 /app/google-services.json
 
+# Firebase Admin SDK service account keys — a private key with whatever IAM
+# roles the service account has (Firestore read/write, etc.), not just a
+# per-environment config value like google-services.json above. Matched by
+# name pattern, not one specific filename, so a newly generated key is
+# covered automatically without a .gitignore update every time one is made.
+*firebase-adminsdk*.json
+serviceAccount*.json
+
 # Firebase CLI local cache (debug logs are already covered by *.log above)
 .firebase/
