@@ -1,12 +1,14 @@
 package com.wedora.app
 
 import android.content.res.ColorStateList
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.DiffUtil
@@ -64,21 +66,47 @@ class MessageAdapter(
         private val reactionsRow: LinearLayout = view.findViewById(R.id.reactionsRow)
 
         /**
-         * A deleted message shows the italic placeholder instead of its
-         * (already server-cleared) text, and never shows reactions —
-         * nothing in this app's own UI offers reacting to one (see
-         * MessageAdapter's own doc comment), so a non-empty reactions map
-         * here would only ever come from a modified client; rendering it
-         * anyway would make that visible instead of just inert.
+         * This bubble type's ordinary text color (white for sent, dark for
+         * received) — [bindTextAndTime] needs it to restore a recycled view
+         * that was previously showing the deleted state's muted color back
+         * to normal, since a ViewHolder is reused across binds rather than
+         * recreated.
+         */
+        @get:ColorRes
+        protected abstract val normalTextColorRes: Int
+
+        /**
+         * A deleted message renders like WhatsApp's own: a small prohibition
+         * icon, italic text, both in a single muted gray that's the same in
+         * either bubble type (deliberately overriding the sent bubble's
+         * usual white — a deleted message reads as a system notice, not
+         * content from either participant). Never shows reactions — nothing
+         * in this app's own UI offers reacting to one (see MessageAdapter's
+         * own doc comment), so a non-empty reactions map here would only
+         * ever come from a modified client; rendering it anyway would make
+         * that visible instead of just inert.
+         *
+         * Every branch below is set unconditionally on both paths (not just
+         * when true) because the view is recycled — a row that previously
+         * bound a deleted message and now binds a normal one needs its
+         * drawable/color/style explicitly put back, not just left alone.
          */
         protected fun bindTextAndTime(message: Message) {
             if (message.deleted) {
                 text.text = itemView.context.getString(R.string.message_deleted_placeholder)
-                text.alpha = 0.6f
+                text.setTextColor(ContextCompat.getColor(itemView.context, R.color.wedora_message_deleted))
+                text.setTypeface(text.typeface, Typeface.ITALIC)
+                val icon = ContextCompat.getDrawable(itemView.context, R.drawable.ic_no_entry)?.mutate()
+                icon?.setTint(ContextCompat.getColor(itemView.context, R.color.wedora_message_deleted))
+                text.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
+                text.compoundDrawablePadding =
+                    (4 * itemView.context.resources.displayMetrics.density).toInt()
                 bindReactions(emptyMap())
             } else {
                 text.text = message.text
-                text.alpha = 1f
+                text.setTextColor(ContextCompat.getColor(itemView.context, normalTextColorRes))
+                text.setTypeface(text.typeface, Typeface.NORMAL)
+                text.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
                 bindReactions(message.reactions)
             }
 
@@ -113,6 +141,8 @@ class MessageAdapter(
     }
 
     private class ReceivedViewHolder(view: View) : MessageViewHolder(view) {
+        override val normalTextColorRes = R.color.wedora_text
+
         override fun bind(message: Message, otherLastReadAt: Timestamp?) {
             bindTextAndTime(message)
         }
@@ -128,6 +158,7 @@ class MessageAdapter(
      * without a dedicated presence/delivery system.
      */
     private class SentViewHolder(view: View) : MessageViewHolder(view) {
+        override val normalTextColorRes = R.color.white
         private val status: ImageView = view.findViewById(R.id.ivMessageStatus)
 
         override fun bind(message: Message, otherLastReadAt: Timestamp?) {

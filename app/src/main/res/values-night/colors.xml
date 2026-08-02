@@ -59,6 +59,11 @@
     <color name="wedora_text">#F5EEEF</color>
     <color name="wedora_text_secondary">#B8ABAE</color>
 
+    <!-- "This message was deleted" placeholder (bubble + Chats list preview).
+         Approximation of WhatsApp's own deleted-message gray — not pixel-
+         verified against the real app, flagged as such when it was chosen. -->
+    <color name="wedora_message_deleted">#8696A0</color>
+
     <!-- Skeleton loading placeholders -->
     <color name="wedora_skeleton">#2E2529</color>
 

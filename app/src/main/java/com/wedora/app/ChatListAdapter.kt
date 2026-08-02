@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -108,6 +109,25 @@ class ChatListAdapter(
                 tvChatTimestamp.setTextColor(
                     ContextCompat.getColor(context, R.color.wedora_text_secondary)
                 )
+            }
+
+            // Deleted overrides whichever read/unread color and weight was
+            // just set above — same muted italic-plus-icon treatment as the
+            // bubble placeholder (MessageAdapter.bindTextAndTime), and reset
+            // explicitly in the else branch since this row is recycled.
+            if (chat.lastMessageDeleted) {
+                tvChatPreview.setTypeface(tvChatPreview.typeface, Typeface.ITALIC)
+                tvChatPreview.setTextColor(
+                    ContextCompat.getColor(context, R.color.wedora_message_deleted)
+                )
+                val icon = ContextCompat.getDrawable(context, R.drawable.ic_no_entry)?.mutate()
+                icon?.setTint(ContextCompat.getColor(context, R.color.wedora_message_deleted))
+                tvChatPreview.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
+                tvChatPreview.compoundDrawablePadding =
+                    (4 * context.resources.displayMetrics.density).toInt()
+            } else {
+                tvChatPreview.setTypeface(tvChatPreview.typeface, Typeface.NORMAL)
+                tvChatPreview.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
             }
 
             root.setOnClickListener { onRowInteracted(chat, longPress = false) }
