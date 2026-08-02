@@ -8,7 +8,6 @@ import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.text.method.HideReturnsTransformationMethod
 import android.text.method.PasswordTransformationMethod
-import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -20,10 +19,6 @@ import com.google.firebase.FirebaseNetworkException
 import com.wedora.app.databinding.ActivityLoginBinding
 
 class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
-
-    private companion object {
-        const val TAG = "WedoraLogin"
-    }
 
     private lateinit var binding: ActivityLoginBinding
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
@@ -89,7 +84,9 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         binding.etPassword.addTextChangedListener(watcher)
         updateLoginEnabled()
 
-        binding.tvContinueAsGuest.setOnClickListener { continueAsGuest() }
+        binding.tvContinueAsGuest.setOnClickListener {
+            continueAsGuest(this, auth, binding.tvContinueAsGuest)
+        }
 
         playEntranceTimeline()
     }
@@ -117,51 +114,6 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         binding.btnLogin.isEnabled =
             binding.etEmail.text.isNotBlank() &&
             binding.etPassword.text.isNotEmpty()
-    }
-
-    /**
-     * Enter the app without a real account. Guests still need a Firebase Auth
-     * session — every Firestore read rule requires `request.auth != null`,
-     * so without one the guest feed would fail every query with
-     * PERMISSION_DENIED — so this signs in anonymously first. GuestPrefs
-     * stays the source of truth for "is this a guest" everywhere in the app;
-     * the anonymous session exists only so Firestore's own rules let a
-     * guest's reads through, not as a second identity system. See
-     * FirebaseAuth.realUid for how the rest of the app keeps an anonymous
-     * session from being treated as a genuine one.
-     *
-     * A returning guest — same session, or the app reopened without logging
-     * out — already has an anonymous session FirebaseAuth persists locally,
-     * so there's no need to sign in again; and already has both GuestPrefs
-     * values from a previous run through GuestGenderPromptActivity, so
-     * there's nothing left to ask either — skip straight to Home rather than
-     * showing the same prompt twice.
-     */
-    private fun continueAsGuest() {
-        val existing = auth.currentUser
-        if (existing != null && existing.isAnonymous) {
-            proceedAsGuest()
-            return
-        }
-
-        binding.tvContinueAsGuest.isEnabled = false
-        auth.signInAnonymously()
-            .addOnSuccessListener { proceedAsGuest() }
-            .addOnFailureListener { e ->
-                binding.tvContinueAsGuest.isEnabled = true
-                Log.w(TAG, "Anonymous sign-in failed", e)
-                Toast.makeText(this, R.string.error_generic_login, Toast.LENGTH_LONG).show()
-            }
-    }
-
-    private fun proceedAsGuest() {
-        GuestPrefs.setGuest(this)
-        val alreadyAnswered =
-            GuestPrefs.guestGender(this) != null && GuestPrefs.guestInterestedIn(this) != null
-        val destination =
-            if (alreadyAnswered) HomeActivity::class.java else GuestGenderPromptActivity::class.java
-        startActivity(Intent(this, destination))
-        finish()
     }
 
     private fun attemptLogin() {
