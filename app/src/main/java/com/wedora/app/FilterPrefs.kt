@@ -23,14 +23,21 @@ object FilterPrefs {
     private const val KEY_MY_STATUS = "filter_my_status"
     private const val KEY_LOOKING_FOR = "filter_looking_for"
 
+    /**
+     * Full range by default — until someone narrows it via Filters, age
+     * shouldn't quietly exclude anyone. Equal to AGE_FLOOR/AGE_CEILING on
+     * purpose: "default" and "maximum" are the same range now.
+     */
     const val DEFAULT_AGE_MIN = 18
-    const val DEFAULT_AGE_MAX = 40
+    const val DEFAULT_AGE_MAX = 80
 
     /** The app's hard floor — the same 18+ policy the security rules enforce. */
     const val AGE_FLOOR = 18
     const val AGE_CEILING = 80
 
-    const val DEFAULT_DISTANCE_KM = 50
+    /** Worldwide by default — see MAX_DISTANCE_KM's own comment for why that
+     *  value specifically means "no real limit". */
+    const val DEFAULT_DISTANCE_KM = 20_020
     const val MIN_DISTANCE_KM = 1
 
     /**
