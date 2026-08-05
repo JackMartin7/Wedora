@@ -2,16 +2,51 @@
 <!--
     Wedora design tokens — DARK mode.
     Names mirror values/colors.xml exactly; only the values differ.
-    Brand colours are intentionally identical across both modes.
+    Most brand colours are intentionally identical across both modes — but
+    NOT wedora_accent/wedora_accent_pressed/their derived shadow+tint
+    tokens, deliberately brighter here than in light mode (see
+    wedora_accent's own comment below).
 -->
 <resources>
-    <!-- Brand — identical in light and dark -->
-    <color name="wedora_accent">#FA4659</color>
+    <!-- Brand — REBRAND: wedora_accent is now deliberately brighter here
+         than in light mode (#F0748A vs #E22A48), unlike every other token
+         on this page, so it doesn't look muddy against this near-black
+         page. That in turn breaks the usual white-on-accent button-text
+         pairing: white text on #F0748A measures only 2.77:1 (needs 4.5:1),
+         and mechanically darkening the fill to fix it would undo the exact
+         "brighter, not muddy" reasoning this value exists for. Instead
+         wedora_text_on_primary flips to a dark color here — #1A1013 (this
+         file's own wedora_bg) on #F0748A measures 6.71:1, and the same dark
+         text on wedora_accent_pressed's ORIGINAL, unadjusted spec value
+         (#D85A72) still clears AA at 4.99:1, so accent_pressed needed no
+         hex change at all here, only the light-mode file's did. -->
+    <color name="wedora_accent">#F0748A</color>
+    <color name="wedora_accent_pressed">#D85A72</color>
+    <!-- The dark-mode flip described above. -->
+    <color name="wedora_text_on_primary">#1A1013</color>
     <color name="wedora_gradient_start">#FF93A8</color>
     <color name="wedora_gradient_end">#FE4667</color>
     <color name="wedora_success">#3FB56E</color>
-    <color name="wedora_error">#E23B4E</color>
-    <color name="wedora_accent_shadow">#4DFA4659</color>
+    <!-- #FF6B6B, unchanged from the original spec — passes comfortably
+         (5.70:1) once composited against wedora_error_bg's translucent
+         fill; unlike light mode, no adjustment was needed here. -->
+    <color name="wedora_error">#FF6B6B</color>
+    <!-- 12% wedora_error over this file's wedora_bg, expressed as a direct
+         translucent color per the original spec (rgba(255,107,107,0.12))
+         rather than a pre-composited flat one, the same way Android
+         renders any translucent fill against whatever is actually behind
+         it. -->
+    <color name="wedora_error_bg">#1FFF6B6B</color>
+    <!-- Translucent tint of #E8536B (the ORIGINAL, unadjusted primary spec
+         value) at 12%, per the exact rgba given for this token — tagText
+         itself reuses wedora_accent's dark-mode value (#F0748A), which
+         passes at 5.87:1 once composited against this. -->
+    <color name="wedora_tag_bg">#1FE8536B</color>
+    <color name="wedora_tag_text">#F0748A</color>
+    <!-- Same fixed 60%-black scrim as light mode — see that file's comment. -->
+    <color name="wedora_badge_overlay">#99000000</color>
+    <color name="wedora_accent_shadow">#4DF0748A</color>
+    <color name="wedora_accent_tint_12">#1FF0748A</color>
     <!-- Same value as light mode — see that file's comment. -->
     <color name="wedora_read_receipt">#4FC3F7</color>
     <color name="wedora_premium_gold">#E5A93B</color>
@@ -37,7 +72,10 @@
          rather than blending into a light one.
          Muted dark rose #7A3F47 instead: against wedora_bg (#1C1417,
          luminance ~0.008) it measures ~2.26:1 and against the enabled
-         wedora_accent (#FA4659) ~2.32:1 — clearly a distinct, deliberately
+         wedora_accent (previously #FA4659, now #F0748A post-rebrand — the
+         ~2.32:1 figure is against the old value and wasn't re-measured
+         against the new one; disabled-state colors were left out of the
+         rebrand's scope) ~2.32:1 — clearly a distinct, deliberately
          desaturated version of the same rose family, not blending into
          either. Paired with full-opacity white text rather than carrying
          the 60%-alpha version over: at 60% alpha it measured ~4.01:1,
@@ -45,27 +83,32 @@
     <color name="wedora_btn_disabled_bg">#7A3F47</color>
     <color name="wedora_btn_disabled_text">#FFFFFFFF</color>
 
-    <!-- Surfaces -->
-    <color name="wedora_bg">#1C1417</color>
-    <color name="wedora_surface">#2A2124</color>
-    <color name="wedora_border">#3A2E32</color>
+    <!-- Surfaces — REBRAND, matching the light-mode inversion: page is now
+         #1A1013 (was #1C1417, barely different) and cards are #241419
+         (was #2A2124, also slightly darker than before) — same "card reads
+         very slightly duller than the page" relationship as light mode. -->
+    <color name="wedora_bg">#1A1013</color>
+    <color name="wedora_surface">#241419</color>
+    <color name="wedora_border">#3A2A2E</color>
     <!-- Same tone as wedora_border — see light values.xml's own comment for
          why the light value is a shade darker than its wedora_border; in
          dark mode wedora_border's existing value already gives enough
          definition against a photo, so no separate adjustment was needed. -->
-    <color name="wedora_avatar_ring">#3A2E32</color>
+    <color name="wedora_avatar_ring">#3A2A2E</color>
 
     <!-- Text -->
-    <color name="wedora_text">#F5EEEF</color>
-    <color name="wedora_text_secondary">#B8ABAE</color>
-
+    <color name="wedora_text">#F5EEF0</color>
+    <color name="wedora_text_secondary">#9B8A8E</color>
 
     <!-- Skeleton loading placeholders -->
     <color name="wedora_skeleton">#2E2529</color>
 
-    <!-- Inputs -->
-    <color name="wedora_input_bg">#241A1D</color>
-    <color name="wedora_input_border">#3A2E32</color>
+    <!-- Inputs — REBRAND: neutralBorder role, moving away from a
+         wedora_border-matching value toward a distinct, slightly lighter
+         neutral gray so input fields read as their own element rather than
+         blending into every other bordered surface. -->
+    <color name="wedora_input_bg">#241419</color>
+    <color name="wedora_input_border">#4A373C</color>
 
     <!-- Decorative concentric rings behind the onboarding avatar collage -->
     <color name="wedora_ring_mid">#241A1D</color>

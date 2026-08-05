@@ -233,8 +233,100 @@
                 android:text="@string/btn_login"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cbRememberMe"
-                app:layout_constraintBottom_toBottomOf="parent" />
+                app:layout_constraintTop_toBottomOf="@id/cbRememberMe" />
+
+            <!-- Small "or" divider between Login and the guest button — lighter
+                 weight than the card's "Or continue with" divider above, since
+                 this one separates two ways into the SAME screen rather than
+                 two different auth providers. -->
+            <View
+                android:id="@+id/dividerGuestLeft"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_marginTop="14dp"
+                android:background="@color/wedora_border"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/tvGuestDividerOr"
+                app:layout_constraintTop_toBottomOf="@id/btnLogin"
+                app:layout_constraintBottom_toBottomOf="@id/tvGuestDividerOr" />
+
+            <TextView
+                android:id="@+id/tvGuestDividerOr"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:text="@string/auth_divider_or_lowercase"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="11sp"
+                app:layout_constraintStart_toEndOf="@id/dividerGuestLeft"
+                app:layout_constraintEnd_toStartOf="@id/dividerGuestRight"
+                app:layout_constraintTop_toBottomOf="@id/btnLogin" />
+
+            <View
+                android:id="@+id/dividerGuestRight"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:background="@color/wedora_border"
+                app:layout_constraintStart_toEndOf="@id/tvGuestDividerOr"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvGuestDividerOr"
+                app:layout_constraintBottom_toBottomOf="@id/tvGuestDividerOr" />
+
+            <!-- Continue as Guest — the one guest entry point on this screen
+                 (see the removed plain-text link that used to sit below the
+                 card). Outlined/tinted rather than solid, so it reads as a
+                 secondary action next to Login's solid accent fill. Two lines:
+                 label (with a person icon) and a muted subtitle underneath. -->
+            <LinearLayout
+                android:id="@+id/btnContinueAsGuest"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:minHeight="44dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingVertical="6dp"
+                android:background="@drawable/bg_button_guest_outline"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvGuestDividerOr"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginEnd="6dp"
+                        android:src="@drawable/ic_account"
+                        android:tint="@color/wedora_accent"
+                        android:contentDescription="@null" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/continue_as_guest"
+                        android:textColor="@color/wedora_accent"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/poppins_medium" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/continue_as_guest_subtitle"
+                    android:textColor="@color/wedora_accent"
+                    android:alpha="0.7"
+                    android:textSize="10sp" />
+
+            </LinearLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -247,23 +339,8 @@
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/authCard" />
-
-        <!-- Continue as Guest -->
-        <TextView
-            android:id="@+id/tvContinueAsGuest"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:padding="8dp"
-            android:background="?attr/selectableItemBackground"
-            android:text="@string/continue_as_guest"
-            android:textColor="@color/wedora_text_secondary"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_medium"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvSignUpPrompt" />
+            app:layout_constraintTop_toBottomOf="@id/authCard"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

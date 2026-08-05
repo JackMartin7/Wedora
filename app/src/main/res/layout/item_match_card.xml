@@ -237,7 +237,7 @@
         android:paddingVertical="5dp"
         android:maxLines="1"
         android:ellipsize="end"
-        android:textColor="@color/wedora_text_secondary"
+        android:textColor="@color/wedora_tag_text"
         android:textSize="12sp"
         android:fontFamily="@font/poppins_medium"
         android:visibility="gone"

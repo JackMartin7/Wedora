@@ -139,7 +139,7 @@
                 android:background="@drawable/bg_intent_badge"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="5dp"
-                android:textColor="@color/wedora_text_secondary"
+                android:textColor="@color/wedora_tag_text"
                 android:textSize="12sp"
                 android:fontFamily="@font/poppins_medium"
                 android:visibility="gone"

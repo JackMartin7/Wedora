@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Continue as Guest" secondary button — accent-tinted wash fill and an
+     accent border, distinct from bg_button_google's neutral surface and
+     bg_button_primary_stateful's solid accent fill. Same 14dp corner radius
+     as both, so all three read as one matched button family. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/wedora_accent_shadow">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_accent_tint_12" />
+            <stroke
+                android:width="1.5dp"
+                android:color="@color/wedora_accent" />
+            <corners android:radius="14dp" />
+        </shape>
+    </item>
+</ripple>

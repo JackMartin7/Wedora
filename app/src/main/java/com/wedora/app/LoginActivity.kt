@@ -84,8 +84,8 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
         binding.etPassword.addTextChangedListener(watcher)
         updateLoginEnabled()
 
-        binding.tvContinueAsGuest.setOnClickListener {
-            continueAsGuest(this, auth, binding.tvContinueAsGuest)
+        binding.btnContinueAsGuest.setOnClickListener {
+            continueAsGuest(this, auth, binding.btnContinueAsGuest)
         }
 
         playEntranceTimeline()

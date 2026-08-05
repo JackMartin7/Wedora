@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- White text; wedora_btn_disabled_text when the button is disabled — 60%
-     alpha in light mode, full opacity in dark mode (see
-     values-night/colors.xml: at 60% against the dark-mode disabled
-     background it measured ~4.01:1, just under AA's 4.5:1, so dark mode
-     uses full white instead rather than carrying the same alpha over). -->
+<!-- wedora_text_on_primary when enabled — white in light mode, but NOT in
+     dark mode (see values-night/colors.xml's wedora_accent comment for why
+     the dark-mode button fill needs dark text instead of white). Disabled
+     state is unaffected by the rebrand: wedora_btn_disabled_text, 60% alpha
+     in light mode, full opacity in dark mode (see values-night/colors.xml:
+     at 60% against the dark-mode disabled background it measured ~4.01:1,
+     just under AA's 4.5:1, so dark mode uses full white instead rather than
+     carrying the same alpha over). -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_enabled="false" android:color="@color/wedora_btn_disabled_text" />
-    <item android:color="@color/white" />
+    <item android:color="@color/wedora_text_on_primary" />
 </selector>

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Neutral pill behind the "status • looking for" line on profiles. -->
+<!-- Pill behind the "status • looking for" line on profiles — the tagBackground
+     role. Was wedora_input_bg (this rebrand made that plain white, which
+     would've left the pill with no fill of its own); wedora_tag_bg keeps it
+     a distinct, deliberately tinted pill. Text pairs with wedora_tag_text,
+     not wedora_input_bg's old pairing. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/wedora_input_bg" />
+    <solid android:color="@color/wedora_tag_bg" />
     <corners android:radius="10dp" />
 </shape>

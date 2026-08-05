@@ -21,6 +21,10 @@
     <!-- Google Sign-In — shared by Login and Sign Up -->
     <string name="auth_divider_or">Or continue with</string>
     <string name="btn_continue_with_google">Continue with Google</string>
+    <!-- Smaller divider between Login and the guest button — deliberately
+         lowercase, unlike auth_divider_or, to read as the lighter-weight
+         of the two dividers on the same screen. -->
+    <string name="auth_divider_or_lowercase">or</string>
     <string name="error_google_sign_in_failed">Google sign-in failed. Please try again.</string>
     <string name="auth_signing_in">Signing in…</string>
     <string name="auth_signing_up">Signing up…</string>
@@ -77,6 +81,7 @@
 
     <!-- Guest mode -->
     <string name="continue_as_guest">Continue as Guest</string>
+    <string name="continue_as_guest_subtitle">Browse profiles before signing up</string>
     <string name="guest_action_blocked">Sign up to use this feature</string>
     <string name="guest_like_blocked">Sign up to like profiles</string>
     <string name="guest_chat_blocked">Sign up to message people</string>

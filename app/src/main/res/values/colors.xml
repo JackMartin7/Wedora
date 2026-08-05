@@ -5,14 +5,59 @@
     the same names so the system can swap them automatically.
 -->
 <resources>
-    <!-- Brand — identical in light and dark -->
-    <color name="wedora_accent">#FA4659</color>
+    <!-- Brand — REBRAND (see values-night/colors.xml's own comment): unlike
+         before, wedora_accent is no longer identical across modes — dark
+         mode needs a brighter value so it doesn't look muddy against a
+         near-black page, which in turn means its button-text pairing has to
+         flip to a dark color in dark mode (see wedora_text_on_primary
+         below) since white-on-bright-pink fails WCAG AA at that lightness.
+         wedora_accent's own value is #E22A48, not the originally-requested
+         #E8536B — #E8536B measured 3.57:1 with white button text (needs
+         4.5:1); #E22A48 is the nearest darkening of the same hue that
+         clears it, at 4.51:1. -->
+    <color name="wedora_accent">#E22A48</color>
+    <!-- Pressed/active state for anything using wedora_accent as a solid
+         fill (see bg_button_primary_stateful.xml's new state_pressed item).
+         Unchanged from the original spec — already 4.85:1 with white text,
+         no adjustment needed. -->
+    <color name="wedora_accent_pressed">#C93F55</color>
+    <!-- Text/icon color for anything sitting ON a solid wedora_accent (or
+         wedora_accent_pressed) fill — light mode simply reuses white, but
+         this exists as its own token because dark mode's pairing is NOT
+         white (see values-night's comment): keeping one token that both
+         button-text selectors and any other on-accent content reference
+         means dark mode's flip is a single override, not a hunt through
+         every consumer. -->
+    <color name="wedora_text_on_primary">#FFFFFF</color>
     <color name="wedora_gradient_start">#FF93A8</color>
     <color name="wedora_gradient_end">#FE4667</color>
     <color name="wedora_success">#3FB56E</color>
-    <color name="wedora_error">#E23B4E</color>
+    <!-- #D4201B, not the originally-requested #E53935 — that measured
+         3.65:1 against wedora_error_bg (needs 4.5:1); this is the nearest
+         darkening of the same hue that clears it, at 4.51:1. -->
+    <color name="wedora_error">#D4201B</color>
+    <!-- Banner/toast surface behind wedora_error text — new token, the
+         "errorBackground" role. -->
+    <color name="wedora_error_bg">#FDEAEA</color>
+    <!-- The "status • looking for" pill background/text (bg_intent_badge.xml)
+         — new tokens, the "tagBackground"/"tagText" role. wedora_tag_text is
+         #C6384F, not the originally-requested #C93F55 — that measured
+         4.26:1 against wedora_tag_bg (needs 4.5:1); this is the nearest
+         darkening of the same hue that clears it, at 4.52:1. -->
+    <color name="wedora_tag_bg">#FDECEF</color>
+    <color name="wedora_tag_text">#C6384F</color>
+    <!-- Fixed 60%-black scrim for a badge sitting on a photo (the distance
+         pill — bg_distance_pill.xml) rather than a themed surface, since a
+         badge over a photo needs to read the same regardless of app theme —
+         the photo underneath is the only thing that varies. Paired with
+         white text, same both modes. -->
+    <color name="wedora_badge_overlay">#99000000</color>
     <!-- 30% accent, used for the primary button's coloured drop shadow -->
-    <color name="wedora_accent_shadow">#4DFA4659</color>
+    <color name="wedora_accent_shadow">#4DE22A48</color>
+    <!-- ~12% accent, the outlined "Continue as Guest" button's tint fill —
+         a wash of the border colour rather than a solid surface, so it reads
+         as a secondary action next to Login's solid accent fill. -->
+    <color name="wedora_accent_tint_12">#1FE22A48</color>
     <!-- WhatsApp-style read-receipt blue for the double checkmark once the
          recipient's lastReadAt has caught up to a sent message. Fixed in
          both modes, like the other brand colours here — it's a recognisable
@@ -41,21 +86,30 @@
     <color name="wedora_btn_disabled_bg">#FBBCC4</color>
     <color name="wedora_btn_disabled_text">#99FFFFFF</color>
 
-    <!-- Surfaces -->
-    <color name="wedora_bg">#FAF7F7</color>
-    <color name="wedora_surface">#FFFFFF</color>
-    <color name="wedora_border">#F0EAEB</color>
+    <!-- Surfaces — REBRAND: background/surfaceCard deliberately invert the
+         previous hierarchy. Before, the page was a warm off-white
+         (#FAF7F7) and cards were pure white — cards read brighter than the
+         page. Now the page is pure white and cards are a very light gray
+         (#F9F9F9) — cards read very slightly duller than the page instead.
+         This is a real, visible change on every screen with a card, not a
+         token rename. -->
+    <color name="wedora_bg">#FFFFFF</color>
+    <color name="wedora_surface">#F9F9F9</color>
+    <!-- The "divider" role — general borders/separator lines. -->
+    <color name="wedora_border">#EFEFEF</color>
     <!-- Avatar ring/stroke, everywhere a small circular photo has a border —
          was wedora_accent (or wedora_accent_shadow) throughout the app;
          replaced with a neutral tone so the ring reads as UI chrome rather
          than a status/action signal. Deliberately a shade darker than
-         wedora_border (#F0EAEB) rather than reusing it outright, for
-         definition against photos of varied brightness. -->
+         wedora_border rather than reusing it outright, for definition
+         against photos of varied brightness. Left as-is in this rebrand —
+         wedora_border's own shift (#F0EAEB -> #EFEFEF) is small enough that
+         this relationship still holds without needing its own adjustment. -->
     <color name="wedora_avatar_ring">#E8E0E1</color>
 
     <!-- Text -->
-    <color name="wedora_text">#241A1D</color>
-    <color name="wedora_text_secondary">#8C8589</color>
+    <color name="wedora_text">#1A1A1A</color>
+    <color name="wedora_text_secondary">#6B6B6B</color>
 
     <!-- "This message was deleted" placeholder (bubble + Chats list preview).
          Exact values as given, fixed regardless of theme — deliberately not
@@ -67,9 +121,12 @@
     <!-- Skeleton loading placeholders -->
     <color name="wedora_skeleton">#EFE7E9</color>
 
-    <!-- Inputs -->
-    <color name="wedora_input_bg">#FDEFF1</color>
-    <color name="wedora_input_border">#FBD3DA</color>
+    <!-- Inputs — REBRAND: previously a pink-tinted wash (#FDEFF1 fill /
+         #FBD3DA border); now the "inputFill"/"neutralBorder" roles, plain
+         white with a neutral gray border, moving input chrome away from
+         brand-tinted toward neutral. -->
+    <color name="wedora_input_bg">#FFFFFF</color>
+    <color name="wedora_input_border">#E0E0E0</color>
 
     <!-- Decorative concentric rings behind the onboarding avatar collage -->
     <color name="wedora_ring_mid">#FDF2F4</color>

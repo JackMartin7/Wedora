@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Accent distance badge on a match card's action row -->
+<!-- Distance badge on a match card's action row — a photo overlay, not a
+     themed surface, so it uses the fixed black-scrim badgeOverlay token
+     rather than wedora_accent, same both themes. Was a solid accent fill
+     before this rebrand. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/wedora_accent" />
+    <solid android:color="@color/wedora_badge_overlay" />
     <corners android:radius="16dp" />
 </shape>

@@ -251,6 +251,7 @@
                 app:layout_constraintTop_toBottomOf="@id/cbAgreeTerms"
                 app:layout_constraintBottom_toBottomOf="parent" />
 
+
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <!-- Login prompt -->
@@ -265,6 +266,7 @@
             app:layout_constraintTop_toBottomOf="@id/authCard" />
 
         <!-- Continue as Guest — same treatment as activity_login.xml's -->
+
         <TextView
             android:id="@+id/tvContinueAsGuest"
             android:layout_width="wrap_content"
@@ -273,7 +275,7 @@
             android:padding="8dp"
             android:background="?attr/selectableItemBackground"
             android:text="@string/continue_as_guest"
-            android:textColor="@color/wedora_text_secondary"
+            android:textColor="@color/wedora_accent"
             android:textSize="14sp"
             android:fontFamily="@font/poppins_medium"
             app:layout_constraintStart_toStartOf="parent"
