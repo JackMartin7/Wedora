@@ -81,6 +81,10 @@
 
     <!-- Guest mode -->
     <string name="continue_as_guest">Continue as Guest</string>
+    <!-- Sign Up's own wording for the same button/behavior as
+         continue_as_guest — kept as a separate string rather than reusing
+         that one so Login's label is unaffected by this screen's choice. -->
+    <string name="login_as_guest">Login as Guest</string>
     <string name="continue_as_guest_subtitle">Browse profiles before signing up</string>
     <string name="guest_action_blocked">Sign up to use this feature</string>
     <string name="guest_like_blocked">Sign up to like profiles</string>

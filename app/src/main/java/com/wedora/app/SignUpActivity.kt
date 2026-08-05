@@ -100,8 +100,8 @@ class SignUpActivity : WedoraBaseActivity() {
         binding.btnSignUp.setOnClickListener { attemptSignUp() }
         binding.btnSignUp.addPressScale()
 
-        binding.tvContinueAsGuest.setOnClickListener {
-            continueAsGuest(this, auth, binding.tvContinueAsGuest)
+        binding.btnContinueAsGuest.setOnClickListener {
+            continueAsGuest(this, auth, binding.btnContinueAsGuest)
         }
 
         playEntranceTimeline()
