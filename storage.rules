@@ -26,12 +26,24 @@ service firebase.storage {
     // check — matches the kind of file this endpoint is actually for
     // (a picked/captured JPEG), not an open drop point for arbitrary
     // uploads under someone else's uid.
+    // Delete is split out from write, and must stay split. `write` covers
+    // create, update AND delete, but the two conditions above it — size and
+    // contentType — are properties of request.resource, which is null on a
+    // delete. Folded together, they made every delete fail: the owner could
+    // upload their photo but never remove it. Exactly the shape of the bug
+    // that blocked account deletion in firestore.rules' profileViews block,
+    // found while fixing that one.
+    //
+    // Account deletion is what needs this (see
+    // AccountSettingsActivity.deleteProfilePhotoThenAuth); without it every
+    // deleted account left its photo in the bucket permanently.
     match /profile_photos/{uid}/{fileName} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null
+      allow create, update: if request.auth != null
           && request.auth.uid == uid
           && request.resource.size < 10 * 1024 * 1024
           && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == uid;
     }
   }
 }

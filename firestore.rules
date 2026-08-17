@@ -140,21 +140,112 @@ service cloud.firestore {
       // modified client could still write an early/future date to force a
       // reset ahead of schedule. Known gap; would need a Cloud Function (none
       // exist in this project yet) to close properly.
+      // bonusLikesToday is the rewarded-ad allowance (see RewardedAds /
+      // LikeLimit.kt) and widens the ceiling by exactly what was earned.
+      // It's itself capped at 10, which is what keeps the existing gap from
+      // getting worse: the rules can't verify an ad was watched any more
+      // than they can verify the date below, so a modified client could
+      // still forge a bonus — but the cap bounds that at double the free
+      // allowance rather than unlimited.
       function likesLimitRespected() {
         return resource.data.get('isPremium', false)
             || request.resource.data.get('likesGivenDate', '')
                 != resource.data.get('likesGivenDate', '')
-            || request.resource.data.get('likesGivenToday', 0) <= 10;
+            || (request.resource.data.get('bonusLikesToday', 0) <= 10
+                && request.resource.data.get('likesGivenToday', 0)
+                     <= 10 + request.resource.data.get('bonusLikesToday', 0));
+      }
+
+      // The rewarded-ad rate limit: one earned bonus per 10 minutes.
+      //
+      // Unlike the daily caps above, this one IS enforceable. Their gap is
+      // that rules can't format request.time into "yyyy-MM-dd" to check a
+      // claimed date; a cooldown needs no formatting, only timestamp
+      // arithmetic. request.time is set by the server, so moving the device
+      // clock does nothing here — a client that skips its local countdown
+      // gets an ad view that pays out nothing.
+      //
+      // Only constrains writes that touch a bonus field, so it never blocks
+      // an ordinary profile edit. lastRewardedAdAt must equal request.time
+      // on such a write, which is what forces it to be a real server
+      // timestamp rather than a client-chosen one — otherwise a client could
+      // backdate it and clear its own cooldown.
+      //
+      // One field for both quotas: the cooldown is global, rate-limiting ad
+      // views rather than either quota individually.
+
+      // Any change to the bonus quartet, not just a numeric increase: a
+      // grant on a new calendar day writes 10 -> 1, which is a decrease, and
+      // a ">" test would wave exactly that write through uncontrolled. Only
+      // RewardedAds.grantBonus ever touches these four fields, so gating all
+      // changes to them costs an ordinary profile edit nothing.
+      function bonusFieldsChanged() {
+        return request.resource.data.get('bonusLikesToday', 0)
+                 != resource.data.get('bonusLikesToday', 0)
+            || request.resource.data.get('bonusMessagesToday', 0)
+                 != resource.data.get('bonusMessagesToday', 0)
+            || request.resource.data.get('bonusLikesDate', '')
+                 != resource.data.get('bonusLikesDate', '')
+            || request.resource.data.get('bonusMessagesDate', '')
+                 != resource.data.get('bonusMessagesDate', '');
+      }
+      // ---- COMPATIBILITY WINDOW — remove writtenByCurrentClient() below
+      //      once the cooldown build has rolled out. ----
+      //
+      // The version live on Play when this shipped does not write
+      // lastRewardedAdAt at all. Enforcing the strict rule immediately would
+      // reject every one of those users' bonus writes: they would watch a
+      // full rewarded ad and silently receive nothing, which is the worst
+      // failure this flow has. So a write that leaves the field exactly as
+      // it found it is grandfathered through.
+      //
+      // Two shapes count as "left alone": the field is absent from the
+      // incoming document at all (a user who has never run the new build),
+      // or it's present only because a merge write carried the stored value
+      // forward unchanged (a user who ran the new build on one device and
+      // an old build on another). Tested with `in` rather than comparing
+      // against null so the result doesn't rest on null-equality semantics.
+      //
+      // What this costs: for the length of the window the cooldown is
+      // enforced only for clients that opt in by writing the field — the
+      // current build always does, so real users are limited, but a modified
+      // client can bypass it by simply omitting the field. That is exactly
+      // today's situation (no server cooldown at all), so the window is a
+      // delay in gaining enforcement, not a new hole.
+      function writtenByCurrentClient() {
+        return ('lastRewardedAdAt' in request.resource.data)
+            && !(('lastRewardedAdAt' in resource.data)
+                 && request.resource.data.lastRewardedAdAt
+                      == resource.data.lastRewardedAdAt);
+      }
+      function rewardedCooldownRespected() {
+        return !bonusFieldsChanged()
+            || !writtenByCurrentClient()
+            || (request.resource.data.lastRewardedAdAt == request.time
+                && (!('lastRewardedAdAt' in resource.data)
+                    || request.time > resource.data.lastRewardedAdAt
+                                        + duration.value(10, 'm')));
       }
 
       // Same best-effort shape and the same gap as likesLimitRespected() above
       // — an independent quota, tracked in its own pair of fields, so it's
       // checked separately rather than folded into the same function.
+      // The base allowance is 5, not 10: messages are the scarcer resource of
+      // the two, so the message cap is deliberately tighter than the like cap
+      // rather than tracking it. Mirrors FREE_DAILY_MESSAGE_LIMIT in
+      // MessageLimit.kt, which is the client-side half of the same number.
+      //
+      // The bonus cap is 5 here against likes' 10 — each quota's cap equals
+      // its own base, which is what keeps "at most double" true for both.
+      // A shared 10 against this lower base would quietly make the ad path
+      // worth twice the free allowance on messages alone.
       function messagesLimitRespected() {
         return resource.data.get('isPremium', false)
             || request.resource.data.get('messagesSentDate', '')
                 != resource.data.get('messagesSentDate', '')
-            || request.resource.data.get('messagesSentToday', 0) <= 10;
+            || (request.resource.data.get('bonusMessagesToday', 0) <= 5
+                && request.resource.data.get('messagesSentToday', 0)
+                     <= 5 + request.resource.data.get('bonusMessagesToday', 0));
       }
 
       // The document is built up across the profile-setup steps, so both
@@ -183,7 +274,8 @@ service cloud.firestore {
           && genderChangeKeepsPairing()
           && (isPremiumUnchanged() || isPremiumChangeFromPurchase())
           && likesLimitRespected()
-          && messagesLimitRespected();
+          && messagesLimitRespected()
+          && rewardedCooldownRespected();
 
       // Admin-only exception, evaluated as an OR alongside the owner-only
       // allow update above (Firestore grants a write if ANY matching allow
@@ -400,6 +492,97 @@ service cloud.firestore {
               && request.resource.data.text.size() <= 2000;
         }
 
+        /**
+         * replyTo is optional (most messages aren't replies), so absence is
+         * valid too — this only shapes it when present: a map with exactly
+         * messageId/senderId/text, all non-empty strings, text bounded the
+         * same as REPLY_PREVIEW_MAX_CHARS's own generous headroom on the
+         * client (Message.kt).
+         *
+         * Deliberately NOT verified to reference a real message in this
+         * match — that would need a second get() per message send (on top
+         * of the one isMatchMember() already spends), doubling the read
+         * cost of every message in the app, and still wouldn't stop a
+         * modified client pairing a real messageId with a fabricated
+         * senderId/text — this is a private 1:1 thread between two already-
+         * matched users, and the value of that check doesn't justify either
+         * cost. Same accepted-trust-boundary shape as the like/message daily
+         * limits' date field and BillingManager's purchaseToken above.
+         *
+         * text's 200-char ceiling is headroom above the client's own
+         * REPLY_PREVIEW_MAX_CHARS (120, Message.kt) — a bound to stop an
+         * arbitrarily large quoted snippet, not meant to be exact.
+         */
+        function isValidReplyTo() {
+          return !('replyTo' in request.resource.data)
+              || (request.resource.data.replyTo.keys().hasOnly(['messageId', 'senderId', 'text'])
+                  && request.resource.data.replyTo.messageId is string
+                  && request.resource.data.replyTo.messageId.size() > 0
+                  && request.resource.data.replyTo.senderId is string
+                  && request.resource.data.replyTo.senderId.size() > 0
+                  && request.resource.data.replyTo.text is string
+                  && request.resource.data.replyTo.text.size() > 0
+                  && request.resource.data.replyTo.text.size() <= 200);
+        }
+
+        // ---- Contact-sharing backstop -----------------------------------
+        //
+        // Server-side half of the check in ContactShareDetector.kt. The
+        // client shows the warning and blocks the send; this stops a
+        // modified client that skips that UI from writing the message
+        // anyway. Every function below takes the already-lowercased text so
+        // lower() is only paid once at the call site.
+        //
+        // RE2 notes: matches() is a FULL-string match, so every pattern is
+        // wrapped in .* — and (?s) is required on all of them because the
+        // composer accepts multi-line input and . excludes newlines by
+        // default (same reason isValidMessageText() carries it).
+        //
+        // Two things the client catches that this deliberately cannot:
+        // Arabic-Indic digits (٠-٩), which [0-9] doesn't match, and any
+        // normalize-then-rerun handling of mixed obfuscation. Those are
+        // accepted gaps in the backstop, not in the product check.
+
+        function hasEmail(t) {
+          return t.matches('(?s).*[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}.*');
+        }
+
+        // Closed TLD list, matching the client's: an open \.[a-z]{2,} would
+        // fire on "M.Sc", "U.S.A" and any missing space after a full stop.
+        function hasUrl(t) {
+          return t.matches('(?s).*(https?://|www\\.).*')
+              || t.matches('(?s).*\\.(com|net|org|io|me|co|ly|gg|app|link|xyz|info|site|online|shop|store)\\b.*');
+        }
+
+        // Unambiguous brands only — signal/line/imo/snap/zoom are ordinary
+        // English and are excluded here for the same reason as on the
+        // client. \b matters: bare "insta" would fire on "instant".
+        function hasAppName(t) {
+          return t.matches('(?s).*\\b(whatsapp|whats ?app|wa\\.me|instagram|insta|telegram|t\\.me|snapchat|viber|wechat|tiktok|skype|messenger)\\b.*');
+        }
+
+        // Strips only space/dot/paren/hyphen before counting, never comma or
+        // slash — stripping those would merge "1,500,000" and "12/25/2024"
+        // into long runs. 9, not 7 or 8: 7 blocks plain PKR amounts, and 8
+        // blocks any all-numeric date once hyphens are stripped, which on a
+        // marriage app means birthdays and wedding dates. Keep in step with
+        // MIN_DIGIT_RUN in ContactShareDetector.kt.
+        function hasPhoneDigits(t) {
+          return t.replace('[ .()\\-]', '').matches('(?s).*[0-9]{9,}.*');
+        }
+
+        function hasSpelledDigits(t) {
+          return t.matches('(?s).*\\b((zero|one|two|three|four|five|six|seven|eight|nine|oh)[^a-z0-9]{0,3}){5,}(zero|one|two|three|four|five|six|seven|eight|nine|oh)\\b.*');
+        }
+
+        function hasNoContactInfo(t) {
+          return !hasEmail(t)
+              && !hasUrl(t)
+              && !hasAppName(t)
+              && !hasPhoneDigits(t)
+              && !hasSpelledDigits(t);
+        }
+
         /** The full set of top-level keys this update actually touches. */
         function affectedKeys() {
           return request.resource.data.diff(resource.data).affectedKeys();
@@ -496,6 +679,8 @@ service cloud.firestore {
         allow create: if isMatchMember()
             && request.resource.data.senderId == request.auth.uid
             && isValidMessageText()
+            && isValidReplyTo()
+            && hasNoContactInfo(request.resource.data.text.lower())
             && !('deleted' in request.resource.data)
             && !('deletedFor' in request.resource.data)
             && !('reactions' in request.resource.data)
@@ -539,6 +724,25 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Blocked contact-sharing attempts (see ContactShareDetector.kt and the
+    // messages create rule's hasNoContactInfo above). Same write-only-to-
+    // admin-read shape as reports, but a separate collection on purpose:
+    // these are system-generated, about one specific message, append-only,
+    // and carry no pending/resolved workflow — folding them into reports
+    // would bury the real moderation queue under automated noise.
+    //
+    // Append-only by design: an offender can file their own attempt but can
+    // never read the feed back, amend it, or delete the evidence. There is
+    // no admin UI for this yet — it's Firebase-Console-visible only.
+    match /contactShareAttempts/{attemptId} {
+      allow create: if request.auth != null
+          && request.resource.data.senderUid == request.auth.uid;
+
+      allow read: if isAdmin();
+
+      allow update, delete: if false;
+    }
+
     // Each user owns their own block list and nobody else can see it.
     match /blocks/{userId}/blockedUsers/{blockedUid} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
@@ -571,7 +775,65 @@ service cloud.firestore {
     match /profileViews/{viewedUid}/viewers/{viewerUid} {
       allow read: if request.auth != null
           && (request.auth.uid == viewedUid || request.auth.uid == viewerUid);
-      allow write: if request.auth != null && request.auth.uid == viewerUid;
+
+      // Recording a view stays viewer-only. Letting the profile owner create
+      // or amend entries here would let anyone manufacture their own viewer
+      // list, which is the whole thing this collection is trusted for.
+      allow create, update: if request.auth != null && request.auth.uid == viewerUid;
+
+      // Delete is deliberately wider than create/update: the OWNER of the
+      // profile must be able to remove view records left on it.
+      //
+      // This split is what account deletion was missing. AccountSettingsActivity
+      // reads profileViews/{uid}/viewers to clear the record of who viewed the
+      // departing user — reads that the rule above already allows — and then
+      // batches those refs for deletion. Under a single viewer-only `write`
+      // rule every one of those deletes was rejected, and because a batch is
+      // atomic the whole account deletion failed with PERMISSION_DENIED for
+      // any user who had ever been viewed. An account with no viewers deleted
+      // cleanly, which is why this survived testing.
+      //
+      // Widening delete rather than read is the narrow fix: it grants the
+      // owner power only over data attached to their own profile, and still
+      // never lets them see or forge another viewer's entry elsewhere.
+      allow delete: if request.auth != null
+          && (request.auth.uid == viewerUid || request.auth.uid == viewedUid);
+    }
+
+    // Collection-group read over every 'viewers' collection, which is a
+    // DIFFERENT operation from anything the block above can authorise.
+    //
+    // AccountSettingsActivity's delete-account cleanup runs
+    // collectionGroup('viewers').whereEqualTo('viewerUid', uid) to find the
+    // views a departing user made on OTHER people's profiles — records that
+    // live under those users' own profileViews/{otherUid}/viewers
+    // subcollections, so they aren't reachable from this user's own document.
+    //
+    // A concrete-path rule cannot permit that query. A collection-group query
+    // is an operation over every collection with that ID anywhere in the
+    // database, and only a rule whose match path begins with the {path=**}
+    // recursive wildcard applies to one. The profileViews/{viewedUid}/viewers
+    // block above is scoped to that one nesting, so the query was denied
+    // outright — before any document was examined — and took the whole
+    // enumerate step down with it. That failed on every account, including
+    // ones with no views at all; it is not the same bug as the delete-vs-write
+    // split above, which is why fixing that one changed nothing here.
+    //
+    // Tests resource.data.viewerUid rather than a {viewerUid} path wildcard.
+    // The two agree today, since recordProfileView writes the document with
+    // the viewer's uid as its ID, but nothing enforces that invariant — and a
+    // single document whose ID drifted from its field would be returned by the
+    // query's filter, denied by a path check, and fail the whole query again.
+    // Matching on exactly what the query filters on removes that class of
+    // silent, data-dependent breakage.
+    //
+    // Read only. Writes and deletes reach these documents by concrete
+    // reference and stay governed entirely by the block above; this grants no
+    // access that the `request.auth.uid == viewerUid` branch there didn't
+    // already allow.
+    match /{path=**}/viewers/{docId} {
+      allow read: if request.auth != null
+          && resource.data.get('viewerUid', '') == request.auth.uid;
     }
   }
 }
