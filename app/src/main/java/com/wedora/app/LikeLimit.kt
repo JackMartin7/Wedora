@@ -27,10 +27,16 @@ sealed class LikeAttempt {
  * Records a like, enforcing the free-tier daily cap first.
  *
  * Checks for an existing match before anything else: the Discover/Explore
- * fallback (see Feed.kt's resolveFeedExclusions) can now resurface someone
- * already matched with, and re-liking them is a no-op refresh, not a new
- * like — it must not cost the free daily allowance. [matchExistsQuery] is the
+ * fallback's widest tier (see Feed.kt's buildFeedCards) resurfaces someone
+ * this user already liked one-sidedly, and re-liking them is a no-op
+ * refresh, not a new like — it must not cost the free daily allowance. The
+ * same holds for ProfileDetailActivity, which can open any profile directly
+ * regardless of what the feed is currently showing. [matchExistsQuery] is the
  * same sorted-UID lookup already used elsewhere for "are we already matched".
+ *
+ * Note the tiers themselves never reintroduce an already-MATCHED user — they
+ * have a chat thread — so that case now only arrives via a direct profile
+ * open, not from the deck.
  *
  * Reads the liker's own profile before writing — unlike [createMatchDocument],
  * which is deliberately a blind write (see its doc comment on why a pre-read
@@ -105,8 +111,11 @@ private fun likeNewUserRespectingDailyLimit(
 
             val today = todayDateString()
             val countSoFar = if (profile.likesGivenDate == today) profile.likesGivenToday else 0
+            // Rewarded-ad allowance on top of the flat cap, reset by its own
+            // date the same way the base counter is.
+            val bonus = if (profile.bonusLikesDate == today) profile.bonusLikesToday else 0
 
-            if (countSoFar >= FREE_DAILY_LIKE_LIMIT) {
+            if (countSoFar >= FREE_DAILY_LIKE_LIMIT + bonus) {
                 onResult(LikeAttempt.DailyLimitReached)
                 return@addOnSuccessListener
             }

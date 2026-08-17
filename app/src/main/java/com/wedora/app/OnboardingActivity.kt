@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Gravity
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.wedora.app.databinding.ActivityOnboardingBinding
@@ -94,15 +95,24 @@ class OnboardingActivity : WedoraBaseActivity() {
 
         binding.tvSkip.setOnClickListener { finishOnboarding() }
 
-        binding.btnNext.setOnClickListener {
-            val current = binding.viewPager.currentItem
-            if (current == pages.lastIndex) {
-                finishOnboarding()
-            } else {
-                binding.viewPager.currentItem = current + 1
-            }
-        }
+        binding.btnNext.setOnClickListener { advance() }
         binding.btnNext.addPressScale()
+
+        // Back advances rather than exits — the intro is deliberately
+        // one-way. Unconditional, with no isTaskRoot guard (unlike
+        // setUpExitConfirmOnBackPress, which only intercepts when back would
+        // genuinely close the app): here there is nothing behind this screen
+        // to go back to anyway, since SplashActivity finishes itself.
+        //
+        // Two things this makes true, both intended: the app cannot be exited
+        // from the carousel at all, and back on the last page runs
+        // finishOnboarding(), which sets the onboarding-complete flag with no
+        // way to undo it.
+        //
+        // The pager's own swipe still moves in both directions, so a user who
+        // wants to re-read a page can — it's only the back button that's
+        // repurposed.
+        onBackPressedDispatcher.addCallback(this) { advance() }
     }
 
     private fun buildIndicators() {
@@ -136,6 +146,22 @@ class OnboardingActivity : WedoraBaseActivity() {
             dot.layoutParams = (dot.layoutParams as LinearLayout.LayoutParams).apply {
                 width = if (isActive) activeWidth else size
             }
+        }
+    }
+
+    /**
+     * One step forward, or out of the carousel entirely on the last page.
+     *
+     * Shared by the Next button and the back-press callback so the two can't
+     * drift — "back goes forward" means exactly what Next does, including
+     * completing onboarding at the end.
+     */
+    private fun advance() {
+        val current = binding.viewPager.currentItem
+        if (current == pages.lastIndex) {
+            finishOnboarding()
+        } else {
+            binding.viewPager.currentItem = current + 1
         }
     }
 

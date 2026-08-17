@@ -12,9 +12,21 @@ class WedoraApplication : Application() {
         // so the very first screen renders in the right theme.
         ThemePrefs.applyStoredMode(this)
 
+        // Crash reporting. Only the user identifier is wired here — the SDK's
+        // own ContentProvider has already initialized it and installed the
+        // uncaught-exception handler by the time this runs, so crashes are
+        // captured whether or not this line exists. See CrashReporting.
+        CrashReporting.attach()
+
         // App-level foreground/background presence. Registered once here so it
         // tracks the whole process rather than any single activity.
         ProcessLifecycleOwner.get().lifecycle.addObserver(PresenceTracker)
+
+        // Scopes the between-swipes interstitial to a foreground session:
+        // without this its swipe counter would only reset on process death,
+        // so a warm resume could fire one on the first swipe back. See
+        // InterstitialAds.onStart.
+        ProcessLifecycleOwner.get().lifecycle.addObserver(InterstitialAds)
 
         // Local notifications for matches/messages/likes. Channels must exist
         // before the first notification is ever posted; the watcher attaches
@@ -44,6 +56,11 @@ class WedoraApplication : Application() {
         UpdateAnalytics.attach(this)
         UpdateCopy.attach()
         UpdateRepository.attach(this)
+
+        // Onboarding funnel events (see OnboardingAnalytics) — attached here
+        // for the same reason as UpdateAnalytics above: a single shared
+        // instance every ProfileStep*Activity logs through.
+        OnboardingAnalytics.attach(this)
 
         // Native ads in Home's swipe stack (free users only). Init is
         // fire-and-forget — the SDK queues ad requests made before it

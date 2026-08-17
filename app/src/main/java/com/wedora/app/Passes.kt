@@ -64,17 +64,35 @@ fun loadPassedUsersQuery(firestore: FirebaseFirestore, selfUid: String): Task<Qu
         .get()
 
 /**
- * Everyone the feed should leave out, split by how absolute that exclusion
- * is: [blocked] must never be shown under any circumstance, while [all]
- * (blocked + already passed + already liked) is the normal, stricter set
- * the feed prefers — except when the fallback pool it'd leave behind is too
- * small, at which point a caller falls back to [blocked] alone (see
- * [Feed.kt]'s resolveFeedExclusions). [blocked] is always a subset of [all].
+ * Everyone the feed should leave out, split by how absolute each exclusion
+ * is — see [buildFeedCards], which walks these as progressively wider tiers
+ * when the strictest set leaves too few people to show.
+ *
+ * [blocked] and [matched] are permanent: a block is a safety decision that
+ * must never be undone by a fallback, and someone already matched has a chat
+ * thread, so putting them back in the swipe deck is noise rather than
+ * discovery. [passed] and [liked] are soft — reintroduced, in that order,
+ * only once the feed would otherwise be empty.
+ *
+ * [liked] deliberately excludes mutual matches (they're in [matched]
+ * instead), so the two sets never overlap.
  */
 data class FeedExclusions(
     val blocked: Set<String>,
-    val all: Set<String>
-)
+    val matched: Set<String>,
+    val passed: Set<String>,
+    val liked: Set<String>
+) {
+    companion object {
+        /** A guest: no account, so nothing to exclude. */
+        val EMPTY = FeedExclusions(
+            blocked = emptySet(),
+            matched = emptySet(),
+            passed = emptySet(),
+            liked = emptySet()
+        )
+    }
+}
 
 /**
  * Everyone the feed should leave out: blocked, already passed, and already
@@ -111,27 +129,53 @@ fun loadFeedExclusions(
     Tasks.whenAllComplete(blocked, passed, liked)
         .addOnSuccessListener {
             val blockedIds = blocked.resultOrNull()?.documents?.map { it.id }?.toSet().orEmpty()
-
-            val exclusions = mutableSetOf<String>()
-            exclusions.addAll(blockedIds)
-            passed.resultOrNull()?.documents?.forEach { exclusions.add(it.id) }
+            val passedIds = passed.resultOrNull()?.documents?.map { it.id }?.toSet().orEmpty()
 
             // A match document exists as soon as either side likes, so only the
             // ones this user initiated are excluded — someone who liked *them*
             // should still show up, so they can like back.
-            liked.resultOrNull()?.documents
+            //
+            // Split by mutuality from the same already-loaded documents, so
+            // separating "matched" from "liked but not matched" costs no extra
+            // read: a mutual match is permanently excluded (they have a chat
+            // thread), a one-sided like only until the feed runs dry.
+            val myLikes = liked.resultOrNull()?.documents
                 ?.mapNotNull { Match.from(it) }
                 ?.filter { it.isLikeBy(selfUid) }
-                ?.mapNotNull { it.otherUserId(selfUid) }
-                ?.let { exclusions.addAll(it) }
+                .orEmpty()
 
-            onResult(FeedExclusions(blocked = blockedIds, all = exclusions))
+            val matchedIds = myLikes
+                .filter { it.isMutual() }
+                .mapNotNull { it.otherUserId(selfUid) }
+                .toSet()
+
+            val likedIds = myLikes
+                .filterNot { it.isMutual() }
+                .mapNotNull { it.otherUserId(selfUid) }
+                .toSet()
+
+            onResult(
+                FeedExclusions(
+                    blocked = blockedIds,
+                    matched = matchedIds,
+                    passed = passedIds,
+                    liked = likedIds
+                )
+            )
         }
 }
 
-/** The snapshot if the task succeeded, or null — never throws on a failure. */
+/**
+ * The snapshot if the task succeeded, or null — never throws on a failure.
+ *
+ * Reported as a non-fatal because this path fails *open* and is otherwise
+ * completely silent in production: a persistent failure here means users are
+ * shown people they blocked or already passed, with nothing on screen or in
+ * any dashboard to say why.
+ */
 private fun Task<QuerySnapshot>.resultOrNull(): QuerySnapshot? =
     if (isSuccessful) result else {
         Log.w(TAG, "A feed exclusion read failed; continuing without it", exception)
+        exception?.let { CrashReporting.record(it, "loadFeedExclusions read failed") }
         null
     }

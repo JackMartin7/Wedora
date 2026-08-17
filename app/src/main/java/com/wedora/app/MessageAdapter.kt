@@ -1,7 +1,10 @@
 package com.wedora.app
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,10 +32,20 @@ import com.wedora.app.databinding.ItemReactionPillBinding
  * (nothing left to delete or react to) or on a demo thread's messages, which
  * ChatThreadActivity's own setUpDemoThread routes through a completely
  * separate, Firestore-free adapter instance that never calls this at all.
+ *
+ * [otherUserName] labels a quoted-reply preview's sender when it isn't this
+ * user's own earlier message — the demo adapter's messages never carry a
+ * replyTo, so its default empty string is never actually shown.
+ *
+ * [onReplyPreviewTapped] fires with the quoted message's id when a bubble's
+ * quote block is tapped — ChatThreadActivity uses it to scroll to and
+ * briefly highlight the original (see [flashHighlight]).
  */
 class MessageAdapter(
     private val selfUid: String,
-    private val onLongPress: (Message) -> Unit = {}
+    private val otherUserName: String = "",
+    private val onLongPress: (Message) -> Unit = {},
+    private val onReplyPreviewTapped: (String) -> Unit = {}
 ) : ListAdapter<Message, MessageAdapter.MessageViewHolder>(DIFF) {
 
     private companion object {
@@ -43,6 +56,9 @@ class MessageAdapter(
             override fun areItemsTheSame(a: Message, b: Message) = a.id == b.id
             override fun areContentsTheSame(a: Message, b: Message) = a == b
         }
+
+        /** How long a jumped-to message's highlight flash stays visible. */
+        const val HIGHLIGHT_FLASH_MS = 900L
     }
 
     /**
@@ -61,10 +77,46 @@ class MessageAdapter(
         notifyItemRangeChanged(0, itemCount)
     }
 
+    /**
+     * Transient "jumped-to-this-message" flash, decoupled from [Message]
+     * itself the same way [otherLastReadAt] is — a highlight is presentation
+     * state, not something that belongs in a DiffUtil-compared data class.
+     */
+    private var highlightedMessageId: String? = null
+    private val highlightHandler = Handler(Looper.getMainLooper())
+    private var pendingUnhighlight: Runnable? = null
+
+    /** Briefly highlights [messageId]'s row, then clears itself — see [ChatThreadActivity]'s jump-to-reply. */
+    fun flashHighlight(messageId: String) {
+        pendingUnhighlight?.let { highlightHandler.removeCallbacks(it) }
+
+        val previous = highlightedMessageId
+        highlightedMessageId = messageId
+        rebindId(previous)
+        rebindId(messageId)
+
+        val runnable = Runnable {
+            highlightedMessageId = null
+            rebindId(messageId)
+        }
+        pendingUnhighlight = runnable
+        highlightHandler.postDelayed(runnable, HIGHLIGHT_FLASH_MS)
+    }
+
+    private fun rebindId(messageId: String?) {
+        if (messageId == null) return
+        val position = currentList.indexOfFirst { it.id == messageId }
+        if (position >= 0) notifyItemChanged(position)
+    }
+
     abstract class MessageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        private val bubbleContainer: LinearLayout = view.findViewById(R.id.bubbleContainer)
         private val text: TextView = view.findViewById(R.id.tvMessageText)
         private val time: TextView = view.findViewById(R.id.tvMessageTime)
         private val reactionsRow: LinearLayout = view.findViewById(R.id.reactionsRow)
+        private val quoteBlock: LinearLayout = view.findViewById(R.id.quoteBlock)
+        private val quoteSender: TextView = view.findViewById(R.id.tvQuoteSender)
+        private val quoteText: TextView = view.findViewById(R.id.tvQuoteText)
 
         /**
          * This bubble type's ordinary text color (white for sent, dark for
@@ -100,10 +152,16 @@ class MessageAdapter(
          * bound a deleted message and now binds a normal one needs its
          * drawable/color/style explicitly put back, not just left alone.
          */
-        protected fun bindTextAndTime(message: Message) {
+        protected fun bindTextAndTime(
+            message: Message,
+            selfUid: String,
+            otherUserName: String,
+            isHighlighted: Boolean,
+            onReplyPreviewTapped: (String) -> Unit
+        ) {
             if (message.deleted) {
                 text.text = itemView.context.getString(R.string.message_deleted_placeholder)
-                text.setBackgroundResource(deletedBubbleBackgroundRes)
+                bubbleContainer.setBackgroundResource(deletedBubbleBackgroundRes)
                 text.setTextColor(ContextCompat.getColor(itemView.context, R.color.wedora_message_deleted))
                 text.setTypeface(text.typeface, Typeface.ITALIC)
                 val icon = ContextCompat.getDrawable(itemView.context, R.drawable.ic_no_entry)?.mutate()
@@ -112,13 +170,18 @@ class MessageAdapter(
                 text.compoundDrawablePadding =
                     (4 * itemView.context.resources.displayMetrics.density).toInt()
                 bindReactions(emptyMap())
+                // A deleted message reads as a system notice with nothing of
+                // its own left to quote — see this function's own doc
+                // comment on the deleted-state treatment generally.
+                quoteBlock.visibility = View.GONE
             } else {
                 text.text = message.text
-                text.setBackgroundResource(normalBubbleBackgroundRes)
+                bubbleContainer.setBackgroundResource(normalBubbleBackgroundRes)
                 text.setTextColor(ContextCompat.getColor(itemView.context, normalTextColorRes))
                 text.setTypeface(text.typeface, Typeface.NORMAL)
                 text.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
                 bindReactions(message.reactions)
+                bindQuote(message.replyTo, selfUid, otherUserName, onReplyPreviewTapped)
             }
 
             val stamp = formatChatTimestamp(itemView.context, message.sentAt)
@@ -126,6 +189,43 @@ class MessageAdapter(
             // A message still awaiting its server timestamp has nothing
             // meaningful to show, so hide the line rather than leave a gap.
             time.visibility = if (stamp.isBlank()) View.GONE else View.VISIBLE
+
+            // Jumped-to-this-message flash — see MessageAdapter.flashHighlight.
+            // Applied to the whole row rather than just the bubble so it
+            // reads clearly even for a short message.
+            itemView.setBackgroundColor(
+                if (isHighlighted) {
+                    ContextCompat.getColor(itemView.context, R.color.wedora_accent_tint_12)
+                } else {
+                    Color.TRANSPARENT
+                }
+            )
+        }
+
+        /**
+         * The quoted-reply strip. [ReplyPreview.text] is a snapshot taken
+         * when the reply was sent (see [Message.replyTo]'s own doc comment)
+         * — never a live read of the original message — so this needs
+         * nothing beyond what's already on [replyTo] to render.
+         */
+        private fun bindQuote(
+            replyTo: Message.ReplyPreview?,
+            selfUid: String,
+            otherUserName: String,
+            onReplyPreviewTapped: (String) -> Unit
+        ) {
+            if (replyTo == null) {
+                quoteBlock.visibility = View.GONE
+                return
+            }
+            quoteBlock.visibility = View.VISIBLE
+            quoteSender.text = if (replyTo.senderId == selfUid) {
+                itemView.context.getString(R.string.replying_to_you_label)
+            } else {
+                otherUserName
+            }
+            quoteText.text = replyTo.text
+            quoteBlock.setOnClickListener { onReplyPreviewTapped(replyTo.messageId) }
         }
 
         /** One pill per distinct emoji, e.g. "❤️ 2" — hidden entirely when nobody's reacted. */
@@ -148,7 +248,14 @@ class MessageAdapter(
                 }
         }
 
-        abstract fun bind(message: Message, otherLastReadAt: Timestamp?)
+        abstract fun bind(
+            message: Message,
+            otherLastReadAt: Timestamp?,
+            selfUid: String,
+            otherUserName: String,
+            isHighlighted: Boolean,
+            onReplyPreviewTapped: (String) -> Unit
+        )
     }
 
     private class ReceivedViewHolder(view: View) : MessageViewHolder(view) {
@@ -156,8 +263,15 @@ class MessageAdapter(
         override val normalBubbleBackgroundRes = R.drawable.bg_bubble_received
         override val deletedBubbleBackgroundRes = R.drawable.bg_bubble_deleted_received
 
-        override fun bind(message: Message, otherLastReadAt: Timestamp?) {
-            bindTextAndTime(message)
+        override fun bind(
+            message: Message,
+            otherLastReadAt: Timestamp?,
+            selfUid: String,
+            otherUserName: String,
+            isHighlighted: Boolean,
+            onReplyPreviewTapped: (String) -> Unit
+        ) {
+            bindTextAndTime(message, selfUid, otherUserName, isHighlighted, onReplyPreviewTapped)
         }
     }
 
@@ -176,8 +290,15 @@ class MessageAdapter(
         override val deletedBubbleBackgroundRes = R.drawable.bg_bubble_deleted_sent
         private val status: ImageView = view.findViewById(R.id.ivMessageStatus)
 
-        override fun bind(message: Message, otherLastReadAt: Timestamp?) {
-            bindTextAndTime(message)
+        override fun bind(
+            message: Message,
+            otherLastReadAt: Timestamp?,
+            selfUid: String,
+            otherUserName: String,
+            isHighlighted: Boolean,
+            onReplyPreviewTapped: (String) -> Unit
+        ) {
+            bindTextAndTime(message, selfUid, otherUserName, isHighlighted, onReplyPreviewTapped)
 
             val sentAt = message.sentAt
             val readAt = otherLastReadAt
@@ -211,7 +332,14 @@ class MessageAdapter(
 
     override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
         val message = getItem(position)
-        holder.bind(message, otherLastReadAt)
+        holder.bind(
+            message,
+            otherLastReadAt,
+            selfUid,
+            otherUserName,
+            isHighlighted = message.id == highlightedMessageId,
+            onReplyPreviewTapped = onReplyPreviewTapped
+        )
         holder.itemView.setOnLongClickListener {
             if (!message.deleted) onLongPress(message)
             true

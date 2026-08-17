@@ -87,6 +87,26 @@ class SignUpActivity : WedoraBaseActivity() {
         setUpLoginPrompt()
         setUpAgreementLinks()
 
+        // Where the intro carousel lands (see OnboardingActivity.finishOnboarding),
+        // and where its now-one-way back button eventually deposits everyone —
+        // so this is the first screen in the flow where back should be able to
+        // leave the app, and the first that should ask before doing so.
+        //
+        // isTaskRoot inside the helper is what keeps this correct in both
+        // directions: arriving from onboarding (which finishes itself) makes
+        // this the root and shows the sheet, while arriving from Login (which
+        // does not finish) leaves something underneath, so back simply returns
+        // there. Counts are zero because a pre-auth screen has no likes or
+        // messages to personalise with — resolveExitConfirmKind falls through
+        // to GENERIC.
+        //
+        // btnBack routes through the same dispatcher, so the on-screen arrow
+        // shows the sheet too whenever back would exit.
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(unseenLikes = 0, unreadMessages = 0)
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
+
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
         binding.btnTogglePassword.setOnClickListener { togglePasswordVisibility() }
         binding.tvLoginPrompt.setOnClickListener { goToLogin() }

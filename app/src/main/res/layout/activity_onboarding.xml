@@ -5,27 +5,13 @@
     android:layout_height="match_parent"
     android:background="@color/wedora_bg">
 
-    <!-- Skip -->
-    <TextView
-        android:id="@+id/tvSkip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="20dp"
-        android:padding="8dp"
-        android:text="@string/onboarding_skip"
-        android:textColor="@color/wedora_text_secondary"
-        android:textSize="14sp"
-        android:fontFamily="@font/poppins_medium"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <!-- Slides -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/tvSkip"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/indicatorContainer" />
@@ -42,16 +28,35 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/btnNext" />
 
+    <!-- Bottom row: Skip (left) + Next/Get Started (right), replacing Skip's
+         old top-right corner spot. Vertically centered against btnNext so it
+         tracks the button's own height rather than needing a separate
+         bottom margin. -->
+    <TextView
+        android:id="@+id/tvSkip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:padding="8dp"
+        android:text="@string/onboarding_skip"
+        android:textColor="@color/wedora_text_secondary"
+        android:textSize="14sp"
+        android:fontFamily="@font/poppins_medium"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnNext"
+        app:layout_constraintBottom_toBottomOf="@id/btnNext" />
+
     <!-- Next / Get Started. AppCompatButton for the same reason as the auth
          screens: MaterialButton would ignore our android:background. -->
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnNext"
         style="@style/WedoraPrimaryButton"
         android:layout_width="0dp"
-        android:layout_marginHorizontal="32dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="32dp"
         android:layout_marginBottom="40dp"
         android:text="@string/onboarding_next"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tvSkip"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent" />
 

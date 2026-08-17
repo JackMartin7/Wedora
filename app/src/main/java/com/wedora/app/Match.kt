@@ -108,6 +108,13 @@ fun logFirestoreWriteFailure(tag: String, what: String, e: Exception) {
     } else {
         Log.w(tag, "$what: ${code?.name ?: e.javaClass.simpleName}", e)
     }
+
+    // Every write failure already routed through this function reaches
+    // Crashlytics from here — one edit rather than one per call site, and
+    // the reason this function was worth having in the first place. Tagged
+    // with the failing code so a rules-deploy regression (the
+    // PERMISSION_DENIED case above) groups separately from a network blip.
+    CrashReporting.record(e, "$what [${code?.name ?: "no-code"}]")
 }
 
 /**
@@ -313,9 +320,31 @@ data class Match(
 
         /** Null when the document has no usable `users` array. */
         fun from(snapshot: DocumentSnapshot): Match? {
+            // A dropped match is a chat thread, a like, or a feed exclusion
+            // silently going missing. Reported once per process — this runs
+            // per document across whole snapshots, so an unguarded report
+            // would flood on a systematically bad collection.
             @Suppress("UNCHECKED_CAST")
-            val users = snapshot.get(FIELD_USERS) as? List<String> ?: return null
-            if (users.size != 2) return null
+            val users = snapshot.get(FIELD_USERS) as? List<String> ?: run {
+                CrashReporting.recordOnce(
+                    key = "match_missing_users",
+                    throwable = IllegalStateException(
+                        "Match ${snapshot.id} has no usable $FIELD_USERS array; dropped"
+                    ),
+                    where = "Match.from"
+                )
+                return null
+            }
+            if (users.size != 2) {
+                CrashReporting.recordOnce(
+                    key = "match_wrong_user_count",
+                    throwable = IllegalStateException(
+                        "Match ${snapshot.id} has ${users.size} participants, expected 2; dropped"
+                    ),
+                    where = "Match.from"
+                )
+                return null
+            }
 
             val likedUsers = parseLikedUsers(snapshot)
             return Match(

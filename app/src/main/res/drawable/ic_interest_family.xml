@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- House, for the Family Time interest chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:fillType="evenOdd"
+        android:pathData="M12,3 L22,12 L19,12 L19,20 L5,20 L5,12 L2,12 Z
+            M10,14.5 L14,14.5 L14,20 L10,20 Z" />
+</vector>

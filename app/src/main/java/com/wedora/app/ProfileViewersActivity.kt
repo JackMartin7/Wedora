@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
+import com.google.android.gms.ads.nativead.NativeAd
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -34,6 +35,16 @@ class ProfileViewersActivity : WedoraBaseActivity() {
         startActivity(ProfileDetailActivity.intent(this, viewer.viewerUid))
     }
 
+    /**
+     * Reuses the Likes ad unit rather than minting another: both are the
+     * same "free user looking at gated social proof" context, and one unit
+     * with more traffic reports more usefully than two starved ones.
+     */
+    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_LIKES)
+
+    /** The ad currently bound into the banner; destroyed when replaced or on exit. */
+    private var loadedAd: NativeAd? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileViewersBinding.inflate(layoutInflater)
@@ -51,7 +62,23 @@ class ProfileViewersActivity : WedoraBaseActivity() {
         binding.premiumBanner.setOnClickListener(openUpgrade)
         binding.btnBannerAction.setOnClickListener(openUpgrade)
 
+        // Kicked off before load()'s own round trip so an ad is likely ready
+        // by the time showTeaser needs one. No-ops for Premium.
+        adPool.refill()
+
         load()
+    }
+
+    /**
+     * Native ads hold their own resources until told to let go — both the
+     * one bound into the banner and anything still pooled. Same reasoning as
+     * every other ad-carrying screen's onDestroy.
+     */
+    override fun onDestroy() {
+        loadedAd?.destroy()
+        loadedAd = null
+        adPool.destroyAll()
+        super.onDestroy()
     }
 
     private fun load() {
@@ -126,6 +153,33 @@ class ProfileViewersActivity : WedoraBaseActivity() {
         binding.rvViewers.visibility = View.GONE
         binding.teaserSection.visibility = View.VISIBLE
         buildFeaturedTiles()
+        showAdBanner()
+    }
+
+    /**
+     * The free-tier ad slot under the upgrade banner.
+     *
+     * Only reached from [showTeaser], so it's inherently free-users-only —
+     * a Premium account takes the [loadAndShowViewers] branch and never gets
+     * here. [NativeAdPool.refill] re-checks isPremium anyway, which is what
+     * makes that belt-and-braces rather than a second source of truth.
+     *
+     * Polls whatever is already loaded and gives up quietly if nothing is:
+     * the slot stays hidden rather than showing an empty card, and the
+     * refill below means one is usually ready by the next visit.
+     */
+    private fun showAdBanner() {
+        val ad = adPool.poll()
+        if (ad == null) {
+            binding.adBanner.root.visibility = View.GONE
+            adPool.refill()
+            return
+        }
+        loadedAd?.destroy()
+        loadedAd = ad
+        binding.adBanner.bindNativeAd(ad)
+        binding.adBanner.root.visibility = View.VISIBLE
+        adPool.refill()
     }
 
     /**

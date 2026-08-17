@@ -1,7 +1,9 @@
 package com.wedora.app
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -40,7 +42,8 @@ class ChatThreadActivity :
     WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
     GuestChatBlockedBottomSheet.Host,
-    MessageActionsBottomSheet.Host {
+    MessageActionsBottomSheet.Host,
+    RateAppBottomSheet.Host {
 
     companion object {
         private const val TAG = "WedoraChat"
@@ -91,7 +94,15 @@ class ChatThreadActivity :
 
     private lateinit var selfUid: String
     private lateinit var otherUid: String
+    private lateinit var otherUserName: String
     private lateinit var matchId: String
+
+    /**
+     * Set by [onReplyRequested] (MessageActionsBottomSheet's Reply option),
+     * cleared once [sendMessage] uses it or [clearStagedReply] cancels it.
+     * Null means the composer is a plain send with no reply attached.
+     */
+    private var stagedReply: Message? = null
 
     private var messagesListener: ListenerRegistration? = null
 
@@ -188,8 +199,9 @@ class ChatThreadActivity :
         selfUid = uid
         otherUid = otherUserId
         matchId = Match.idFor(selfUid, otherUid)
+        otherUserName = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
 
-        binding.tvChatTitle.text = intent.getStringExtra(EXTRA_OTHER_USER_NAME).orEmpty()
+        binding.tvChatTitle.text = otherUserName
         // The whole header (avatar + name + status) opens the other person's
         // profile. Uses the intent factory so the extra key can't drift.
         binding.chatHeader.setOnClickListener {
@@ -200,8 +212,14 @@ class ChatThreadActivity :
         // to whatever happened to launch the thread (a Home card, a profile).
         onBackPressedDispatcher.addCallback(this) { goToChats() }
         binding.btnSend.setOnClickListener { sendMessage() }
+        binding.btnCancelReply.setOnClickListener { clearStagedReply() }
 
-        adapter = MessageAdapter(selfUid) { message -> showMessageActions(message) }
+        adapter = MessageAdapter(
+            selfUid,
+            otherUserName,
+            onLongPress = { message -> showMessageActions(message) },
+            onReplyPreviewTapped = { messageId -> jumpToMessage(messageId) }
+        )
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
         binding.rvMessages.adapter = adapter
         binding.rvMessages.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -244,7 +262,7 @@ class ChatThreadActivity :
         binding.btnBack.setOnClickListener { goToChats() }
         onBackPressedDispatcher.addCallback(this) { goToChats() }
 
-        val demoAdapter = MessageAdapter(DEMO_SELF_UID)
+        val demoAdapter = MessageAdapter(DEMO_SELF_UID, demoName)
         binding.rvMessages.layoutManager = LinearLayoutManager(this)
         binding.rvMessages.adapter = demoAdapter
         val demoMessages = demoMessagesFor(demoName)
@@ -555,32 +573,74 @@ class ChatThreadActivity :
         val text = binding.etMessage.text.toString().trim()
         if (text.isEmpty()) return
 
+        // Contact-sharing check runs before anything is cleared, staged or
+        // written: a flagged message is blocked outright with no send-anyway
+        // path, and the composer deliberately keeps what was typed so the
+        // user can edit it down rather than losing it. firestore.rules
+        // re-checks this server-side for a client that skips the UI.
+        val flagged = ContactShareDetector.detect(text)
+        if (flagged.isNotEmpty()) {
+            ContactShareBlockedBottomSheet.show(supportFragmentManager)
+            // Fire-and-forget: the message is blocked either way, and a
+            // failed log is nothing the user could act on.
+            logContactShareAttempt(
+                firestore, selfUid, matchId, text, flagged.map { it.id }
+            ).addOnFailureListener { e ->
+                Log.w(TAG, "Failed to log blocked contact-share attempt", e)
+            }
+            return
+        }
+
+        // Captured before clearing, same reasoning as text below — restored
+        // together if the send doesn't happen.
+        val replyForSend = stagedReply
+        val replyPreview = replyForSend?.let {
+            Message.ReplyPreview(
+                messageId = it.id,
+                senderId = it.senderId,
+                text = (if (it.deleted) getString(R.string.message_deleted_placeholder) else it.text)
+                    .take(Message.REPLY_PREVIEW_MAX_CHARS)
+            )
+        }
+
         // Cleared immediately: the snapshot listener echoes the message back
         // from the local cache before the server round-trip, so the thread
         // updates without waiting. Restored if the send doesn't happen —
         // daily limit, or the write itself failing — so nothing typed is lost.
         binding.etMessage.text.clear()
+        clearStagedReply()
 
-        sendMessageRespectingDailyLimit(firestore, selfUid, otherUid, matchId, text) { attempt ->
+        sendMessageRespectingDailyLimit(firestore, selfUid, otherUid, matchId, text, replyPreview) { attempt ->
             when (attempt) {
                 is MessageSendAttempt.DailyLimitReached -> {
                     binding.etMessage.setText(text)
                     binding.etMessage.setSelection(text.length)
+                    replyForSend?.let { stageReply(it) }
                     DailyLimitReachedBottomSheet.show(
                         supportFragmentManager, DailyLimitReachedBottomSheet.Kind.MESSAGES
                     )
                 }
                 is MessageSendAttempt.Started -> {
                     // The onMessageSent Cloud Function (functions/src/index.ts)
-                    // fires straight off this write once it lands — nothing
-                    // left for this Activity to do on success beyond letting
-                    // the snapshot listener echo the message back.
-                    attempt.task.addOnFailureListener { e ->
-                        Log.w(TAG, "Failed to send message", e)
-                        binding.etMessage.setText(text)
-                        binding.etMessage.setSelection(text.length)
-                        Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
-                    }
+                    // fires straight off this write once it lands, so the only
+                    // thing left for this Activity on success is the
+                    // rate-prompt milestone — the snapshot listener echoes the
+                    // message back on its own.
+                    attempt.task
+                        .addOnSuccessListener {
+                            // Counted on confirmed success rather than on
+                            // attempt, so a send that never landed doesn't
+                            // move the user toward the milestone.
+                            RatePromptPrefs.recordMessageSent(this)
+                            maybeShowRatePrompt()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Failed to send message", e)
+                            binding.etMessage.setText(text)
+                            binding.etMessage.setSelection(text.length)
+                            replyForSend?.let { stageReply(it) }
+                            Toast.makeText(this, R.string.error_message_send_failed, Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         }
@@ -588,6 +648,88 @@ class ChatThreadActivity :
 
     override fun onUpgradeFromDailyLimitRequested() {
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
+    }
+
+    override fun onWatchAdForBonusRequested(kind: DailyLimitReachedBottomSheet.Kind) {
+        runRewardedBonusFlow(kind)
+    }
+
+    /**
+     * Shows the rate prompt if this send was the one that earned it.
+     *
+     * Lives here rather than in an app-wide observer because a sheet needs a
+     * FragmentManager: every object attached in WedoraApplication
+     * ([PremiumStatus], [CrashReporting], MatchNotificationWatcher) manages
+     * state and never puts anything on screen, precisely because it has no
+     * Activity to put it on.
+     *
+     * Guests never reach this at all — setUpDemoThread wires Send to the
+     * blocked sheet instead, so a demo thread can't advance the milestone.
+     */
+    private fun maybeShowRatePrompt() {
+        // The send confirmation can land after the user has left the thread.
+        if (isFinishing || isDestroyed) return
+        if (!RatePromptPrefs.shouldPrompt(this, RatePromptPrefs.Trigger.THIRD_MESSAGE)) return
+
+        RatePromptPrefs.recordPromptShown(this)
+        RateAppBottomSheet.show(supportFragmentManager)
+    }
+
+    /**
+     * Settled before the intent is fired, not after: nothing reports back
+     * whether a rating was actually left, so "they went to the listing" is
+     * the strongest signal available and re-asking past it would be nagging.
+     * That holds even if the listing fails to open below — a user who opted
+     * in has already answered the question this prompt asks.
+     */
+    override fun onRateAppRequested() {
+        RatePromptPrefs.settle(this)
+        openPlayStoreListing()
+    }
+
+    /**
+     * Populates and reveals the composer's staged-reply strip — see
+     * [stagedReply]'s own doc comment. [message.deleted] is defensive: the
+     * actions sheet already refuses to open for a deleted message, so this
+     * only matters if a delete lands in the narrow window between long-press
+     * and tapping Reply.
+     */
+    private fun stageReply(message: Message) {
+        stagedReply = message
+        binding.tvReplyPreviewLabel.text = if (message.senderId == selfUid) {
+            getString(R.string.replying_to_you)
+        } else {
+            getString(R.string.replying_to_format, otherUserName)
+        }
+        binding.tvReplyPreviewText.text =
+            if (message.deleted) getString(R.string.message_deleted_placeholder) else message.text
+        binding.replyPreviewContainer.visibility = View.VISIBLE
+    }
+
+    private fun clearStagedReply() {
+        stagedReply = null
+        binding.replyPreviewContainer.visibility = View.GONE
+    }
+
+    override fun onReplyRequested(messageId: String) {
+        loadedMessages[messageId]?.let { stageReply(it) }
+    }
+
+    /**
+     * Scrolls to and briefly highlights the original message a quoted-reply
+     * preview points at. Only works if that message is currently in the
+     * adapter's bound list — the paginated history beyond what's loaded
+     * isn't searched, since that could mean an open-ended chain of
+     * loadOlderMessages() calls for a reply to something from very far back.
+     */
+    private fun jumpToMessage(messageId: String) {
+        val position = adapter.currentList.indexOfFirst { it.id == messageId }
+        if (position < 0) {
+            Toast.makeText(this, R.string.message_original_not_loaded, Toast.LENGTH_SHORT).show()
+            return
+        }
+        binding.rvMessages.smoothScrollToPosition(position)
+        adapter.flashHighlight(messageId)
     }
 
     private fun showMessageActions(message: Message) {
@@ -676,7 +818,25 @@ class ChatThreadActivity :
      * reattaches, and that blank frame is what showed through as a flash during
      * the slide transition, most visibly in dark mode.
      */
+    /**
+     * Shows the between-screens interstitial first when one is due — see
+     * [InterstitialAds] for the budget shared with the swipe and
+     * profile-close sources.
+     *
+     * The ad must precede the navigation: an Activity that has already
+     * finished can't host one. [InterstitialAds.show] guarantees its
+     * callback fires exactly once even with no ad loaded, so this always
+     * reaches [navigateToChats].
+     */
     private fun goToChats() {
+        if (InterstitialAds.onEvent(this, InterstitialAds.Trigger.CHAT_EXIT)) {
+            InterstitialAds.show(this) { navigateToChats() }
+        } else {
+            navigateToChats()
+        }
+    }
+
+    private fun navigateToChats() {
         startActivity(
             Intent(this, ChatsActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)

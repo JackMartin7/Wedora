@@ -75,6 +75,19 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
      */
     private var geocodeToken = 0
 
+    /**
+     * Whether this profile already carries a createdAt, so [stepUpdates]
+     * knows not to write a fresh one. This step has a back arrow, so it can
+     * legitimately be saved more than once — and since createdAt now drives
+     * "newest first" in the feed (see Feed.kt), rewriting it on a re-save
+     * would silently reset an existing account's position to brand new.
+     *
+     * Defaults to false so a profile whose read failed still gets one
+     * written: a missing createdAt sorts as oldest, which is worse for that
+     * user than a slightly late one.
+     */
+    private var hasStoredCreatedAt = false
+
     private val requestLocationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) detectLocation() else showManualLocationMode()
@@ -83,6 +96,7 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
     // Visual step number only — class name and its own string resources
     // (step4_title/step4_subtitle) stay as-is; see the comment on those.
     override val stepNumber = 5
+    override val stepId = OnboardingAnalytics.STEP_NAME_DETAILS
     override val titleRes = R.string.step4_title
     override val subtitleRes = R.string.step4_subtitle
     override val contentLayoutRes = R.layout.view_step_details
@@ -123,6 +137,7 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
     }
 
     override fun onExistingProfile(profile: UserProfile) {
+        hasStoredCreatedAt = profile.createdAt != null
         profile.age?.let { if (etAge.text.isEmpty()) etAge.setText(it.toString()) }
         // Only pre-fills the manual fields; a stored place shouldn't override a
         // fresh detection that may already have landed.
@@ -243,11 +258,15 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
         val updates = mutableMapOf<String, Any?>(
             UserProfile.FIELD_AGE to enteredAge(),
             UserProfile.FIELD_CITY to place.city,
-            UserProfile.FIELD_COUNTRY to place.country,
-            // Set here rather than at sign-up: this is the point the profile
-            // becomes real enough to appear in anyone's feed.
-            UserProfile.FIELD_CREATED_AT to FieldValue.serverTimestamp()
+            UserProfile.FIELD_COUNTRY to place.country
         )
+        // Set here rather than at sign-up: this is the point the profile
+        // becomes real enough to appear in anyone's feed. Written once and
+        // only once — see [hasStoredCreatedAt] for why a re-save must not
+        // refresh it.
+        if (!hasStoredCreatedAt) {
+            updates[UserProfile.FIELD_CREATED_AT] = FieldValue.serverTimestamp()
+        }
         // A GPS-detected place carries its own fix; a manually typed one falls
         // back to whatever scheduleManualGeocode() resolved for it, if the
         // debounce settled in time. Neither being available leaves the fields

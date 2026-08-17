@@ -30,7 +30,23 @@ data class DiscoverProfile(
  */
 sealed class DiscoverGridItem {
     data class Profile(val profile: DiscoverProfile) : DiscoverGridItem()
-    data class Ad(val ad: NativeAd) : DiscoverGridItem()
+
+    /**
+     * A position reserved for an ad before any ad exists, at the cadence
+     * [AlternatingAdGap] decides — the reserve-then-fill half of the design.
+     *
+     * [ad] is null until one loads, and the slot renders a placeholder in the
+     * meantime. What matters is that the slot is in the list from the first
+     * render: filling it changes an item's contents, never the list's length,
+     * so nothing around it moves. The previous model appended ads as they
+     * arrived, which shifted every following tile down.
+     *
+     * [slotId] is the slot's identity, deliberately independent of [ad]:
+     * DiffUtil uses it for areItemsTheSame, so an arriving ad reads as "this
+     * item's contents changed" (rebind one position) rather than "a new item
+     * appeared" (insert and shift).
+     */
+    data class AdSlot(val slotId: Int, val ad: NativeAd?) : DiscoverGridItem()
 }
 
 /**
@@ -51,11 +67,24 @@ class DiscoverAdapter(
                 when {
                     a is DiscoverGridItem.Profile && b is DiscoverGridItem.Profile ->
                         a.profile.userId == b.profile.userId
-                    a is DiscoverGridItem.Ad && b is DiscoverGridItem.Ad -> a.ad === b.ad
+                    // By slotId, not by ad: a slot that just received its ad
+                    // is still the SAME item, which is what turns a fill into
+                    // a one-position rebind instead of an insertion.
+                    a is DiscoverGridItem.AdSlot && b is DiscoverGridItem.AdSlot ->
+                        a.slotId == b.slotId
                     else -> false
                 }
 
-            override fun areContentsTheSame(a: DiscoverGridItem, b: DiscoverGridItem) = a == b
+            override fun areContentsTheSame(a: DiscoverGridItem, b: DiscoverGridItem): Boolean =
+                when {
+                    // Identity, not equals: NativeAd doesn't define equality,
+                    // and "did this slot get filled" is exactly an identity
+                    // question — null to non-null, or one ad swapped for
+                    // another on a rebuild.
+                    a is DiscoverGridItem.AdSlot && b is DiscoverGridItem.AdSlot ->
+                        a.ad === b.ad
+                    else -> a == b
+                }
         }
     }
 
@@ -89,7 +118,24 @@ class DiscoverAdapter(
         private val binding: ItemNativeAdGridBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(ad: NativeAd) = with(binding) {
+        /**
+         * [ad] null means the slot is reserved but unfilled — render the
+         * placeholder and don't touch the NativeAdView's ad wiring.
+         *
+         * Both states are this one inflated layout, which is what makes the
+         * "nothing resizes when the real ad arrives" guarantee structural
+         * rather than a matter of matching two sets of dimensions by hand.
+         */
+        fun bind(ad: NativeAd?) = with(binding) {
+            if (ad == null) {
+                adLoading.visibility = View.VISIBLE
+                adContent.visibility = View.INVISIBLE
+                return@with
+            }
+
+            adLoading.visibility = View.GONE
+            adContent.visibility = View.VISIBLE
+
             tvAdHeadline.text = ad.headline
             tvAdCta.text = ad.callToAction
             tvAdCta.visibility = if (ad.callToAction.isNullOrBlank()) View.GONE else View.VISIBLE
@@ -103,7 +149,9 @@ class DiscoverAdapter(
 
     override fun getItemViewType(position: Int): Int = when (getItem(position)) {
         is DiscoverGridItem.Profile -> VIEW_TYPE_PROFILE
-        is DiscoverGridItem.Ad -> VIEW_TYPE_AD
+        // Constant for the life of the slot, filled or not — the type never
+        // flips under an already-inflated view.
+        is DiscoverGridItem.AdSlot -> VIEW_TYPE_AD
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -118,7 +166,7 @@ class DiscoverAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
             is DiscoverGridItem.Profile -> (holder as DiscoverViewHolder).bind(item.profile)
-            is DiscoverGridItem.Ad -> (holder as AdViewHolder).bind(item.ad)
+            is DiscoverGridItem.AdSlot -> (holder as AdViewHolder).bind(item.ad)
         }
     }
 }

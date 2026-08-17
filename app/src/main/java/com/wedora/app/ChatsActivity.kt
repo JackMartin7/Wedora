@@ -9,6 +9,7 @@ import androidx.activity.addCallback
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldPath
@@ -78,6 +79,16 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
         onSelectionChanged = { selectionMode, count -> updateSelectionUi(selectionMode, count) }
     )
 
+    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_CHATS)
+
+    /**
+     * Ads woven into the current list, kept so onDestroy can release them —
+     * unlike the feed screens this list is rebuilt on every search keystroke
+     * (see showChats), so ads are polled once per real rebuild rather than
+     * per filter pass; see [buildChatListItems].
+     */
+    private val shownAds = mutableListOf<NativeAd>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityChatsBinding.inflate(layoutInflater)
@@ -86,6 +97,10 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
 
         binding.rvChats.layoutManager = LinearLayoutManager(this)
         binding.rvChats.adapter = adapter
+
+        // Kicked off before the conversation query so an ad is likely ready
+        // by the time the first list is built. No-ops for Premium.
+        adPool.refill()
 
         setUpWedoraBottomNav(binding.bottomNav, R.id.nav_chats)
 
@@ -239,8 +254,45 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
         } else {
             binding.emptyState.hide()
             binding.rvChats.visibility = View.VISIBLE
-            adapter.submitList(filtered)
+            adapter.submitList(buildChatListItems(filtered))
         }
+    }
+
+    /**
+     * Weaves ads into [chats] at [ChatAdGap]'s cadence for non-Premium users.
+     *
+     * Unlike the feed screens there's no pending-slot/backfill machinery
+     * here: this runs again on every search keystroke, so a slot that
+     * couldn't be filled this pass is simply skipped, and the next rebuild
+     * gets another chance from a pool that has since refilled. Adding
+     * backfill on top of a list that re-diffs per keystroke would fight
+     * itself for no benefit.
+     *
+     * Ads already handed to the adapter are tracked in [shownAds] and reused
+     * across rebuilds rather than re-polled, so typing in the search box
+     * doesn't burn through the pool or churn impressions.
+     */
+    private fun buildChatListItems(chats: List<ChatPreview>): List<ChatListItem> {
+        if (PremiumStatus.isPremium()) return chats.map { ChatListItem.Chat(it) }
+
+        val gap = ChatAdGap()
+        val items = mutableListOf<ChatListItem>()
+        var adIndex = 0
+
+        chats.forEach { chat ->
+            items += ChatListItem.Chat(chat)
+            if (!gap.afterChat()) return@forEach
+
+            // Reuse an ad already on screen for this slot index before
+            // spending a new one from the pool.
+            val ad = shownAds.getOrNull(adIndex) ?: adPool.poll()?.also { shownAds += it }
+            if (ad != null) {
+                items += ChatListItem.Ad(ad)
+                adIndex++
+                adPool.refill()
+            }
+        }
+        return items
     }
 
     private fun ChatPreview.matchesSearch(query: String): Boolean {
@@ -258,6 +310,18 @@ class ChatsActivity : WedoraBaseActivity(), DeleteChatsBottomSheet.Host {
         matchesListener?.remove()
         matchesListener = null
         super.onStop()
+    }
+
+    /**
+     * Native ads hold their own resources until explicitly released — both
+     * the ones woven into the current list and anything still pooled. Same
+     * reasoning as every other ad-carrying screen's onDestroy.
+     */
+    override fun onDestroy() {
+        shownAds.forEach { it.destroy() }
+        shownAds.clear()
+        adPool.destroyAll()
+        super.onDestroy()
     }
 
     /**

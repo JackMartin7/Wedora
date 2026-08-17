@@ -25,7 +25,10 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import com.wedora.app.databinding.ActivityAccountSettingsBinding
 import com.wedora.app.databinding.DialogPasswordPromptBinding
 
@@ -459,19 +462,77 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
                 refs.add(firestore.collection(UserProfile.COLLECTION).document(uid))
 
                 deleteInBatches(refs)
-                    .addOnSuccessListener { deleteAuthAccount(user) }
+                    .addOnSuccessListener { deleteProfilePhotoThenAuth(user) }
                     .addOnFailureListener { e ->
-                        Log.w(TAG, "Failed to delete Firestore data for $uid; account not deleted", e)
-                        setBusy(false)
-                        Toast.makeText(
-                            this, R.string.error_account_delete_failed, Toast.LENGTH_LONG
-                        ).show()
+                        reportDeleteFailure("delete Firestore data", uid, e)
                     }
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to enumerate data to delete for $uid; account not deleted", e)
-                setBusy(false)
-                Toast.makeText(this, R.string.error_account_delete_failed, Toast.LENGTH_LONG).show()
+                reportDeleteFailure("enumerate data to delete", uid, e)
+            }
+    }
+
+    /**
+     * One place for every delete-account failure: the local log, a
+     * Crashlytics non-fatal, and the toast.
+     *
+     * Crashlytics rather than logcat alone because this failure is
+     * data-dependent — the PERMISSION_DENIED on profileViews that prompted
+     * this only ever fired for users who had actually been viewed, so it was
+     * invisible in testing and only visible in the field with a cable
+     * attached. Account deletion is also a legal obligation in several
+     * markets, which is a poor thing to be quietly failing.
+     *
+     * The Firestore status code is pulled into the message rather than left
+     * inside the exception's text: PERMISSION_DENIED vs UNAVAILABLE is the
+     * whole diagnosis, and it's what groups usefully in the dashboard.
+     */
+    private fun reportDeleteFailure(step: String, uid: String, e: Exception) {
+        val code = (e as? FirebaseFirestoreException)?.code?.name ?: "n/a"
+        CrashReporting.record(
+            IllegalStateException("Account deletion failed to $step (code=$code)", e),
+            where = "AccountSettingsActivity.deleteAccount"
+        )
+        Log.w(TAG, "Failed to $step for $uid (code=$code); account not deleted", e)
+        setBusy(false)
+        Toast.makeText(this, R.string.error_account_delete_failed, Toast.LENGTH_LONG).show()
+    }
+
+    /**
+     * Removes the hosted profile photo, then deletes the Auth account.
+     *
+     * Storage was the one store account deletion never touched, so every
+     * deleted account left `profile_photos/{uid}/photo.jpg` behind for good —
+     * bytes with no owner, no reference from any document, and nothing that
+     * would ever clean them up.
+     *
+     * Before the Auth deletion, for the same reason the Firestore pass is:
+     * storage.rules scopes the write to the owning uid, so deleting the Auth
+     * account first would revoke the credential this delete needs.
+     *
+     * ERROR_OBJECT_NOT_FOUND counts as success — a user who never uploaded a
+     * photo has no object, and that must not block their deletion. Any other
+     * Storage error is reported but also NOT allowed to block: a leftover
+     * image is worth strictly less than the user's right to delete their
+     * account, so it's logged for cleanup rather than turned into a wall.
+     */
+    private fun deleteProfilePhotoThenAuth(user: FirebaseUser) {
+        val uid = user.uid
+        FirebaseStorage.getInstance().reference
+            .child("profile_photos/$uid/photo.jpg")
+            .delete()
+            .addOnSuccessListener { deleteAuthAccount(user) }
+            .addOnFailureListener { e ->
+                val notFound = (e as? StorageException)?.errorCode ==
+                    StorageException.ERROR_OBJECT_NOT_FOUND
+                if (!notFound) {
+                    CrashReporting.record(
+                        IllegalStateException("Orphaned profile photo left for $uid", e),
+                        where = "AccountSettingsActivity.deleteProfilePhoto"
+                    )
+                    Log.w(TAG, "Couldn't delete stored photo for $uid; continuing", e)
+                }
+                deleteAuthAccount(user)
             }
     }
 
@@ -517,6 +578,14 @@ class AccountSettingsActivity : WedoraBaseActivity(), DeleteAccountBottomSheet.H
         user.delete()
             .addOnSuccessListener { onAccountDeleted(uid) }
             .addOnFailureListener { e ->
+                // Worth its own report rather than routing through
+                // reportDeleteFailure: reaching here means the user's data is
+                // already gone but the account isn't, which is the one
+                // partial state this flow can end up in.
+                CrashReporting.record(
+                    IllegalStateException("Data deleted but auth account survived", e),
+                    where = "AccountSettingsActivity.deleteAuthAccount"
+                )
                 Log.w(TAG, "Firestore data deleted but failed to delete auth account for $uid", e)
                 setBusy(false)
                 Toast.makeText(

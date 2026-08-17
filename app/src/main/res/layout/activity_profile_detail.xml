@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Another user's profile, opened by tapping a Home feed card.
+    Another user's profile. Opened from Home's feed cards, Explore, Likes,
+    the Discover list, a chat thread's header, and match/like notifications.
 
-    Shows only what the backend actually has for other users: name, and the
-    age/city/country they supplied at Complete Profile. There is no photo
-    backend for other users (profile photos are device-local), so the photo
-    slot is a neutral placeholder rather than a stock image.
+    Shows what the backend has for other users: name, the age/city/country
+    they supplied at Complete Profile, and their uploaded photo — loaded from
+    photoUrl via loadRemoteProfilePhoto (see ProfileDetailActivity.bind).
+    ic_avatar_placeholder is the android:src fallback for a user who hasn't
+    uploaded one, not the normal case.
+
+    (This header used to say there was no photo backend for other users and
+    that the slot was always a placeholder. That stopped being true once
+    PhotoUploadService started publishing a hosted photoUrl alongside the
+    device-local copy — the local file is only for the owner's own device.)
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -60,16 +67,42 @@
             android:orientation="vertical"
             android:paddingHorizontal="16dp">
 
-            <!-- FrameLayout so the dot can overlay the photo's corner — the
-                 enclosing LinearLayout has no constraint system of its own. -->
-            <FrameLayout
+            <!--
+                ConstraintLayout, not a FrameLayout, for one reason: the photo
+                needs a maximum width.
+
+                Its height is fixed but its width used to be match_parent, so
+                the frame's ASPECT RATIO tracked the screen's. Portrait gave
+                roughly 328x360 (near square) and centerCrop trimmed a little
+                off a portrait photo; landscape gave roughly 720x360, and
+                centerCrop had to scale the same photo to ~960dp tall to fill
+                that width, showing only the middle 360dp — about 60% of the
+                image cropped away.
+
+                constraintWidth_max caps it at 400dp, so landscape gets
+                400x360 instead of 720x360 — near enough to the portrait shape
+                that the crop matches. Below 400dp (every phone in portrait)
+                the cap never applies and nothing changes. The spare width in
+                landscape shows the screen background either side, reading as
+                a centred photo rather than a stretched band.
+
+                Note this is a WIDTH cap, not an aspect ratio: constraining the
+                ratio instead would make a landscape frame ~960dp tall, which
+                is worse than the bug.
+            -->
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="360dp">
 
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivDetailPhoto"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintWidth_max="400dp"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
                     android:src="@drawable/ic_avatar_placeholder"
                     android:scaleType="centerCrop"
                     android:contentDescription="@string/cd_profile_photo"
@@ -77,17 +110,23 @@
 
                 <!-- Larger (16dp) variant, and live rather than one-time: this
                      is the one screen where the viewer is looking at a single
-                     person continuously, so it's worth a listener over a get(). -->
+                     person continuously, so it's worth a listener over a get().
+
+                     Anchored to the PHOTO's corner, not the parent's: once the
+                     width cap kicks in they are no longer the same edge, and
+                     a parent-anchored dot would float in the empty margin
+                     beside the photo in landscape. -->
                 <include
                     android:id="@+id/onlineDot"
                     layout="@layout/view_online_status_dot"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:layout_gravity="bottom|end"
                     android:layout_marginEnd="14dp"
-                    android:layout_marginBottom="14dp" />
+                    android:layout_marginBottom="14dp"
+                    app:layout_constraintEnd_toEndOf="@id/ivDetailPhoto"
+                    app:layout_constraintBottom_toBottomOf="@id/ivDetailPhoto" />
 
-            </FrameLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
                 android:id="@+id/tvDetailName"
@@ -159,23 +198,6 @@
                 tools:visibility="visible"
                 tools:text="Coffee, long walks and terrible puns." />
 
-            <!-- Label depends on whether a match already exists, so it stays
-                 hidden until that lookup resolves rather than flipping text
-                 in front of the user. -->
-            <TextView
-                android:id="@+id/btnMessage"
-                android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/bg_pill_outline"
-                android:gravity="center"
-                android:textColor="@color/wedora_accent"
-                android:textSize="15sp"
-                android:fontFamily="@font/poppins_medium"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="Like &amp; Message" />
-
         </LinearLayout>
     </ScrollView>
 
@@ -189,7 +211,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Pass / Like -->
+    <!-- Pass / Message / Like -->
     <LinearLayout
         android:id="@+id/actionRow"
         android:layout_width="wrap_content"
@@ -212,6 +234,25 @@
             android:src="@drawable/ic_action_pass"
             app:tint="@color/wedora_text_secondary"
             android:contentDescription="@string/cd_pass" />
+
+        <!-- Same icon/tint item_match_card.xml already uses for its own chat
+             button; tap behaviour is unchanged (messageUser()) — this was
+             previously a rectangular pill whose label toggled between "Like &
+             Message" and "Message" depending on match state. An icon-only
+             circular button can't carry that distinction, so the label is
+             gone, but which action fires on tap is identical either way. -->
+        <ImageButton
+            android:id="@+id/btnMessage"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="28dp"
+            android:padding="16dp"
+            android:background="@drawable/bg_icon_button"
+            android:src="@drawable/ic_nav_chats"
+            app:tint="@color/wedora_accent"
+            android:visibility="gone"
+            tools:visibility="visible"
+            android:contentDescription="@string/cd_message" />
 
         <!-- The heart colour lives in ic_like_filled / ic_like_outline (no
              app:tint), so the toggle only swaps src. Hidden until the like

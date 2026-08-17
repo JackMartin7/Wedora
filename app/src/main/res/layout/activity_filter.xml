@@ -202,6 +202,30 @@
                 app:trackColorInactive="@color/wedora_input_border"
                 app:labelBehavior="gone" />
 
+            <!-- ===== Interests ===== -->
+            <!-- Stored and restored like the rest of this screen, but not
+                 currently applied to the feed query — see FilterActivity and
+                 Feed.kt. Placed last since, unlike the sections above, it
+                 doesn't narrow anything yet. -->
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="@string/filter_by_interests"
+                android:textColor="@color/wedora_text"
+                android:textSize="16sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipsInterestsFilter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:singleLine="false"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp" />
+
         </LinearLayout>
 
     </ScrollView>

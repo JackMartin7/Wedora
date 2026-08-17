@@ -46,6 +46,22 @@
     <string name="error_interested_in_required">Please select who you\'re interested in</string>
     <string name="error_photo_copy_failed">Couldn\'t use that photo. Please try another.</string>
     <string name="error_photo_upload_failed">Couldn\'t upload your photo to show to others. You can try again from Edit Profile.</string>
+
+    <!-- Face check on profile photos — see ProfilePhotoPipeline. The two
+         no-face messages are separate because the user is in a different
+         place each time: one has just picked, the other has just framed a
+         crop and needs to know it was the framing, not the photo. -->
+    <string name="error_photo_no_face">No face detected in that photo. Please choose one that clearly shows your face.</string>
+    <string name="error_photo_no_face_in_crop">No face in the area you selected. Please adjust the crop to include your face.</string>
+    <string name="error_photo_check_unavailable">Couldn\'t run the face check right now — continuing without it.</string>
+    <string name="error_photo_processing_failed">Couldn\'t process that image. Please try another.</string>
+    <string name="photo_processing">Checking photo…</string>
+
+    <!-- Crop screen. The library's own confirm action is titled just "Crop",
+         which reads as an operation rather than as the way forward — these
+         override it so the action that finishes the flow says so. -->
+    <string name="crop_photo_title">Crop Photo</string>
+    <string name="crop_photo_confirm">Use Photo</string>
     <string name="error_wrong_password">Incorrect email or password. Please try again.</string>
     <string name="error_no_account">No account found with this email.</string>
     <string name="error_email_in_use">An account already exists with this email.</string>
@@ -117,6 +133,11 @@
     <string name="cd_dark_mode_toggle">Toggle dark mode</string>
     <string name="cd_notifications">Notifications</string>
 
+    <!-- Shown on Home when the signed-in user has no latitude/longitude on
+         their own profile — never affects their visibility to others, just
+         nudges them to add one so distance can show on matches. -->
+    <string name="home_location_banner_text">Add your location to see distance to matches</string>
+
     <!-- Likes tab (who liked you, as a photo grid) -->
     <string name="likes_title">Likes</string>
     <string name="likes_users_matched_label">Users Matched</string>
@@ -176,7 +197,12 @@
     <string name="step5_title">Add your best photo</string>
     <string name="step5_subtitle">Profiles with photos get 3x more matches</string>
 
-    <!-- Permissions primer (step 4 of 6) -->
+    <!-- Step 7 of 7 — added after Photo rather than renumbering the steps
+         above; same "visual number only" note applies. -->
+    <string name="step6_title">What are you into?</string>
+    <string name="step6_subtitle">Pick a few interests to show on your profile — this is optional</string>
+
+    <!-- Permissions primer (step 4 of 7) -->
     <string name="step_permissions_title">Stay in the loop</string>
     <string name="step_permissions_subtitle">Enable these so Wedora can find your matches and keep you updated</string>
     <string name="permissions_location_title">Location Access</string>
@@ -224,8 +250,6 @@
     <string name="chat_hint_message">Type a message…</string>
     <string name="cd_send">Send</string>
     <string name="cd_message">Message</string>
-    <string name="btn_message">Message</string>
-    <string name="btn_like_and_message">Like &amp; Message</string>
     <string name="error_message_send_failed">Couldn\'t send. Please try again.</string>
     <string name="error_chat_load_failed">Couldn\'t load this conversation.</string>
 
@@ -236,6 +260,29 @@
     <string name="error_message_delete_failed">Couldn\'t delete this message. Please try again.</string>
     <string name="error_message_react_failed">Couldn\'t react to this message. Please try again.</string>
     <string name="cd_message_reactions">Reactions</string>
+
+    <!-- Rate the app (see RatePromptPrefs) -->
+    <string name="rate_app_title">Enjoying Wedora?</string>
+    <string name="rate_app_subtitle">A quick rating on Google Play helps other people find us.</string>
+    <string name="settings_rate_app">Rate Wedora</string>
+    <string name="rate_app_now">Rate Now</string>
+    <string name="rate_app_later">Maybe Later</string>
+
+    <!-- Contact-sharing block (see ContactShareDetector) -->
+    <string name="action_got_it">Got It</string>
+    <string name="contact_share_blocked_title">Keep Chats in Wedora</string>
+    <string name="contact_share_blocked_subtitle">This looks like it contains contact info — for your safety, keep communication in the app.</string>
+
+    <!-- Message reply -->
+    <string name="message_action_reply">Reply</string>
+    <string name="replying_to_format">Replying to %1$s</string>
+    <string name="replying_to_you">Replying to yourself</string>
+    <!-- The quoted-sender label inside a bubble's own reply preview, e.g.
+         "You" above the quoted snippet — distinct from replying_to_you
+         above, which labels the composer's staged-reply strip instead. -->
+    <string name="replying_to_you_label">You</string>
+    <string name="cd_cancel_reply">Cancel reply</string>
+    <string name="message_original_not_loaded">Original message not loaded</string>
 
     <!-- Match radar states -->
     <string name="match_empty">No matches yet — like someone from Home to get started.</string>
@@ -292,6 +339,7 @@
     <string name="explore_see_all">See All</string>
     <string name="explore_nearby_empty">No one nearby yet</string>
     <string name="explore_discover_label">Discover</string>
+    <string name="explore_load_more">Load More</string>
     <string name="explore_search_hint">Search people</string>
     <string name="cd_close_search">Close search</string>
     <string name="empty_search_title">No results</string>
@@ -299,6 +347,7 @@
     <string name="empty_discover_title">No profiles to show</string>
     <string name="empty_discover_subtitle">Try adjusting your filters to see more people.</string>
     <string name="nearby_list_title">People Nearby</string>
+    <string name="discover_list_title">Discover</string>
     <string name="empty_nearby_title">No one nearby</string>
     <string name="empty_nearby_subtitle">Try increasing your distance filter to see more people.</string>
 
@@ -350,8 +399,8 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get Started</string>
 
-    <string name="onboarding_title_1">Find Your Perfect Venue</string>
-    <string name="onboarding_desc_1">Discover hand-picked wedding venues and vendors that match your style, budget, and dream day.</string>
+    <string name="onboarding_title_1">Find Your Perfect Match</string>
+    <string name="onboarding_desc_1">Connect with genuine, marriage-minded Muslims who share your values, faith, and vision for the future.</string>
 
     <!-- Slide 2 interest-tag chips -->
     <string name="onboarding_chip_fashion">Fashion</string>
@@ -360,11 +409,11 @@
     <!-- Slide 3 match badge -->
     <string name="onboarding_match_percent">80%</string>
 
-    <string name="onboarding_title_2">Plan Every Detail</string>
-    <string name="onboarding_desc_2">Keep your checklist, guest list, and budget in one place so nothing slips through the cracks.</string>
+    <string name="onboarding_title_2">Built on Trust &amp; Faith</string>
+    <string name="onboarding_desc_2">A respectful space for Nikah — verified profiles, thoughtful matching, and privacy you can rely on.</string>
 
-    <string name="onboarding_title_3">Celebrate Together</string>
-    <string name="onboarding_desc_3">Share your special moments and stay connected with everyone who matters most.</string>
+    <string name="onboarding_title_3">Begin Your Journey Together</string>
+    <string name="onboarding_desc_3">Chat, connect, and take the next step toward marriage with someone who truly understands you.</string>
 
     <!-- Sign Up -->
     <string name="signup_title">Sign Up</string>
@@ -538,6 +587,25 @@
     <string name="daily_limit_sheet_title">Daily Limit Reached</string>
     <string name="daily_limit_sheet_upgrade">Upgrade Now</string>
     <string name="daily_limit_sheet_maybe_later">Maybe Later</string>
+    <!-- Rewarded-ad option. The reward is stated in the label itself, which
+         is what AdMob requires of a rewarded placement. -->
+    <string name="daily_limit_watch_ad_like">Watch an ad for 1 more like</string>
+    <string name="daily_limit_watch_ad_message">Watch an ad for 1 more message</string>
+    <string name="rewarded_not_earned">No ad available right now. Please try again later.</string>
+
+    <!-- Loading state between tapping Watch Ad and the ad opening. -->
+    <string name="ad_loading_message">Loading ad, please wait…</string>
+
+    <!-- Success sheet shown once the reward is actually written. -->
+    <string name="reward_granted_title">Reward Earned</string>
+    <string name="reward_granted_like">You\'ve earned 1 extra like!</string>
+    <string name="reward_granted_message">You\'ve earned 1 extra message!</string>
+
+    <!-- Rewarded cooldown: one ad per 10 minutes. Says "another ad", not
+         "another like/message" — the cooldown is global across both quotas,
+         so naming one of them would be wrong half the time. %1$s is m:ss. -->
+    <string name="rewarded_cooldown_button">Watch another ad in %1$s</string>
+    <string name="rewarded_cooldown_toast">You can watch another ad in %1$s</string>
 
     <!-- Guest daily profile-view limit -->
     <string name="guest_limit_sheet_title">You\'ve seen today\'s free profiles!</string>
@@ -546,7 +614,7 @@
     <string name="guest_limit_empty_subtitle">Come back tomorrow, or sign up for unlimited browsing.</string>
     <string name="guest_limit_empty_action">Sign Up</string>
     <string name="like_limit_sheet_subtitle">You\'ve used all 10 likes today. Upgrade to Premium for unlimited likes!</string>
-    <string name="message_limit_sheet_subtitle">You\'ve used all 10 messages today. Upgrade to Premium for unlimited messages!</string>
+    <string name="message_limit_sheet_subtitle">You\'ve used all 5 messages today. Upgrade to Premium for unlimited messages!</string>
 
     <!-- Guest demo chat -->
     <string name="guest_chat_blocked_title">Ready to Connect?</string>
@@ -565,6 +633,30 @@
     <string name="delete_sheet_subtitle">This permanently removes your profile, matches and messages. This can\'t be undone.</string>
     <string name="delete_sheet_confirm">Delete My Account</string>
 
+    <!-- Interests / hobbies. IDs (Interest.kt's firestoreValue) are what's
+         stored; these are only the display labels, so relabeling never
+         touches stored data. -->
+    <string name="label_interests">Interests</string>
+    <string name="interest_gym_fitness">Gym &amp; Fitness</string>
+    <string name="interest_movies_tv">Movies &amp; TV</string>
+    <string name="interest_photography">Photography</string>
+    <string name="interest_travel">Travel &amp; Places</string>
+    <string name="interest_music">Music</string>
+    <string name="interest_food_dining">Food &amp; Dining</string>
+    <string name="interest_cooking">Cooking</string>
+    <string name="interest_reading">Reading</string>
+    <string name="interest_sports">Sports</string>
+    <string name="interest_art_design">Art &amp; Design</string>
+    <string name="interest_volunteering">Volunteering</string>
+    <string name="interest_prayer_islamic_studies">Prayer &amp; Islamic Studies</string>
+    <string name="interest_nature_outdoors">Nature &amp; Outdoors</string>
+    <string name="interest_fashion">Fashion</string>
+    <string name="interest_gaming">Gaming</string>
+    <string name="interest_pets">Pets</string>
+    <string name="interest_business_career">Business &amp; Career</string>
+    <string name="interest_languages">Languages</string>
+    <string name="interest_family_time">Family Time</string>
+
     <!-- Marriage intent -->
     <string name="label_my_status">My Status</string>
     <string name="label_looking_for">Looking For</string>
@@ -581,6 +673,10 @@
     <string name="filter_age_value">%1$d – %2$d</string>
     <string name="filter_by_status">Filter by Status</string>
     <string name="filter_by_looking_for">Filter by Looking For</string>
+    <!-- Stored and restored like the rest of this screen's non-age filters,
+         but not currently applied to the feed query — see FilterActivity
+         and Feed.kt. -->
+    <string name="filter_by_interests">Interests</string>
     <string name="filter_distance">Distance</string>
     <string name="filter_distance_value">Within %1$d km</string>
     <string name="filter_distance_worldwide">Worldwide</string>

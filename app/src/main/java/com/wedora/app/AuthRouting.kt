@@ -106,15 +106,18 @@ private fun registerFcmToken(firestore: FirebaseFirestore, uid: String) {
  * gap rather than its latest — a user missing both gender and age should be
  * asked for gender first, the same order a new account sees.
  *
- * Two steps are deliberately absent. The photo (ProfileStep5PhotoActivity) is
- * optional and device-local, so gating on it would send anyone who skipped it
- * back to the same screen on every launch, with no way to satisfy a check
- * that has nothing to read. The permissions primer
+ * Three steps are deliberately absent. The photo (ProfileStep5PhotoActivity)
+ * is optional and device-local, so gating on it would send anyone who
+ * skipped it back to the same screen on every launch, with no way to satisfy
+ * a check that has nothing to read. Interests (ProfileStep6InterestsActivity)
+ * is optional for the same reason — an empty list means either "skipped" or
+ * "chose none," which are indistinguishable and both valid, so there's
+ * nothing here that would ever resolve. The permissions primer
  * (ProfileStepPermissionsActivity) writes nothing to the profile at all —
  * there's no field to check even if it were the returning-user experience
  * this gate is for, and it isn't: it belongs only to a fresh signup passing
  * through the steps in order, not to someone resuming a partially-completed
- * one. A returning user with an age on file goes straight past it.
+ * one. A returning user with an age on file goes straight past all three.
  */
 private fun nextSetupStepFor(profile: UserProfile): Class<*> = when {
     profile.displayName.isNullOrBlank() -> ProfileStep1NameActivity::class.java

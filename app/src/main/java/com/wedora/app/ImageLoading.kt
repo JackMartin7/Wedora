@@ -72,16 +72,62 @@ fun ImageView.loadRemoteProfilePhoto(
  * no-op — the view keeps its XML placeholder drawable.
  */
 fun ImageView.loadLocalProfilePhoto(context: Context, uid: String) {
-    val path = LocalProfilePrefs.getPhotoPath(context, uid) ?: return
-    val file = File(path)
-    if (!file.exists()) return
-    Glide.with(this)
-        .load(file)
-        // The photo is always written to the same UID-keyed path, and Glide's
-        // default cache key is the path alone — so without a signature that
-        // changes with the file, editing your photo would keep showing the old
-        // one everywhere it's already been loaded.
-        .signature(ObjectKey(file.lastModified()))
-        .centerCrop()
-        .into(this)
+    val file = localProfilePhotoFile(context, uid) ?: return
+    loadLocalPhotoFile(file)
+}
+
+/**
+ * This user's own photo: the device-local copy when there is one, falling
+ * back to their hosted [photoUrl] when there isn't.
+ *
+ * The fallback is the whole point. [loadLocalProfilePhoto] alone is correct
+ * only for the account that uploaded the photo *from this device* — sign in
+ * anywhere else (a new phone, a reinstall, or simply a second account on a
+ * shared device) and there is no local file, so it no-ops and you see the
+ * placeholder while every other user in the app sees your photo fine. The
+ * URL has been in Firestore the whole time; nothing was reading it for your
+ * own avatar.
+ *
+ * Local still wins when present: it's instant, needs no network, and is
+ * already up to date immediately after an edit, whereas [photoUrl] can lag
+ * a just-finished upload (see PhotoUploadService, which writes the local
+ * copy first and the URL after).
+ *
+ * With neither, this is deliberately a no-op rather than loading a
+ * placeholder — the hosting view keeps whatever its XML `src` is, which
+ * differs per screen (Home's own avatar is not the generic
+ * ic_avatar_placeholder), and overwriting that would be a visible
+ * regression for accounts with no photo at all.
+ */
+fun ImageView.loadOwnProfilePhoto(context: Context, uid: String, photoUrl: String?) {
+    val file = localProfilePhotoFile(context, uid)
+    when {
+        file != null -> loadLocalPhotoFile(file)
+        !photoUrl.isNullOrBlank() -> loadRemoteProfilePhoto(photoUrl)
+        else -> Unit
+    }
+}
+
+/** The saved local photo for [uid], or null when there's no path or no file. */
+private fun localProfilePhotoFile(context: Context, uid: String): File? =
+    LocalProfilePrefs.getPhotoPath(context, uid)
+        ?.let { File(it) }
+        ?.takeIf { it.exists() }
+
+private fun ImageView.loadLocalPhotoFile(file: File) {
+    try {
+        Glide.with(this)
+            .load(file)
+            // The photo is always written to the same UID-keyed path, and
+            // Glide's default cache key is the path alone — so without a
+            // signature that changes with the file, editing your photo would
+            // keep showing the old one everywhere it's already been loaded.
+            .signature(ObjectKey(file.lastModified()))
+            .centerCrop()
+            .into(this)
+    } catch (e: IllegalArgumentException) {
+        // Same destroyed-host guard as loadRemoteProfilePhoto — this now runs
+        // from async profile reads too, not just synchronously on screen load.
+        Log.w(TAG, "Skipped a local photo load — host is no longer usable", e)
+    }
 }

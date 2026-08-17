@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Notice sheet: icon disc, title, subtitle, one acknowledging button.
+
+    Same visual family as sheet_confirm.xml but with a single action —
+    ConfirmBottomSheet's base always renders a primary AND a secondary, which
+    would leave a meaningless second button on a sheet the user can only
+    acknowledge (see ContactShareBlockedBottomSheet).
+
+    Scroll wrapper for the same reason as sheet_confirm.xml, though this one
+    has more headroom: a single button puts the content near 293dp, which
+    fits the ~360dp a landscape phone offers. It's here as insurance against
+    the two things that erode that margin — a longer subtitle and a large
+    system font scale — since both are cheaper to absorb than to notice.
+-->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="20dp">
+
+        <!-- Small drag handle for affordance. -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_marginBottom="20dp"
+            android:background="@color/wedora_border" />
+
+        <ImageView
+            android:id="@+id/ivNoticeIcon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:padding="16dp"
+            android:background="@drawable/bg_sheet_icon_circle"
+            android:contentDescription="@null"
+            tools:src="@drawable/ic_shield_lock" />
+
+        <TextView
+            android:id="@+id/tvNoticeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="18sp"
+            android:fontFamily="@font/poppins_semibold"
+            tools:text="Keep Chats in Wedora" />
+
+        <TextView
+            android:id="@+id/tvNoticeSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3sp"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            tools:text="This looks like it contains contact info." />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnNoticePrimary"
+            style="@style/WedoraPrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            tools:text="Got It" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

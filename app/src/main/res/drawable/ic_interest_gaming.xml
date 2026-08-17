@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Game controller, for the Gaming interest chip. evenOdd so the D-pad and
+     buttons are true cut-outs — a chip icon is uniformly recolored by
+     chipIconTint, so a second fill color wouldn't read as a separate shape. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:fillType="evenOdd"
+        android:pathData="M6,8 L18,8 A4,4.5 0 0,1 22,12.5 L22,15 A2.5,2.5 0 0,1 17.9,16.8 L15.5,14.5 L8.5,14.5 L6.1,16.8 A2.5,2.5 0 0,1 2,15 L2,12.5 A4,4.5 0 0,1 6,8 Z
+            M6.2,10.4 L7.6,10.4 L7.6,12 L9.2,12 L9.2,13.4 L7.6,13.4 L7.6,15 L6.2,15 L6.2,13.4 L4.6,13.4 L4.6,12 L6.2,12 Z
+            M16.2,9.7 A1,1 0 1,0 16.2,11.7 A1,1 0 1,0 16.2,9.7 Z
+            M18.6,12.1 A1,1 0 1,0 18.6,14.1 A1,1 0 1,0 18.6,12.1 Z" />
+</vector>

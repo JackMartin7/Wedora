@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Eighth note, for the Music interest chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M9,16.2 A3.2,2.8 0 1,1 9,10.6 A3.2,2.8 0 1,1 9,16.2 Z M11,4 L13,4 L13,13.5 L11,13.5 Z M13,4 L19.5,7.5 L13,10.5 Z" />
+</vector>

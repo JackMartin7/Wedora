@@ -9,7 +9,9 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.nativead.NativeAd
 import com.wedora.app.databinding.ItemChatRowBinding
+import com.wedora.app.databinding.ViewNativeAdBannerBinding
 
 /**
  * Long-press any row to enter multi-select; once in it, a plain tap on any
@@ -21,16 +23,34 @@ import com.wedora.app.databinding.ItemChatRowBinding
  * purely a rendering concern, notified with a plain [notifyDataSetChanged],
  * which is cheap enough for a conversation list this size.
  */
+/**
+ * One row in the conversation list — a real chat or, for non-Premium users,
+ * a native ad woven in by ChatsActivity at [ChatAdGap]'s cadence.
+ */
+sealed class ChatListItem {
+    data class Chat(val preview: ChatPreview) : ChatListItem()
+    data class Ad(val ad: NativeAd) : ChatListItem()
+}
+
 class ChatListAdapter(
     private val onClick: (ChatPreview) -> Unit = {},
     /** (selectionMode, selectedCount) — fired whenever either changes. */
     private val onSelectionChanged: (Boolean, Int) -> Unit = { _, _ -> }
-) : ListAdapter<ChatPreview, ChatListAdapter.ChatViewHolder>(DIFF) {
+) : ListAdapter<ChatListItem, RecyclerView.ViewHolder>(DIFF) {
 
     private companion object {
-        val DIFF = object : DiffUtil.ItemCallback<ChatPreview>() {
-            override fun areItemsTheSame(a: ChatPreview, b: ChatPreview) = a.matchId == b.matchId
-            override fun areContentsTheSame(a: ChatPreview, b: ChatPreview) = a == b
+        const val VIEW_TYPE_CHAT = 0
+        const val VIEW_TYPE_AD = 1
+
+        val DIFF = object : DiffUtil.ItemCallback<ChatListItem>() {
+            override fun areItemsTheSame(a: ChatListItem, b: ChatListItem): Boolean = when {
+                a is ChatListItem.Chat && b is ChatListItem.Chat ->
+                    a.preview.matchId == b.preview.matchId
+                a is ChatListItem.Ad && b is ChatListItem.Ad -> a.ad === b.ad
+                else -> false
+            }
+
+            override fun areContentsTheSame(a: ChatListItem, b: ChatListItem) = a == b
         }
     }
 
@@ -138,14 +158,37 @@ class ChatListAdapter(
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
-        val binding = ItemChatRowBinding.inflate(
-            LayoutInflater.from(parent.context), parent, false
-        )
-        return ChatViewHolder(binding)
+    /**
+     * The ad row. Deliberately the compact card from
+     * view_native_ad_banner.xml rather than anything resembling
+     * item_chat_row: a conversation list is the highest-risk place in the
+     * app for an ad to be mistaken for content, and AdMob's policy on ads
+     * that mimic app content is what that layout choice is answering.
+     */
+    class AdViewHolder(
+        private val binding: ViewNativeAdBannerBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(ad: NativeAd) = binding.bindNativeAd(ad)
     }
 
-    override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun getItemViewType(position: Int): Int = when (getItem(position)) {
+        is ChatListItem.Chat -> VIEW_TYPE_CHAT
+        is ChatListItem.Ad -> VIEW_TYPE_AD
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == VIEW_TYPE_AD) {
+            AdViewHolder(ViewNativeAdBannerBinding.inflate(inflater, parent, false))
+        } else {
+            ChatViewHolder(ItemChatRowBinding.inflate(inflater, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (val item = getItem(position)) {
+            is ChatListItem.Chat -> (holder as ChatViewHolder).bind(item.preview)
+            is ChatListItem.Ad -> (holder as AdViewHolder).bind(item.ad)
+        }
     }
 }

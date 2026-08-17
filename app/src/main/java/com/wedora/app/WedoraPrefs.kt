@@ -34,3 +34,36 @@ fun clearAllWedoraData(context: Context, uid: String?) {
         .clear()
         .apply()
 }
+
+/**
+ * Clears the preferences that belong to the account signing out, leaving
+ * device-scoped ones alone.
+ *
+ * Logging out is not account deletion, so [clearAllWedoraData]'s blunt
+ * `clear()` would be wrong here — it would reset the onboarding flag and
+ * send the device back to the intro carousel, and drop the dark-mode choice,
+ * neither of which belongs to the account.
+ *
+ * What has to go is anything account-scoped stored under a flat key, since a
+ * second account on the same device would otherwise inherit it:
+ *
+ *  - [FilterPrefs] — age range, distance, status, looking-for and interests.
+ *    Signing in as someone else and silently inheriting their feed filters
+ *    is the visible bug here.
+ *
+ * Deliberately NOT cleared:
+ *
+ *  - [ThemePrefs], [OnboardingPrefs] — device preferences, not account data.
+ *  - [RatePromptPrefs] — device-scoped on purpose (see its own doc): a Play
+ *    rating belongs to the device and its Play account. Clearing it would
+ *    re-prompt someone who has already rated, just because they switched
+ *    accounts — the exact thing that scoping was chosen to avoid.
+ *  - [LocalProfilePrefs], [LikedProfilesCache], [FeedCache] — already
+ *    UID-keyed, so another account simply never reads the previous one's
+ *    entries. They're left in place so switching back doesn't refetch
+ *    everything from scratch.
+ *  - [GuestPrefs] — the logout path clears it explicitly already.
+ */
+fun clearAccountScopedData(context: Context) {
+    FilterPrefs.reset(context)
+}

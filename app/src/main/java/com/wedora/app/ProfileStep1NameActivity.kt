@@ -19,6 +19,7 @@ class ProfileStep1NameActivity : ProfileStepActivity() {
     private lateinit var etName: EditText
 
     override val stepNumber = 1
+    override val stepId = OnboardingAnalytics.STEP_NAME_NAME
     override val titleRes = R.string.step1_title
     override val subtitleRes = R.string.step1_subtitle
     override val contentLayoutRes = R.layout.view_step_name

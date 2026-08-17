@@ -43,6 +43,12 @@ data class MatchCard(
     val lookingFor: String?,
     /** For the online-status dot; null on accounts predating presence tracking. */
     val lastSeen: Date?,
+    /**
+     * When this profile became visible in the feed — see
+     * [UserProfile.createdAt]. Drives "newest first" ordering; null on
+     * accounts predating the field, which sort as oldest.
+     */
+    val createdAt: Date?,
     /** This user's own Premium status — see withPremiumPriority() in Feed.kt. */
     val isPremium: Boolean,
     /**
@@ -72,6 +78,19 @@ data class MatchCard(
     /** "2.4 km" for the distance pill, or null when there's no distance to show. */
     fun distanceBadge(): String? = distanceKm?.let { DistanceUtils.formatDistance(it) }
 
+    /**
+     * Whether this profile became visible within [NEW_SIGNUP_WINDOW_MS] —
+     * the Explore visibility band (see Feed.kt's withNewSignupPriority).
+     *
+     * A missing [createdAt] is not new: an account predating the field is
+     * old by definition, and treating unknown as new would put every legacy
+     * profile in the band permanently.
+     */
+    fun isNewSignup(nowMs: Long = System.currentTimeMillis()): Boolean {
+        val created = createdAt?.time ?: return false
+        return nowMs - created in 0..NEW_SIGNUP_WINDOW_MS
+    }
+
     /** "Divorced • Looking for Second Wife", or null when neither is set. */
     fun marriageIntentLine(context: Context): String? =
         MarriageIntent.summaryLine(context, myStatus, lookingFor)
@@ -95,7 +114,21 @@ data class MatchCard(
         return body.trimEnd() + "…"
     }
 
-    private companion object {
-        const val BIO_PREVIEW_LENGTH = 60
+    companion object {
+        private const val BIO_PREVIEW_LENGTH = 60
+
+        /**
+         * How long a profile counts as "new" for Explore's visibility band.
+         *
+         * 7 days rather than something tighter, deliberately. The band is
+         * self-limiting — inside it cards still sort by distance — so a wide
+         * window degrades toward the plain distance sort rather than
+         * distorting it, while a window that's too narrow is simply empty
+         * most of the time on a small user base and the band does nothing.
+         * It also can't cause repeat exposure: once someone likes or passes
+         * a profile it leaves their feed entirely (see Feed.kt's tier 1), so
+         * this only governs where a profile lands on first sight.
+         */
+        const val NEW_SIGNUP_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
     }
 }

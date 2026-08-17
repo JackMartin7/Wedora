@@ -4,19 +4,6 @@ import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Whether the user has already chosen "Exit" from [ExitConfirmBottomSheet]
- * this app process — in-memory only, deliberately not persisted. Once set,
- * later back-presses on a root tab screen exit immediately without asking
- * again: having already left once this session, re-showing the same prompt
- * if they come back in (e.g. via a notification) and hit back again would
- * just trap them in a loop. A fresh process (the real start of a new
- * session) always gets to see the prompt again.
- */
-object ExitConfirmState {
-    var hasExitedThisSession: Boolean = false
-}
-
-/**
  * Intercepts back-press on a root tab screen (Home, Explore, Likes, Profile
  * — see each Activity's onCreate) and shows [ExitConfirmBottomSheet] instead
  * of letting the app close outright, but only when back-press would
@@ -33,6 +20,15 @@ object ExitConfirmState {
  * whatever personalized counts the screen has *at the moment back is
  * pressed* rather than whatever was true when onCreate ran.
  *
+ * The prompt shows on every qualifying back-press. There used to be a
+ * once-per-process suppression (ExitConfirmState) that let a second exit go
+ * through silently, on the reasoning that someone bouncing back in via a
+ * notification shouldn't be asked twice. That's been removed deliberately:
+ * an exit is worth confirming every time, and the silent close it produced
+ * was the more surprising of the two behaviours. There is no loop risk —
+ * the sheet's Exit action calls finish() directly rather than routing back
+ * through this dispatcher.
+ *
  * ChatsActivity deliberately isn't one of the four callers — it already
  * intercepts back itself to redirect to Home rather than exit, and that
  * existing behavior is left untouched rather than layering this on top of
@@ -40,7 +36,7 @@ object ExitConfirmState {
  */
 fun AppCompatActivity.setUpExitConfirmOnBackPress(showExitConfirm: () -> Unit) {
     onBackPressedDispatcher.addCallback(this) {
-        if (isTaskRoot && !ExitConfirmState.hasExitedThisSession) {
+        if (isTaskRoot) {
             showExitConfirm()
         } else {
             finish()

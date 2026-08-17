@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Two overlapping speech bubbles, for the Languages interest chip. evenOdd
+     so the front bubble reads as a distinct cut-out shape rather than
+     merging with the back one once uniformly recolored by chipIconTint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:fillType="evenOdd"
+        android:pathData="M2,4 L15,4 L15,13 L6.5,13 L3,16.5 L3,13 L2,13 Z
+            M10.6,9.6 L21,9.6 L21,17.6 L18,17.6 L18,20.6 L15,17.6 L10.6,17.6 Z" />
+</vector>

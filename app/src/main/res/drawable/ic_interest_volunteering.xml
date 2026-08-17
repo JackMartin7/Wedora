@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Heart, for the Volunteering interest chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M12,20 C12,20 3,14.5 3,8.6 C3,5.8 5.2,4 7.6,4 C9.4,4 11,5 12,6.5 C13,5 14.6,4 16.4,4 C18.8,4 21,5.8 21,8.6 C21,14.5 12,20 12,20 Z" />
+</vector>

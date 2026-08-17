@@ -8,8 +8,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityFilterBinding
 
 /**
- * Feed filters: age range, marital status, what they're looking for, and
- * distance.
+ * Feed filters: age range, marital status, what they're looking for,
+ * distance, and interests.
+ *
+ * Interests is stored and restored like the rest of this screen but, unlike
+ * the others, isn't applied to the feed query at all yet — see FilterPrefs's
+ * own note on [FilterPrefs.getInterestsFilter].
  *
  * Status and Looking For are worded differently per gender — a man is a
  * widower and looks for a wife; everyone else is widowed and looks for a
@@ -72,6 +76,9 @@ class FilterActivity : WedoraBaseActivity() {
         binding.sliderDistance.value = FilterPrefs.getDistanceKm(this)
             .coerceIn(FilterPrefs.MIN_DISTANCE_KM, FilterPrefs.MAX_DISTANCE_KM)
             .toFloat()
+        binding.chipsInterestsFilter.setInterestOptions(
+            selected = FilterPrefs.getInterestsFilter(this)
+        )
 
         showAgeLabel()
         showDistanceLabel()
@@ -154,6 +161,7 @@ class FilterActivity : WedoraBaseActivity() {
             FilterPrefs.DEFAULT_AGE_MAX.toFloat()
         )
         binding.sliderDistance.value = FilterPrefs.DEFAULT_DISTANCE_KM.toFloat()
+        binding.chipsInterestsFilter.setInterestOptions(selected = emptyList())
 
         // Default is everything ticked, which reads as "don't narrow".
         val statusOptions = MarriageIntent.statusOptions(candidateGender)
@@ -228,6 +236,7 @@ class FilterActivity : WedoraBaseActivity() {
         )
 
         FilterPrefs.setDistanceKm(this, selectedDistance())
+        FilterPrefs.setInterestsFilter(this, binding.chipsInterestsFilter.selectedInterestIds().toSet())
 
         setResult(RESULT_OK)
         finish()

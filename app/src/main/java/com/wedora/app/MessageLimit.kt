@@ -9,9 +9,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Free-tier messages per calendar day. Premium is unlimited. An independent
- *  quota from the daily like limit — see [likeUserRespectingDailyLimit]. */
-private const val FREE_DAILY_MESSAGE_LIMIT = 10
+/**
+ * Free-tier messages per calendar day. Premium is unlimited. An independent
+ * quota from the daily like limit — see [likeUserRespectingDailyLimit], which
+ * is still 10; the two caps are deliberately not tied to each other.
+ *
+ * Must be kept in step with messagesLimitRespected() in firestore.rules,
+ * which enforces the same number server-side and can't reference this
+ * constant.
+ */
+private const val FREE_DAILY_MESSAGE_LIMIT = 5
 
 /** "yyyy-MM-dd" for the device's local calendar day. */
 private fun todayDateString(): String =
@@ -44,6 +51,7 @@ fun sendMessageRespectingDailyLimit(
     otherUid: String,
     matchId: String,
     text: String,
+    replyTo: Message.ReplyPreview? = null,
     onResult: (MessageSendAttempt) -> Unit
 ) {
     val selfDoc = firestore.collection(UserProfile.COLLECTION).document(selfUid)
@@ -53,7 +61,7 @@ fun sendMessageRespectingDailyLimit(
             if (profile.isPremium) {
                 onResult(
                     MessageSendAttempt.Started(
-                        sendMessageBatch(firestore, selfUid, otherUid, matchId, text)
+                        sendMessageBatch(firestore, selfUid, otherUid, matchId, text, replyTo)
                     )
                 )
                 return@addOnSuccessListener
@@ -62,8 +70,10 @@ fun sendMessageRespectingDailyLimit(
             val today = todayDateString()
             val countSoFar =
                 if (profile.messagesSentDate == today) profile.messagesSentToday else 0
+            // Rewarded-ad allowance on top of the flat cap — see LikeLimit.kt.
+            val bonus = if (profile.bonusMessagesDate == today) profile.bonusMessagesToday else 0
 
-            if (countSoFar >= FREE_DAILY_MESSAGE_LIMIT) {
+            if (countSoFar >= FREE_DAILY_MESSAGE_LIMIT + bonus) {
                 onResult(MessageSendAttempt.DailyLimitReached)
                 return@addOnSuccessListener
             }
@@ -77,7 +87,7 @@ fun sendMessageRespectingDailyLimit(
                 ),
                 SetOptions.merge()
             )
-            addMessageWrites(batch, firestore, selfUid, otherUid, matchId, text)
+            addMessageWrites(batch, firestore, selfUid, otherUid, matchId, text, replyTo)
             onResult(MessageSendAttempt.Started(batch.commit()))
         }
         .addOnFailureListener {
@@ -85,7 +95,7 @@ fun sendMessageRespectingDailyLimit(
             // message over a transient read error.
             onResult(
                 MessageSendAttempt.Started(
-                    sendMessageBatch(firestore, selfUid, otherUid, matchId, text)
+                    sendMessageBatch(firestore, selfUid, otherUid, matchId, text, replyTo)
                 )
             )
         }
@@ -96,10 +106,11 @@ private fun sendMessageBatch(
     selfUid: String,
     otherUid: String,
     matchId: String,
-    text: String
+    text: String,
+    replyTo: Message.ReplyPreview?
 ): Task<Void> {
     val batch = firestore.batch()
-    addMessageWrites(batch, firestore, selfUid, otherUid, matchId, text)
+    addMessageWrites(batch, firestore, selfUid, otherUid, matchId, text, replyTo)
     return batch.commit()
 }
 
@@ -111,7 +122,8 @@ private fun addMessageWrites(
     selfUid: String,
     otherUid: String,
     matchId: String,
-    text: String
+    text: String,
+    replyTo: Message.ReplyPreview?
 ) {
     val matchDoc = firestore.collection(Match.COLLECTION).document(matchId)
     // .document() with no id assigns a client-generated id synchronously, so
@@ -122,7 +134,17 @@ private fun addMessageWrites(
         Message.FIELD_SENDER_ID to selfUid,
         Message.FIELD_TEXT to text,
         Message.FIELD_SENT_AT to FieldValue.serverTimestamp()
-    )
+    ) + if (replyTo == null) {
+        emptyMap()
+    } else {
+        mapOf(
+            Message.FIELD_REPLY_TO to mapOf(
+                Message.REPLY_TO_MESSAGE_ID to replyTo.messageId,
+                Message.REPLY_TO_SENDER_ID to replyTo.senderId,
+                Message.REPLY_TO_TEXT to replyTo.text
+            )
+        )
+    }
     batch.set(messageDoc, message)
     batch.update(
         matchDoc,

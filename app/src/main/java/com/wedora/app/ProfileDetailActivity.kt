@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.annotation.StringRes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -81,17 +82,19 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         }
         userId = id
 
-        binding.btnBack.setOnClickListener { finish() }
+        binding.btnBack.setOnClickListener { closeWithInterstitial() }
+        onBackPressedDispatcher.addCallback(this) { closeWithInterstitial() }
 
         binding.btnMore.setOnClickListener {
             // Blocking from here closes the profile — there's nothing left to
-            // show once they're blocked.
+            // show once they're blocked. Deliberately a plain finish(): an ad
+            // in the middle of a moderation action is indefensible.
             showReportBlockSheet(userId) { finish() }
         }
 
         // Passing is local-only: there is no `passes` collection, so a passed
         // user reappears in the feed on the next load.
-        binding.btnPass.setOnClickListener { finish() }
+        binding.btnPass.setOnClickListener { closeWithInterstitial() }
 
         binding.btnLike.setOnClickListener { onHeartTapped() }
         binding.btnMessage.setOnClickListener { messageUser() }
@@ -186,35 +189,51 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
     }
 
     /**
-     * Reads whether the current user has already liked this person: a match doc
-     * exists AND its likedBy is me. A doc where they liked me (likedBy != me)
-     * counts as not-yet-liked, so the heart is grey and the user can like back.
+     * Reads whether the current user has already liked this person, AND
+     * whether a match document exists at all. These are different questions:
+     * a match's `users` array — and so membership, and so chat access —
+     * exists the moment EITHER side has liked, not only once it's mutual
+     * (see firestore.rules' isValidNewMatch/isMatchMember). So if they liked
+     * me first and I haven't liked back, [Match.isLikeBy] correctly says
+     * false (the heart stays grey, since that's specifically about MY like),
+     * but a match document — and therefore somewhere for Message to open —
+     * already exists. [applyLikeState]'s two parameters keep those separate
+     * rather than collapsing "matched" down to "I liked them."
      *
-     * On failure it defaults to grey / "Like & Message": the create is
+     * On failure it defaults to grey / no Message: the like create is
      * idempotent, so offering to like when a match already exists is harmless,
-     * whereas showing red would let an unlike fire against a doc that may not be
-     * deletable by this user.
+     * whereas showing red would let an unlike fire against a doc that may not
+     * be deletable by this user, and showing Message with no confirmed match
+     * would risk opening a thread the rules end up denying.
      */
     private fun checkLikeState() {
         val selfUid = FirebaseAuth.getInstance().realUid
         if (selfUid == null) {
-            applyLikeState(false)
+            applyLikeState(liked = false, matchExists = false)
             return
         }
         matchExistsQuery(firestore, selfUid, userId)
             .addOnSuccessListener { snapshot ->
-                val liked = snapshot.documents.firstOrNull()
-                    ?.let { Match.from(it)?.isLikeBy(selfUid) } == true
-                applyLikeState(liked)
+                val match = snapshot.documents.firstOrNull()?.let { Match.from(it) }
+                applyLikeState(liked = match?.isLikeBy(selfUid) == true, matchExists = match != null)
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to check like state for $userId", e)
-                applyLikeState(false)
+                applyLikeState(liked = false, matchExists = false)
             }
     }
 
-    /** Reflects [liked] into the heart icon and the Message button label. */
-    private fun applyLikeState(liked: Boolean) {
+    /**
+     * Reflects [liked] into the heart icon, and [matchExists] into whether
+     * Message shows at all — see activity_profile_detail.xml's own comment on
+     * btnMessage. [matchExists] defaults to [liked] because every OTHER
+     * caller (likeUser/unlikeUser) is about this user's own like, which
+     * always moves the two together: liking is what creates the match
+     * document, unliking is what deletes it outright. Only [checkLikeState]
+     * — the one place a match can exist for a reason other than something
+     * this call did — passes both explicitly.
+     */
+    private fun applyLikeState(liked: Boolean, matchExists: Boolean = liked) {
         hasLiked = liked
 
         binding.likeLoading.visibility = View.GONE
@@ -223,10 +242,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
             if (liked) R.drawable.ic_like_filled else R.drawable.ic_like_outline
         )
 
-        binding.btnMessage.setText(
-            if (liked) R.string.btn_message else R.string.btn_like_and_message
-        )
-        binding.btnMessage.visibility = View.VISIBLE
+        binding.btnMessage.visibility = if (matchExists) View.VISIBLE else View.GONE
     }
 
     private fun onHeartTapped() {
@@ -270,6 +286,28 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
+    override fun onWatchAdForBonusRequested(kind: DailyLimitReachedBottomSheet.Kind) {
+        runRewardedBonusFlow(kind)
+    }
+
+    /**
+     * Closes the screen, showing the between-screens interstitial first if
+     * one is due — see [InterstitialAds] for the shared budget all three
+     * trigger sources draw from.
+     *
+     * The ad has to go BEFORE finish(), not after: an Activity that has
+     * already finished can't host one. finish() therefore runs from the
+     * onClosed callback, which InterstitialAds guarantees fires exactly
+     * once even when there's no ad to show — so this always closes.
+     */
+    private fun closeWithInterstitial() {
+        if (InterstitialAds.onEvent(this, InterstitialAds.Trigger.PROFILE_CLOSE)) {
+            InterstitialAds.show(this) { finish() }
+        } else {
+            finish()
+        }
+    }
+
     /** Red heart -> delete the match, go grey. */
     private fun unlikeUser() {
         val selfUid = FirebaseAuth.getInstance().realUid ?: return
@@ -284,8 +322,11 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
     }
 
     /**
-     * "Message" once liked -> straight to the thread. "Like & Message" -> like
-     * first, then open. Both reuse the same match write as the heart.
+     * Just opens the thread — no like-first fallback. Message is only ever
+     * visible once [checkLikeState] has confirmed a match document exists
+     * (see [applyLikeState]'s matchExists parameter), so by the time this can
+     * be tapped there's always somewhere for it to open; liking is no longer
+     * something tapping Message can trigger on the user's behalf.
      */
     private fun messageUser() {
         val selfUid = FirebaseAuth.getInstance().realUid
@@ -298,27 +339,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
             return
         }
 
-        if (hasLiked == true) {
-            openChatThread()
-            return
-        }
-
-        binding.btnMessage.isEnabled = false
-        likeUserRespectingDailyLimit(firestore, selfUid, userId) { attempt ->
-            when (attempt) {
-                is LikeAttempt.DailyLimitReached -> {
-                    binding.btnMessage.isEnabled = true
-                    DailyLimitReachedBottomSheet.show(supportFragmentManager, DailyLimitReachedBottomSheet.Kind.LIKES)
-                }
-                is LikeAttempt.Started -> attempt.task
-                    .addOnSuccessListener { openChatThread() }
-                    .addOnFailureListener { e ->
-                        logFirestoreWriteFailure(TAG, "Failed to create match before chat with $userId", e)
-                        binding.btnMessage.isEnabled = true
-                        toast(getString(R.string.error_match_failed))
-                    }
-            }
-        }
+        openChatThread()
     }
 
     private fun openChatThread() {

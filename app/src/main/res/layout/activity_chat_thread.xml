@@ -173,7 +173,77 @@
         android:background="@color/wedora_border"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/etMessage" />
+        app:layout_constraintBottom_toTopOf="@id/replyPreviewContainer" />
+
+    <!-- Staged-reply strip: GONE unless ChatThreadActivity.stagedReply is
+         set (via MessageActionsBottomSheet's Reply option). Self-positions
+         off etMessage's top the same way etMessage itself self-positions
+         off the parent's bottom and composerDivider self-positions off this
+         view's top — a one-way chain, so collapsing to GONE just closes the
+         gap rather than needing an explicit goneMargin anywhere. -->
+    <LinearLayout
+        android:id="@+id/replyPreviewContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_quote_block_received"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="8dp"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/etMessage">
+
+        <View
+            android:layout_width="3dp"
+            android:layout_height="match_parent"
+            android:background="@color/wedora_accent" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvReplyPreviewLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_accent"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_semibold"
+                tools:text="Replying to Amelia" />
+
+            <TextView
+                android:id="@+id/tvReplyPreviewText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="12sp"
+                tools:text="Hey! How's your week going?" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnCancelReply"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:padding="6dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:tint="@color/wedora_text_secondary"
+            android:contentDescription="@string/cd_cancel_reply" />
+
+    </LinearLayout>
 
     <EditText
         android:id="@+id/etMessage"

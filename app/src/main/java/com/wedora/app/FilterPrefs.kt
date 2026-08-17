@@ -22,6 +22,7 @@ object FilterPrefs {
     private const val KEY_DISTANCE_KM = "filter_distance_km"
     private const val KEY_MY_STATUS = "filter_my_status"
     private const val KEY_LOOKING_FOR = "filter_looking_for"
+    private const val KEY_INTERESTS = "filter_interests"
 
     /**
      * Full range by default — until someone narrows it via Filters, age
@@ -130,6 +131,22 @@ object FilterPrefs {
         prefs(context).getStringSet(KEY_LOOKING_FOR, null) ?: options.toSet()
 
     /**
+     * [Interest.firestoreValue] ids picked on the Filters screen. Unlike
+     * Status/Looking For this is purely a stored preference — see
+     * FilterActivity's own note — so there's no "everything ticked means no
+     * filter" trick here: an empty set really does just mean nothing was
+     * picked, and [hasActiveFilters] deliberately doesn't check this, since a
+     * selection with no effect on the feed shouldn't light up the "filters
+     * active" indicator.
+     */
+    fun getInterestsFilter(context: Context): Set<String> =
+        prefs(context).getStringSet(KEY_INTERESTS, emptySet()) ?: emptySet()
+
+    fun setInterestsFilter(context: Context, ids: Set<String>) {
+        prefs(context).edit().putStringSet(KEY_INTERESTS, ids).apply()
+    }
+
+    /**
      * Null when [stored] is absent or covers every option — i.e. when it isn't
      * actually narrowing anything.
      */
@@ -175,6 +192,7 @@ object FilterPrefs {
             .remove(KEY_DISTANCE_KM)
             .remove(KEY_MY_STATUS)
             .remove(KEY_LOOKING_FOR)
+            .remove(KEY_INTERESTS)
             .apply()
     }
 

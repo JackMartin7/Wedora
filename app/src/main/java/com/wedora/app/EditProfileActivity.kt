@@ -106,8 +106,23 @@ class EditProfileActivity : WedoraBaseActivity() {
 
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) stagePickedPhoto(uri)
+            if (uri != null) {
+                photoFlow.start(uri, File(filesDir, STAGED_PHOTO_FILENAME))
+            }
         }
+
+    /**
+     * Normalise -> face check -> crop -> re-check. Writes straight to the
+     * staging file, so the "nothing the rest of the app reads changes until
+     * Save" contract below is unchanged — the pipeline simply replaces the
+     * raw copy that used to produce that file.
+     */
+    private val photoFlow = ProfilePhotoFlow(
+        activity = this,
+        onReady = ::onPhotoStaged,
+        onRejected = { messageRes -> Toast.makeText(this, messageRes, Toast.LENGTH_LONG).show() },
+        onBusyChanged = ::setPhotoBusy
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -218,6 +233,10 @@ class EditProfileActivity : WedoraBaseActivity() {
         )
 
         showIntentOptions(myStatus = null, lookingFor = null)
+        binding.chipsInterests.setInterestOptions(
+            selected = emptyList(),
+            onChanged = { updateSaveEnabled() }
+        )
     }
 
     /** Rebuilds both intent groups for whichever gender is selected now. */
@@ -269,7 +288,23 @@ class EditProfileActivity : WedoraBaseActivity() {
         binding.etCity.setText(profile.city.orEmpty())
         binding.etCountry.setText(profile.country.orEmpty())
 
+        // Rebind the photo now that photoUrl is known — onCreate could only
+        // try the local file, which doesn't exist for an account whose photo
+        // was uploaded from another device.
+        //
+        // Skipped entirely when a photo is staged: that's a pick the user is
+        // currently looking at and hasn't saved, and it survives a config
+        // change via restoreOrClearStagedPhoto. Overwriting it with the
+        // stored photo would silently discard their choice on rotate.
+        if (!photoChanged) {
+            binding.ivEditPhoto.loadOwnProfilePhoto(this, uid, profile.photoUrl)
+        }
+
         genderFrom(profile.gender)?.let { genderControl.select(it) }
+        binding.chipsInterests.setInterestOptions(
+            selected = profile.interests,
+            onChanged = { updateSaveEnabled() }
+        )
 
         // After the gender control has been set, so the option lists match the
         // stored gender rather than the empty default.
@@ -414,6 +449,13 @@ class EditProfileActivity : WedoraBaseActivity() {
             changes[UserProfile.FIELD_LOOKING_FOR] = lookingFor
         }
 
+        // Order doesn't carry meaning here, so this compares as sets rather
+        // than requiring the chips to come back in exactly the enum's order.
+        val interests = binding.chipsInterests.selectedInterestIds()
+        if (interests.toSet() != original.interests.toSet()) {
+            changes[UserProfile.FIELD_INTERESTS] = interests
+        }
+
         return changes
     }
 
@@ -451,21 +493,25 @@ class EditProfileActivity : WedoraBaseActivity() {
      * the app reads changes until Save: [LocalProfilePrefs] still points at
      * the old photo, so backing out discards the pick.
      */
-    private fun stagePickedPhoto(uri: Uri) {
-        try {
-            val staging = File(filesDir, STAGED_PHOTO_FILENAME)
-            staging.parentFile?.mkdirs()
-            contentResolver.openInputStream(uri)?.use { input ->
-                staging.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw IOException("openInputStream returned null")
+    private fun onPhotoStaged(staging: File) {
+        stagedPhotoFile = staging
+        photoChanged = true
+        showPreview(staging)
+        updateSaveEnabled()
+    }
 
-            stagedPhotoFile = staging
-            photoChanged = true
-            showPreview(staging)
+    /**
+     * Blocks Save as well as the picker while the pipeline runs. Save is the
+     * one that matters: committing mid-pipeline would move a staging file
+     * that is either absent or half-written onto the live photo.
+     */
+    private fun setPhotoBusy(busy: Boolean) {
+        binding.ivEditPhoto.isEnabled = !busy
+        if (busy) {
+            binding.btnSave.isEnabled = false
+            binding.btnSave.alpha = 0.4f
+        } else {
             updateSaveEnabled()
-        } catch (e: IOException) {
-            Log.w(TAG, "Failed to copy picked profile photo", e)
-            Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

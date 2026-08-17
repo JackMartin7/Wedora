@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Open book, for the Reading interest chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M12,6 C9.5,4.3 5.5,4.3 3,6 L3,18 C5.5,16.3 9.5,16.3 12,18 C14.5,16.3 18.5,16.3 21,18 L21,6 C18.5,4.3 14.5,4.3 12,6 Z" />
+    <path
+        android:strokeColor="@color/wedora_text_secondary"
+        android:strokeWidth="1"
+        android:pathData="M12,6.5 L12,18" />
+</vector>

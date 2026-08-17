@@ -64,6 +64,15 @@ class LoginActivity : WedoraBaseActivity(), EmailNotVerifiedBottomSheet.Host {
 
         setUpSignUpPrompt()
 
+        // Same treatment as SignUpActivity — see its own comment. This screen
+        // becomes the task root whenever it's reached from Sign Up, which
+        // calls finish() on its way here (goToLogin), so back from here would
+        // otherwise close the app outright.
+        setUpExitConfirmOnBackPress {
+            val (kind, count) = resolveExitConfirmKind(unseenLikes = 0, unreadMessages = 0)
+            ExitConfirmBottomSheet.show(supportFragmentManager, kind, count)
+        }
+
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         binding.btnTogglePassword.setOnClickListener { togglePasswordVisibility() }

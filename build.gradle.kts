@@ -9,4 +9,9 @@ plugins {
     // "9.0+".
     id("com.android.application") version "9.0.1" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
+    // Crash reporting. The plugin is what uploads the R8 mapping file on a
+    // release build (app/build.gradle.kts has isMinifyEnabled = true), without
+    // which every production stack trace comes through obfuscated — the SDK
+    // dependency alone does not do that.
+    id("com.google.firebase.crashlytics") version "3.0.2" apply false
 }

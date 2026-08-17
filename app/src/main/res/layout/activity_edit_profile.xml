@@ -310,6 +310,30 @@
             <!-- interestedIn is auto-derived as the opposite of gender (see
                  EditProfileActivity.changedFields()) — no control for it here. -->
 
+            <!-- ===== Interests ===== -->
+
+            <TextView
+                android:id="@+id/labelInterests"
+                style="@style/WedoraFieldLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="@string/label_interests"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/rowGender" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipsInterests"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:singleLine="false"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelInterests" />
+
             <!-- ===== My Status ===== -->
 
             <TextView
@@ -320,7 +344,7 @@
                 android:layout_marginTop="20dp"
                 android:text="@string/label_my_status"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/rowGender" />
+                app:layout_constraintTop_toBottomOf="@id/chipsInterests" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipsMyStatus"

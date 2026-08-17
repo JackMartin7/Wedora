@@ -191,17 +191,64 @@
         app:layout_constraintTop_toTopOf="@id/greetingContainer"
         app:layout_constraintBottom_toBottomOf="@id/greetingContainer" />
 
+    <!--
+        Location nudge. Shown only to the signed-in user themselves when their
+        own profile has no latitude/longitude — re-evaluated on every Home
+        load, not a one-time dismissible banner. Reuses the guest button's
+        outline treatment rather than the warning-box style used elsewhere,
+        per the approved design. Starts GONE; HomeActivity toggles it once it
+        knows whether self.latitude/longitude are set.
+    -->
+    <LinearLayout
+        android:id="@+id/bannerLocationPrompt"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:background="@drawable/bg_button_guest_outline"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintTop_toBottomOf="@id/greetingContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_location_pin"
+            app:tint="@color/wedora_accent"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:text="@string/home_location_banner_text"
+            android:textColor="@color/wedora_accent"
+            android:textSize="13sp"
+            android:fontFamily="@font/poppins_medium" />
+
+    </LinearLayout>
+
     <!-- ===== Feed (swipeable card stack) ===== -->
 
     <com.wedora.app.SwipeCardStackView
         android:id="@+id/cardStack"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:layout_marginHorizontal="4dp"
         android:layout_marginBottom="8dp"
         android:clipChildren="false"
-        app:layout_constraintTop_toBottomOf="@id/greetingContainer"
+        app:layout_constraintTop_toBottomOf="@id/bannerLocationPrompt"
+        app:layout_goneMarginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottomNav" />
@@ -211,11 +258,12 @@
         android:id="@+id/skeletonFeed"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:orientation="vertical"
         android:visibility="gone"
         tools:visibility="visible"
-        app:layout_constraintTop_toBottomOf="@id/greetingContainer"
+        app:layout_constraintTop_toBottomOf="@id/bannerLocationPrompt"
+        app:layout_goneMarginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -224,7 +272,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:indeterminateTint="@color/wedora_accent"
-        app:layout_constraintTop_toBottomOf="@id/greetingContainer"
+        app:layout_constraintTop_toBottomOf="@id/bannerLocationPrompt"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -235,7 +283,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/greetingContainer"
+        app:layout_constraintTop_toBottomOf="@id/bannerLocationPrompt"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

@@ -3,68 +3,107 @@
     Confirmation sheet: icon disc, title, subtitle, primary + secondary
     buttons. Shared by Log Out, Delete Account and Block confirm — the icon
     and copy are set by the fragment.
+
+    Wrapped in a NestedScrollView because this content can be taller than the
+    window it's shown in. Three buttons plus the icon/title/subtitle comes to
+    roughly 425dp; landscape on a typical phone leaves about 360dp, and a
+    large system font scale can push it past the limit even in portrait. The
+    LinearLayout alone had nowhere to put the overflow, so the bottom-most
+    view — btnSheetSecondary — was simply clipped off the screen.
+
+    NestedScrollView rather than ScrollView: it participates in nested
+    scrolling, so a drag that reaches a scroll boundary is handed back to
+    BottomSheetBehavior and still drags the sheet itself. A plain ScrollView
+    would swallow those gestures and make the sheet feel stuck.
+
+    The height stays wrap_content, so on every screen where the content does
+    fit — which is portrait on essentially every device — the sheet is sized
+    exactly as before and nothing scrolls.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:gravity="center_horizontal"
-    android:paddingHorizontal="24dp"
-    android:paddingTop="24dp"
-    android:paddingBottom="20dp">
+    android:layout_height="wrap_content">
 
-    <!-- Small drag handle for affordance. -->
-    <View
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:layout_marginBottom="20dp"
-        android:background="@color/wedora_border" />
-
-    <ImageView
-        android:id="@+id/ivSheetIcon"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:padding="16dp"
-        android:background="@drawable/bg_sheet_icon_circle"
-        android:contentDescription="@null"
-        tools:src="@drawable/ic_logout" />
-
-    <TextView
-        android:id="@+id/tvSheetTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textColor="@color/wedora_text"
-        android:textSize="18sp"
-        android:fontFamily="@font/poppins_semibold"
-        tools:text="Log Out?" />
-
-    <TextView
-        android:id="@+id/tvSheetSubtitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:gravity="center"
-        android:lineSpacingExtra="3sp"
-        android:textColor="@color/wedora_text_secondary"
-        android:textSize="14sp"
-        tools:text="Are you sure you want to log out of your Wedora account?" />
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="20dp">
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnSheetPrimary"
-        style="@style/WedoraPrimaryButton"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_marginTop="24dp"
-        tools:text="Log Out" />
+        <!-- Small drag handle for affordance. -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_marginBottom="20dp"
+            android:background="@color/wedora_border" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnSheetSecondary"
-        style="@style/WedoraSecondaryButton"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/action_cancel" />
+        <ImageView
+            android:id="@+id/ivSheetIcon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:padding="16dp"
+            android:background="@drawable/bg_sheet_icon_circle"
+            android:contentDescription="@null"
+            tools:src="@drawable/ic_logout" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="18sp"
+            android:fontFamily="@font/poppins_semibold"
+            tools:text="Log Out?" />
+
+        <TextView
+            android:id="@+id/tvSheetSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3sp"
+            android:textColor="@color/wedora_text_secondary"
+            android:textSize="14sp"
+            tools:text="Are you sure you want to log out of your Wedora account?" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSheetPrimary"
+            style="@style/WedoraPrimaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            tools:text="Log Out" />
+
+        <!-- Optional middle action, GONE unless a subclass supplies a label
+             (see ConfirmBottomSheet.tertiaryLabelRes) — currently only the
+             daily-limit sheet's "watch an ad" option. Outlined rather than
+             accent-filled so it reads as the lesser of the two real choices,
+             below Upgrade but above the plain dismiss. -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSheetTertiary"
+            style="@style/WedoraSecondaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_pill_outline"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Watch an ad" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnSheetSecondary"
+            style="@style/WedoraSecondaryButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/action_cancel" />
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

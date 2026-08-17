@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-width media-left native ad, for placements that aren't a square grid
+    tile — the Profile Viewers teaser and the chat list. Deliberately card-
+    shaped and horizontal rather than mimicking the row it sits next to: on
+    both of those screens the surrounding content is a person, and an ad
+    styled like a person is exactly the accidental-click pattern AdMob's
+    policy prohibits.
+
+    Roughly 140dp tall (120dp media plus padding) rather than chat-row
+    height, because the MediaView minimum below sets the floor. That extra
+    height works in this layout's favour on both counts: it's what makes a
+    video creative eligible at all, and it keeps the card unmistakably
+    distinct from the conversation rows above and below it.
+
+    NativeAdView must be the actual root — the SDK's impression/click
+    tracking is wired through headlineView/mediaView/callToActionView being
+    descendants of this exact view (same constraint as
+    item_native_ad_like_grid.xml).
+-->
+<com.google.android.gms.ads.nativead.NativeAdView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_card"
+        android:padding="10dp">
+
+        <!--
+            120x120dp is a hard floor, not a design choice: the Google Mobile
+            Ads SDK warns that a MediaView below it cannot render a video
+            creative, which silently costs fill on every video-backed ad.
+            Do not shrink this to tighten the row — the row height follows
+            from this minimum, not the other way round.
+        -->
+        <com.google.android.gms.ads.nativead.MediaView
+            android:id="@+id/adMedia"
+            android:layout_width="120dp"
+            android:layout_height="120dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:orientation="vertical">
+
+            <!-- Required by AdMob policy: must stay visible and legible
+                 whenever the ad renders — never remove or hide this view. -->
+            <TextView
+                android:id="@+id/tvAdBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_basic"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="@string/native_ad_badge"
+                android:textColor="@color/wedora_text_secondary"
+                android:textSize="9sp"
+                android:fontFamily="@font/poppins_semibold" />
+
+            <TextView
+                android:id="@+id/tvAdHeadline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_text"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_semibold"
+                tools:text="Sponsored headline goes here" />
+
+            <TextView
+                android:id="@+id/tvAdCta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_accent"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_semibold"
+                tools:text="Install Now" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.gms.ads.nativead.NativeAdView>

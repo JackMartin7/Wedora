@@ -140,7 +140,7 @@ class LikesActivity : WedoraBaseActivity() {
      * Activity. Same reasoning as HomeActivity/ExploreActivity.onDestroy.
      */
     override fun onDestroy() {
-        adapter.currentList.forEach { item -> (item as? LikesGridItem.Ad)?.ad?.destroy() }
+        submittedItems.forEach { item -> (item as? LikesGridItem.Ad)?.ad?.destroy() }
         adPool.destroyAll()
         super.onDestroy()
     }
@@ -386,7 +386,7 @@ class LikesActivity : WedoraBaseActivity() {
             binding.featuredContainer.visibility = View.GONE
             binding.featuredContainer.removeAllViews()
             binding.rvLikes.visibility = View.VISIBLE
-            adapter.submitList(buildLikesGridItems(likes, isPremium = true))
+            submitGridItems(buildLikesGridItems(likes, isPremium = true))
             binding.guestSignUpBanner.visibility = View.GONE
             return
         }
@@ -401,7 +401,7 @@ class LikesActivity : WedoraBaseActivity() {
 
         val remainder = if (teasing) likes.drop(FEATURED_COUNT) else likes
         binding.rvLikes.visibility = if (remainder.isEmpty()) View.GONE else View.VISIBLE
-        adapter.submitList(buildLikesGridItems(remainder, isPremium = false))
+        submitGridItems(buildLikesGridItems(remainder, isPremium = false))
 
         binding.guestSignUpBanner.visibility = View.GONE
     }
@@ -430,6 +430,14 @@ class LikesActivity : WedoraBaseActivity() {
     private fun buildLikesGridItems(likes: List<ReceivedLike>, isPremium: Boolean): List<LikesGridItem> {
         if (isPremium) return likes.map { LikesGridItem.Like(it) }
 
+        // Indices from a previous build mean nothing against a new list —
+        // DiscoverAdWeaver.buildItems has always done this and this copy of
+        // the logic never did. Load-bearing now that backfill inserts rather
+        // than replaces: a stale reservation used to fail the bounds check
+        // and be discarded, but insertion accepts more indices as valid and
+        // would land an ad at an unrelated position.
+        pendingAdSlots.clear()
+
         val adGap = FirstTwoThenFourAdGap()
         val items = mutableListOf<LikesGridItem>()
         likes.forEach { like ->
@@ -456,14 +464,62 @@ class LikesActivity : WedoraBaseActivity() {
      * whether to fall back to pooling it instead (see [NativeAdPool.refill]).
      */
     private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
-        val currentItems = adapter.currentList
-        val index = pendingAdSlots.firstOrNull { it < currentItems.size } ?: return false
+        val currentItems = submittedItems
+        // <=, not <. With an insert, an index equal to the current length is
+        // a valid append — the trailing slot that a replace could only ever
+        // discard, since there was nothing there to overwrite.
+        val index = pendingAdSlots.firstOrNull { it <= currentItems.size } ?: return false
         pendingAdSlots.remove(index)
 
-        adapter.submitList(
-            currentItems.toMutableList().apply { this[index] = LikesGridItem.Ad(ad) }
-        )
+        // add(index, ...), never this[index] = .... The assignment overwrote
+        // the like that had landed at the reserved position, so every ad
+        // shown this way cost the user a real like — the same defect
+        // DiscoverAdWeaver carried, in a copy of the same logic.
+        val updated = currentItems.toMutableList()
+            .apply { add(index, LikesGridItem.Ad(ad)) }
+
+        // The list just grew by one, so every reservation past this position
+        // now names a slot one place too early.
+        for (i in pendingAdSlots.indices) {
+            if (pendingAdSlots[i] >= index) pendingAdSlots[i]++
+        }
+
+        submitGridItems(updated)
         return true
+    }
+
+    /**
+     * The list last handed to [adapter], tracked here rather than read back
+     * from `adapter.currentList`.
+     *
+     * submitList is asynchronous (AsyncListDiffer), so `currentList` still
+     * returns the PREVIOUS list until the diff commits — typically empty on
+     * a first render. An ad finishing inside that window made every pending
+     * index fail [backfillPendingAdSlot]'s bounds check, so the ad was
+     * pooled instead of placed and nothing retried those slots.
+     *
+     * Every submission must go through [submitGridItems] or this drifts out
+     * of step with what's actually on screen.
+     */
+    private var submittedItems: List<LikesGridItem> = emptyList()
+
+    private fun submitGridItems(items: List<LikesGridItem>) {
+        // Destroys any ad the outgoing list held that the incoming one
+        // doesn't. A rebuild reconstructs from likes alone, so previously
+        // placed ads are dropped from the list — and having come from
+        // adPool.poll() they aren't in the pool either, leaving them in
+        // neither set onDestroy cleans up. A NativeAd holds its resources
+        // until explicitly released. Identity comparison: a retained ad is
+        // the same object carried through, as on a backfill insertion.
+        // See DiscoverAdWeaver.submitItems, which carries the full reasoning
+        // and the note on the brief blank-frame window this opens.
+        val retained = items.mapNotNullTo(mutableSetOf()) { (it as? LikesGridItem.Ad)?.ad }
+        submittedItems.forEach { item ->
+            val ad = (item as? LikesGridItem.Ad)?.ad ?: return@forEach
+            if (ad !in retained) ad.destroy()
+        }
+        submittedItems = items
+        adapter.submitList(items)
     }
 
     /**
@@ -483,10 +539,35 @@ class LikesActivity : WedoraBaseActivity() {
         binding.likesScroll.visibility = View.VISIBLE
 
         binding.tvLikeCount.visibility = View.GONE
-        binding.rvLikes.visibility = View.GONE
         showFeatured(FEATURED_COUNT)
+        showGuestAdSlot()
 
         binding.guestSignUpBanner.visibility = View.VISIBLE
+    }
+
+    /**
+     * A guest's one ad slot on this screen.
+     *
+     * Guests previously saw none at all: this path never reached
+     * [buildLikesGridItems], which is where every other ad on this screen is
+     * woven, so rvLikes stayed GONE and the inventory was silently lost.
+     * A guest is never Premium (their anonymous session has no users/{uid}
+     * document), so they're squarely in the ad-eligible tier.
+     *
+     * Polls only what's already loaded and stays hidden otherwise, rather
+     * than reserving a slot for backfill: with a single-item list there'd be
+     * no valid index for [backfillPendingAdSlot] to write into.
+     */
+    private fun showGuestAdSlot() {
+        val ad = adPool.poll()
+        if (ad == null) {
+            binding.rvLikes.visibility = View.GONE
+            adPool.refill()
+            return
+        }
+        binding.rvLikes.visibility = View.VISIBLE
+        submitGridItems(listOf(LikesGridItem.Ad(ad)))
+        adPool.refill()
     }
 
     /**

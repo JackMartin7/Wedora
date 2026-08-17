@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quoted-reply strip inside a received (light-surface) bubble — a subtle
+     accent-tinted wash, same role as bg_quote_block_sent.xml but for the
+     opposite bubble color. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_tag_bg" />
+    <corners android:radius="8dp" />
+</shape>

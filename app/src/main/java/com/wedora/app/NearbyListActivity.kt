@@ -13,9 +13,11 @@ import com.wedora.app.databinding.ActivityNearbyListBinding
  *
  * Reuses [loadDiscoveryFeed], so it shows exactly what the Explore strip and
  * grid do — the same feed, the same distance filter — just without the preview
- * cap.
+ * cap. Gated by [applyGuestProfileViewLimit], same as Explore's own Discover
+ * grid — a guest can't bypass the daily cap just by tapping through to this
+ * screen's full list.
  */
-class NearbyListActivity : WedoraBaseActivity() {
+class NearbyListActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host {
 
     private lateinit var binding: ActivityNearbyListBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
@@ -59,10 +61,16 @@ class NearbyListActivity : WedoraBaseActivity() {
             return
         }
 
+        val allowed = applyGuestProfileViewLimit(cards)
+        if (allowed.isEmpty() && GuestPrefs.isGuest(this)) {
+            showGuestLimitReached()
+            return
+        }
+
         binding.emptyState.hide()
         binding.rvNearbyList.visibility = View.VISIBLE
         adapter.submitList(
-            cards.map {
+            allowed.map {
                 NearbyRow(it.id, it.name, it.ageLocationLine(this), it.distanceBadge(), it.photoUrl)
             }
         )
@@ -83,6 +91,22 @@ class NearbyListActivity : WedoraBaseActivity() {
             R.string.empty_action_adjust_filters,
             ::openFilters
         )
+    }
+
+    private fun showGuestLimitReached() {
+        binding.rvNearbyList.visibility = View.GONE
+        adapter.submitList(emptyList())
+        binding.emptyState.show(
+            R.drawable.ic_sparkle_heart,
+            R.string.guest_limit_empty_title,
+            R.string.guest_limit_empty_subtitle,
+            R.string.guest_limit_empty_action,
+            onAction = { startActivity(Intent(this, SignUpActivity::class.java)) }
+        )
+    }
+
+    override fun onSignUpFromGuestLimitRequested() {
+        startActivity(Intent(this, SignUpActivity::class.java))
     }
 
     private fun openFilters() {

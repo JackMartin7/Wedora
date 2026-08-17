@@ -13,6 +13,7 @@ class ProfileStep2GenderActivity : ProfileStepActivity() {
     private lateinit var genderControl: SegmentedControl
 
     override val stepNumber = 2
+    override val stepId = OnboardingAnalytics.STEP_NAME_GENDER
     override val titleRes = R.string.step2_title
     override val subtitleRes = R.string.step2_subtitle
     override val contentLayoutRes = R.layout.view_step_gender

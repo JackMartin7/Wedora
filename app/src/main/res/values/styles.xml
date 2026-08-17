@@ -54,6 +54,33 @@
         <item name="android:windowBackground">@drawable/bg_splash_gradient</item>
     </style>
 
+    <!--
+        Theme for the image cropper's own Activity (see AndroidManifest, which
+        overrides android:theme on com.canhub.cropper.CropImageActivity).
+
+        It needs an ActionBar and Theme.Wedora doesn't have one. That library
+        Activity's layout is nothing but a CropImageView, and it never calls
+        setSupportActionBar — its Crop/rotate/flip actions live in the options
+        menu and rely entirely on a theme-provided ActionBar. Inheriting the
+        app theme, which is NoActionBar, meant the menu inflated into nothing
+        and there was no way to confirm a crop at all.
+
+        Deliberately NOT parented off Theme.Wedora: that would re-inherit
+        NoActionBar and reintroduce exactly the bug this exists to fix.
+
+        DarkActionBar, so the bar's content is light-on-dark — white on the
+        accent fill, legible in both light and night mode. A DayNight inherit
+        would flip the bar's text colour with the system theme while the fill
+        stayed accent-coloured, which is how "invisible button" becomes
+        "unreadable button".
+    -->
+    <style name="Theme.Wedora.Crop" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/wedora_accent</item>
+        <item name="colorPrimaryVariant">@color/wedora_accent</item>
+        <item name="colorAccent">@color/wedora_accent</item>
+        <item name="android:statusBarColor">@color/wedora_accent</item>
+    </style>
+
     <!-- Reusable input field style -->
     <style name="WedoraInputField">
         <item name="android:background">@drawable/bg_input_field</item>
@@ -84,6 +111,12 @@
         <item name="android:textAllCaps">false</item>
         <item name="android:layout_height">54dp</item>
         <item name="android:stateListAnimator">@null</item>
+        <!-- Clears the background's 14dp corner radius, so a leading icon
+             (see ConfirmBottomSheet.setLeadingIcon) sits outside the curve
+             rather than inside it. Was previously unset, falling back to the
+             theme buttonStyle's smaller default. -->
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
         <!-- Coloured drop shadow ~ 0 10px 20px rgba(250,70,89,0.3) -->
         <item name="android:elevation">10dp</item>
         <item name="android:outlineSpotShadowColor" tools:targetApi="28">@color/wedora_accent_shadow</item>
@@ -170,6 +203,13 @@
         <item name="android:fontFamily">@font/poppins_semibold</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:stateListAnimator">@null</item>
+        <!-- 20dp clears the widest radius this style is used with: the
+             daily-limit sheet's tertiary button overrides the background to
+             bg_pill_outline, whose 20dp corners are what made a leading icon
+             collide with the curve. Matches WedoraPrimaryButton so the two
+             stacked buttons on a sheet share one optical left edge. -->
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
     </style>
 
     <style name="WedoraChip" parent="Widget.MaterialComponents.Chip.Choice">
@@ -182,6 +222,30 @@
         <item name="android:textSize">13sp</item>
         <item name="android:fontFamily">@font/poppins_medium</item>
         <item name="chipIconVisible">false</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="rippleColor">@color/wedora_input_border</item>
+    </style>
+
+    <!--
+        Interest/hobby picker chip (sign-up, Edit Profile, Filters). Separate
+        from WedoraChip rather than a variant of it: this one carries a
+        leading icon and has no stroke — a filled solid-accent selected state
+        and a light accent-tinted (not neutral-surface) unselected state, per
+        the reference design, distinct from WedoraChip's outlined look used
+        for Status/Looking For/report-reason chips elsewhere.
+    -->
+    <style name="WedoraInterestChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="chipBackgroundColor">@color/interest_chip_bg_tint</item>
+        <item name="android:textColor">@color/interest_chip_text_tint</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">20dp</item>
+        <item name="chipMinHeight">40dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="chipIconVisible">true</item>
+        <item name="chipIconTint">@color/interest_chip_icon_tint</item>
+        <item name="chipIconSize">18dp</item>
         <item name="checkedIconVisible">false</item>
         <item name="closeIconVisible">false</item>
         <item name="rippleColor">@color/wedora_input_border</item>

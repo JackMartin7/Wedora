@@ -54,10 +54,11 @@ class ExitConfirmBottomSheet : WedoraBottomSheetDialog() {
         b.btnSheetPrimary.addPressScale()
         b.btnSheetPrimary.setOnClickListener { dismiss() }
         b.btnSheetSecondary.setOnClickListener {
-            // Marked *before* finish() — a process death between the two
-            // would just re-show the prompt next launch, same as never
-            // having set it, so ordering here only matters within one run.
-            ExitConfirmState.hasExitedThisSession = true
+            // finish() directly, not onBackPressedDispatcher — this is what
+            // keeps Exit working now that setUpExitConfirmOnBackPress no
+            // longer suppresses the prompt after a first exit. Routing
+            // through the dispatcher here would re-enter that callback and
+            // re-show this sheet.
             dismiss()
             activity?.finish()
         }

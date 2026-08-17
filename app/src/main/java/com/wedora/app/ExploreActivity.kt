@@ -7,24 +7,28 @@ import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.ads.nativead.NativeAd
 import com.google.firebase.firestore.FirebaseFirestore
 import com.wedora.app.databinding.ActivityExploreBinding
 
 /**
  * The Explore tab: the closest discoverable people along the top ("People
- * Nearby"), and a browsable grid of the rest below ("Discover").
+ * Nearby"), and a preview grid of the rest below ("Discover").
  *
  * Both sections are the same feed — opposite gender, minus everyone blocked,
  * passed or already liked, within the distance filter — sorted closest first
- * (see [loadDiscoveryFeed]). The strip is a quick glance at the nearest few;
- * the grid is the full list; "See All" opens it as its own scrollable screen.
+ * (see [loadDiscoveryFeed]). Both are previews, not the full lists: Nearby's
+ * "See All" opens [NearbyListActivity]; Discover's own "See All" and "Load
+ * More" both open [DiscoverListActivity] — two entry points to the same
+ * destination, not two different ones (Load More is just a second, more
+ * natural place to reach it from the bottom of the preview grid).
  */
 class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host {
 
     private companion object {
         /** How many of the closest people the horizontal strip previews. */
         const val NEARBY_STRIP_MAX = 12
+        /** How many of the Discover grid's profiles this screen previews. */
+        const val DISCOVER_GRID_MAX = 12
         const val GRID_COLUMNS = 2
     }
 
@@ -46,24 +50,12 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
     private var discoverCards: List<MatchCard> = emptyList()
 
     /**
-     * Loaded-and-ready native ads for the Discover grid — same shared
-     * implementation HomeActivity's swipe stack uses (see [NativeAdPool]),
-     * a separate instance since each screen manages its own display list.
+     * Weaves native ads into the Discover grid — shared with
+     * [DiscoverListActivity] rather than each screen carrying its own copy
+     * of the pooling/backfill logic. See [DiscoverAdWeaver]'s own doc
+     * comment.
      */
-    private val adPool = NativeAdPool(this, NativeAdLoader.AD_UNIT_ID_EXPLORE)
-
-    /**
-     * Positions in the grid where [buildDiscoverGridItems] wanted to insert
-     * an ad but [adPool] was empty at that moment — a Profile ended up there
-     * instead, the same race HomeActivity's swipe stack guards against (see
-     * its own doc comment on the equivalent field). Backfilled by
-     * [backfillPendingAdSlot] once an ad finishes loading. Unlike the swipe
-     * stack, there's no "already bound, don't touch it" restriction on which
-     * index is eligible — DiscoverAdapter is a real ListAdapter/RecyclerView,
-     * so re-submitting the list safely re-binds whichever position changed
-     * type, on screen or not.
-     */
-    private val pendingAdSlots = mutableListOf<Int>()
+    private val adWeaver by lazy { DiscoverAdWeaver(this, discoverAdapter) }
 
     /**
      * Only reloads on RESULT_OK — i.e. Apply — matching Home. Backing out of the
@@ -118,12 +110,22 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
             startActivity(Intent(this, NearbyListActivity::class.java))
         }
 
+        // See All and Load More both just open the full grid — Load More is
+        // a second, more natural entry point at the bottom of the preview
+        // rather than a different destination.
+        binding.tvDiscoverSeeAll.setOnClickListener {
+            startActivity(Intent(this, DiscoverListActivity::class.java))
+        }
+        binding.btnDiscoverLoadMore.setOnClickListener {
+            startActivity(Intent(this, DiscoverListActivity::class.java))
+        }
+
         // Kicked off before loadFeed's own network round trip — same
         // "preload ahead" reasoning as HomeActivity's swipe stack, so an ad
         // is very likely already sitting in the pool by the time the grid
         // actually needs one. No-ops for a Premium user, since
         // NativeAdPool.refill re-checks isPremium on every call.
-        adPool.refill { ad -> backfillPendingAdSlot(ad) }
+        adWeaver.preload()
 
         // While the search bar is open, back collapses it rather than leaving
         // the tab.
@@ -146,8 +148,7 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
      * Activity. Same reasoning as HomeActivity.onDestroy.
      */
     override fun onDestroy() {
-        discoverAdapter.currentList.forEach { item -> (item as? DiscoverGridItem.Ad)?.ad?.destroy() }
-        adPool.destroyAll()
+        adWeaver.destroy()
         super.onDestroy()
     }
 
@@ -270,45 +271,10 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         applyDiscoverFilter(currentQuery())
     }
 
-    /**
-     * Guests only — signed-in users get the full list back unchanged. Shares
-     * GuestPrefs' single daily pool with Home's swipe stack (same reasoning
-     * as that screen's own onTopCardChanged: "just seeing the card counts"),
-     * so a guest can't dodge Home's cap by switching to Explore instead.
-     *
-     * Only the Discover grid is capped, not the Nearby strip above it — the
-     * strip previews the same closest few people the grid would show anyway,
-     * and gating it too would mean a guest at the daily limit sees an empty
-     * Explore screen top to bottom rather than a normal strip with a frozen
-     * grid underneath. Scoped this way for now; revisit if Nearby turns out
-     * to be a real bypass in practice.
-     *
-     * Truncated once here at load, not counted incrementally per grid tile —
-     * rvDiscover has nested scrolling disabled inside a NestedScrollView, so
-     * GridLayoutManager lays out every item at once rather than binding them
-     * lazily as the user scrolls, meaning "count on bind" would spend the
-     * whole day's pool the instant the screen opens either way. Deciding the
-     * cut once, up front, against what's already loaded produces the same
-     * result without pretending this is a scroll-driven reveal it isn't.
-     */
-    private fun applyGuestProfileViewLimit(cards: List<MatchCard>): List<MatchCard> {
-        if (!GuestPrefs.isGuest(this)) return cards
-
-        val remaining = GuestPrefs.DAILY_PROFILE_VIEW_LIMIT - GuestPrefs.guestProfilesViewedToday(this)
-        if (remaining <= 0) return emptyList()
-
-        val allowed = cards.take(remaining)
-        var newTotal = GuestPrefs.guestProfilesViewedToday(this)
-        repeat(allowed.size) { newTotal = GuestPrefs.recordGuestProfileViewed(this) }
-        if (newTotal >= GuestPrefs.DAILY_PROFILE_VIEW_LIMIT) {
-            GuestProfileLimitBottomSheet.show(supportFragmentManager)
-        }
-        return allowed
-    }
-
     private fun showDiscoverGuestLimitReached() {
         binding.rvDiscover.visibility = View.GONE
-        discoverAdapter.submitList(emptyList())
+        binding.btnDiscoverLoadMore.visibility = View.GONE
+        adWeaver.clear()
         binding.discoverEmpty.show(
             R.drawable.ic_sparkle_heart,
             R.string.guest_limit_empty_title,
@@ -325,6 +291,7 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
     private fun showLoading() {
         binding.discoverEmpty.root.visibility = View.GONE
         binding.rvDiscover.visibility = View.GONE
+        binding.btnDiscoverLoadMore.visibility = View.GONE
         binding.progressDiscover.visibility = View.VISIBLE
         // Nearby has no separate spinner; it just fills in with the same result.
         binding.rvNearby.visibility = View.GONE
@@ -343,67 +310,29 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         binding.tvNearbyEmpty.visibility = View.VISIBLE
     }
 
+    /**
+     * Caps the grid at [DISCOVER_GRID_MAX] — the same "truncate once, up
+     * front" reasoning as [applyGuestProfileViewLimit] just above it, and for
+     * the same structural reason: rvDiscover has nested scrolling disabled
+     * inside a NestedScrollView, so GridLayoutManager lays out every item at
+     * once rather than binding lazily as the user scrolls. Load More and See
+     * All both just open [DiscoverListActivity] with the full list — see
+     * this Activity's own doc comment — so the button here is shown whenever
+     * there's more than the preview to see, regardless of whether that's the
+     * full feed or a search's filtered results.
+     */
     private fun showDiscover(profiles: List<DiscoverProfile>) {
         binding.discoverEmpty.root.visibility = View.GONE
         binding.rvDiscover.visibility = View.VISIBLE
-        discoverAdapter.submitList(buildDiscoverGridItems(profiles))
-    }
-
-    // ----- Native ads (any non-Premium user — free signed-in or guest) -------
-
-    /**
-     * Weaves a native ad in after every profile [AlternatingAdGap] says gets
-     * one, using only whatever's already sitting in [adPool] — never waiting
-     * on a fresh load. If the pool is empty when a slot comes up, that slot
-     * is recorded in [pendingAdSlots] rather than lost outright, and
-     * [backfillPendingAdSlot] converts it to an ad in place once one finishes
-     * loading. Same shape as HomeActivity.buildDisplayItems — see that
-     * function's own doc comment for the full reasoning, identical here.
-     */
-    private fun buildDiscoverGridItems(profiles: List<DiscoverProfile>): List<DiscoverGridItem> {
-        if (PremiumStatus.isPremium()) return profiles.map { DiscoverGridItem.Profile(it) }
-
-        pendingAdSlots.clear()
-        val adGap = AlternatingAdGap()
-        val items = mutableListOf<DiscoverGridItem>()
-        profiles.forEach { profile ->
-            items += DiscoverGridItem.Profile(profile)
-            if (adGap.afterProfile()) {
-                adPool.poll()?.let { ad ->
-                    items += DiscoverGridItem.Ad(ad)
-                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
-                } ?: run {
-                    pendingAdSlots += items.size
-                    adPool.refill { backfillAd -> backfillPendingAdSlot(backfillAd) }
-                }
-            }
-        }
-        return items
-    }
-
-    /**
-     * Converts the earliest still-pending entry in [pendingAdSlots] into
-     * [ad], now that it's finished loading. Unlike HomeActivity's swipe-stack
-     * equivalent, no position is off-limits: DiscoverAdapter is a real
-     * ListAdapter, so re-submitting the list safely re-binds whichever
-     * position changed type regardless of scroll position. Returns whether
-     * [ad] was used this way, so [adPool] knows whether to fall back to
-     * pooling it instead (see [NativeAdPool.refill]).
-     */
-    private fun backfillPendingAdSlot(ad: NativeAd): Boolean {
-        val currentItems = discoverAdapter.currentList
-        val index = pendingAdSlots.firstOrNull { it < currentItems.size } ?: return false
-        pendingAdSlots.remove(index)
-
-        discoverAdapter.submitList(
-            currentItems.toMutableList().apply { this[index] = DiscoverGridItem.Ad(ad) }
-        )
-        return true
+        adWeaver.submitProfiles(profiles.take(DISCOVER_GRID_MAX))
+        binding.btnDiscoverLoadMore.visibility =
+            if (profiles.size > DISCOVER_GRID_MAX) View.VISIBLE else View.GONE
     }
 
     private fun showDiscoverEmpty() {
         binding.rvDiscover.visibility = View.GONE
-        discoverAdapter.submitList(emptyList())
+        binding.btnDiscoverLoadMore.visibility = View.GONE
+        adWeaver.clear()
         binding.discoverEmpty.show(
             R.drawable.ic_sparkle_heart,
             R.string.empty_discover_title,
@@ -416,7 +345,8 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
     /** No feed matched the search query (as opposed to no feed at all). */
     private fun showDiscoverSearchEmpty(query: String) {
         binding.rvDiscover.visibility = View.GONE
-        discoverAdapter.submitList(emptyList())
+        binding.btnDiscoverLoadMore.visibility = View.GONE
+        adWeaver.clear()
         binding.discoverEmpty.show(
             R.drawable.ic_search,
             R.string.empty_search_title,

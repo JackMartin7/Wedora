@@ -74,6 +74,14 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
      * gesture-nav pill's height on stock Android, but this is defensive
      * against OEM skins where the two have disagreed.
      *
+     * Left/right ([HORIZONTAL_INSET_TYPES]) go on [root], which means
+     * [bottomNav] moves inward with everything else rather than running
+     * under a landscape side strip. That does leave root's own background
+     * showing in the strip beside the nav bar — the opposite trade-off to
+     * the bottom edge above, and deliberately so: a narrow band beside the
+     * nav bar reads as part of the system chrome, whereas the same seam
+     * *under* it would cut across the screen's full width.
+     *
      * Reads each view's *current* padding once, before the listener can
      * ever fire, and adds the inset on top of that — the listener itself
      * can re-fire (rotation, multi-window), and adding onto whatever
@@ -82,14 +90,21 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
      */
     protected fun applyBottomNavScreenInsets(root: View, bottomNav: View) {
         val rootInitialTop = root.paddingTop
+        val rootInitialLeft = root.paddingLeft
+        val rootInitialRight = root.paddingRight
         val navInitialBottom = bottomNav.paddingBottom
 
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val gestures = insets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures())
+            val horizontal = insets.getInsets(HORIZONTAL_INSET_TYPES)
             val bottomInset = maxOf(systemBars.bottom, gestures.bottom)
 
-            view.updatePadding(top = rootInitialTop + systemBars.top)
+            view.updatePadding(
+                top = rootInitialTop + systemBars.top,
+                left = rootInitialLeft + horizontal.left,
+                right = rootInitialRight + horizontal.right
+            )
             bottomNav.updatePadding(bottom = navInitialBottom + bottomInset)
 
             insets
@@ -167,6 +182,8 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
     ) {
         val topInitial = topTarget.paddingTop
         val bottomInitial = bottomTarget.paddingBottom
+        val rootInitialLeft = root.paddingLeft
+        val rootInitialRight = root.paddingRight
         var imeInsetShowing = false
 
         fun scrollIntoView(view: View) {
@@ -186,6 +203,18 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             val gestures = insets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures())
+            val horizontal = insets.getInsets(HORIZONTAL_INSET_TYPES)
+
+            // Unconditional, unlike the top/bottom flags above: these are 0 in
+            // portrait, so there is nothing for a screen to opt out of, and a
+            // flag would only be a way to get it wrong. Always on root, never
+            // on topTarget/bottomTarget — a side strip runs the full height of
+            // the window, so it's the whole screen that has to move in, not
+            // one edge's content.
+            root.updatePadding(
+                left = rootInitialLeft + horizontal.left,
+                right = rootInitialRight + horizontal.right
+            )
 
             if (applyTop) {
                 topTarget.updatePadding(top = topInitial + systemBars.top)
@@ -216,5 +245,31 @@ abstract class WedoraBaseActivity : AppCompatActivity() {
 
             insets
         }
+    }
+
+    private companion object {
+        /**
+         * What counts as a left/right inset, for both helpers above.
+         *
+         * In portrait these are almost always 0, which is why nothing here
+         * read them for a long time. Landscape is where they matter, and two
+         * separate things move to a side edge on rotation:
+         *
+         *  - The navigation bar. With 3-button navigation it becomes a
+         *    vertical strip on one side rather than staying at the bottom —
+         *    the side depends on which way the device was turned, so a fix
+         *    has to handle left and right, not just one. Gesture navigation's
+         *    strip is thin enough to hide the problem, which is part of why
+         *    this went unnoticed.
+         *  - The display cutout. A notch or punch-hole rotates with the
+         *    device, so on a cutout phone it lands on a side edge in
+         *    landscape. systemBars() does NOT include it, so a systemBars-only
+         *    fix would leave content clipped on exactly those devices.
+         *
+         * Taking the union means whichever is wider at a given edge wins,
+         * which is the behaviour wanted on a device that has both.
+         */
+        val HORIZONTAL_INSET_TYPES =
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
     }
 }

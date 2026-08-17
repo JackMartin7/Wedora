@@ -99,6 +99,10 @@ class SwipeCardStackView @JvmOverloads constructor(
     private var dragging = false
     private var animating = false
 
+    /** Which axis the current drag committed to — decided once per gesture. */
+    private enum class Axis { HORIZONTAL, VERTICAL }
+    private var dragAxis = Axis.HORIZONTAL
+
     /**
      * (Re)initialises the stack from position 0 with [count] items.
      *
@@ -134,11 +138,11 @@ class SwipeCardStackView @JvmOverloads constructor(
     }
 
     fun swipeRight() {
-        if (!animating && topCard != null) flingOff(right = true, notify = true)
+        if (!animating && topCard != null) flingOff(Axis.HORIZONTAL, isLike = true, notify = true)
     }
 
     fun swipeLeft() {
-        if (!animating && topCard != null) flingOff(right = false, notify = true)
+        if (!animating && topCard != null) flingOff(Axis.HORIZONTAL, isLike = false, notify = true)
     }
 
     /**
@@ -146,7 +150,7 @@ class SwipeCardStackView @JvmOverloads constructor(
      * a like or a pass. The card slides off left and the next takes its place.
      */
     fun dismissTop() {
-        if (!animating && topCard != null) flingOff(right = false, notify = false)
+        if (!animating && topCard != null) flingOff(Axis.HORIZONTAL, isLike = false, notify = false)
     }
 
     // ----- Stack composition ------------------------------------------------
@@ -250,12 +254,12 @@ class SwipeCardStackView @JvmOverloads constructor(
                 dragging = false
             }
             MotionEvent.ACTION_MOVE -> {
-                val dx = ev.x - downX
-                val dy = ev.y - downY
-                // Claim the gesture only once it's clearly a horizontal drag,
-                // so taps still reach the card's buttons and body.
-                if (!dragging && abs(dx) > touchSlop && abs(dx) > abs(dy)) {
+                // Claim the gesture only once it's clearly a drag along one
+                // axis, so taps still reach the card's buttons and body.
+                val axis = detectAxis(ev.x - downX, ev.y - downY)
+                if (!dragging && axis != null) {
                     dragging = true
+                    dragAxis = axis
                     return true
                 }
             }
@@ -275,10 +279,14 @@ class SwipeCardStackView @JvmOverloads constructor(
             }
             MotionEvent.ACTION_MOVE -> {
                 val dx = ev.x - downX
-                if (!dragging && abs(dx) > touchSlop && abs(dx) > abs(ev.y - downY)) {
-                    dragging = true
+                val dy = ev.y - downY
+                if (!dragging) {
+                    detectAxis(dx, dy)?.let { axis ->
+                        dragging = true
+                        dragAxis = axis
+                    }
                 }
-                if (dragging) updateDrag(top, dx)
+                if (dragging) updateDrag(top, dx, dy)
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -292,11 +300,33 @@ class SwipeCardStackView @JvmOverloads constructor(
         return false
     }
 
-    private fun updateDrag(top: View, dx: Float) {
-        top.translationX = dx
-        top.rotation = (dx / width) * MAX_ROTATION
+    /**
+     * Which axis [dx]/[dy] commits a drag to, or null while still inside the
+     * slop / too ambiguous between the two to decide. Shared by both touch
+     * entry points so a gesture is claimed the same way regardless of which
+     * one sees the move first.
+     */
+    private fun detectAxis(dx: Float, dy: Float): Axis? = when {
+        abs(dx) > touchSlop && abs(dx) > abs(dy) -> Axis.HORIZONTAL
+        abs(dy) > touchSlop && abs(dy) > abs(dx) -> Axis.VERTICAL
+        else -> null
+    }
 
-        val ratio = (dx / (width * SWIPE_THRESHOLD)).coerceIn(-1f, 1f)
+    private fun updateDrag(top: View, dx: Float, dy: Float) {
+        val ratio: Float
+        when (dragAxis) {
+            Axis.HORIZONTAL -> {
+                top.translationX = dx
+                top.rotation = (dx / width) * MAX_ROTATION
+                ratio = (dx / (width * SWIPE_THRESHOLD)).coerceIn(-1f, 1f)
+            }
+            Axis.VERTICAL -> {
+                // Up (negative dy) is Like, matching right's positive ratio.
+                top.translationY = dy
+                ratio = (-dy / (height * SWIPE_THRESHOLD)).coerceIn(-1f, 1f)
+            }
+        }
+
         top.findViewById<View?>(R.id.overlayLike)?.alpha = overlayAlpha(ratio)
         top.findViewById<View?>(R.id.overlayPass)?.alpha = overlayAlpha(-ratio)
 
@@ -326,18 +356,34 @@ class SwipeCardStackView @JvmOverloads constructor(
     }
 
     private fun settleDrag(top: View) {
-        val dx = top.translationX
-        when {
-            dx > width * SWIPE_THRESHOLD -> flingOff(right = true, notify = true)
-            dx < -width * SWIPE_THRESHOLD -> flingOff(right = false, notify = true)
-            else -> springBack(top)
+        when (dragAxis) {
+            Axis.HORIZONTAL -> {
+                val dx = top.translationX
+                when {
+                    dx > width * SWIPE_THRESHOLD -> flingOff(Axis.HORIZONTAL, isLike = true, notify = true)
+                    dx < -width * SWIPE_THRESHOLD -> flingOff(Axis.HORIZONTAL, isLike = false, notify = true)
+                    else -> springBack(top)
+                }
+            }
+            Axis.VERTICAL -> {
+                val dy = top.translationY
+                when {
+                    // Up is Like, down is Pass — same threshold shape as horizontal.
+                    dy < -height * SWIPE_THRESHOLD -> flingOff(Axis.VERTICAL, isLike = true, notify = true)
+                    dy > height * SWIPE_THRESHOLD -> flingOff(Axis.VERTICAL, isLike = false, notify = true)
+                    else -> springBack(top)
+                }
+            }
         }
     }
 
     private fun springBack(top: View) {
         animating = true
         top.animate()
-            .translationX(0f).rotation(0f)
+            // Both axes reset regardless of which one this drag used — the
+            // other is already 0 (updateDrag only ever writes the active
+            // one), so this is a no-op there and the real reset here.
+            .translationX(0f).translationY(0f).rotation(0f)
             .setDuration(ANIM_MS)
             .withEndAction { animating = false }
             .start()
@@ -348,11 +394,18 @@ class SwipeCardStackView @JvmOverloads constructor(
             ?.setDuration(ANIM_MS)?.start()
     }
 
-    private fun flingOff(right: Boolean, notify: Boolean) {
+    /**
+     * Flings the top card off in whichever direction [axis]/[isLike] name —
+     * right/up for a like, left/down for a pass — and, if [notify], reports
+     * it through the same two callbacks every entry point already uses
+     * ([Listener.onSwipedRight]/[onSwipedLeft]): the result is Like or Pass,
+     * not "which edge it left from", so up and down deliberately reuse the
+     * horizontal callbacks rather than getting their own.
+     */
+    private fun flingOff(axis: Axis, isLike: Boolean, notify: Boolean) {
         val top = topCard ?: return
         animating = true
         val swipedPosition = topPosition
-        val targetX = if (right) width * FLING_OFFSCREEN_FACTOR else -width * FLING_OFFSCREEN_FACTOR
 
         // The peek is deliberately left where it is. Growing it here would put
         // it at full size before promoteAfterSwipe runs, and that spring would
@@ -360,16 +413,33 @@ class SwipeCardStackView @JvmOverloads constructor(
         // remaining growth is what makes the next card actually spring up,
         // whether the drag left it partway or a button swipe left it untouched.
 
+        val targetX: Float
+        val targetY: Float
+        val targetRotation: Float
+        when (axis) {
+            Axis.HORIZONTAL -> {
+                targetX = if (isLike) width * FLING_OFFSCREEN_FACTOR else -width * FLING_OFFSCREEN_FACTOR
+                targetY = top.translationY
+                targetRotation = if (isLike) MAX_ROTATION else -MAX_ROTATION
+            }
+            Axis.VERTICAL -> {
+                targetX = top.translationX
+                targetY = if (isLike) -height * FLING_OFFSCREEN_FACTOR else height * FLING_OFFSCREEN_FACTOR
+                targetRotation = 0f
+            }
+        }
+
         top.animate()
             .translationX(targetX)
-            .rotation(if (right) MAX_ROTATION else -MAX_ROTATION)
+            .translationY(targetY)
+            .rotation(targetRotation)
             .setDuration(ANIM_MS)
             .withEndAction {
                 animating = false
                 removeView(top)
                 topPosition++
                 if (notify) {
-                    if (right) listener?.onSwipedRight(swipedPosition)
+                    if (isLike) listener?.onSwipedRight(swipedPosition)
                     else listener?.onSwipedLeft(swipedPosition)
                 }
                 promoteAfterSwipe()

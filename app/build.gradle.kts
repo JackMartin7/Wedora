@@ -3,6 +3,9 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
+    // Must come after google-services: Crashlytics reads the app id that
+    // plugin resolves from google-services.json.
+    id("com.google.firebase.crashlytics")
 }
 
 // Release signing credentials. keystore.properties (repo root, gitignored —
@@ -33,8 +36,8 @@ android {
         // is what actually covers that now, wired app-wide across every
         // screen rather than left as a bare manifest bump.
         targetSdk = 35
-        versionCode = 16
-        versionName = "1.2.6"
+        versionCode = 23
+        versionName = "1.3.3"
     }
 
     signingConfigs {
@@ -110,6 +113,11 @@ dependencies {
     // In-app update analytics and remotely-controlled update copy — see
     // UpdateAnalytics / UpdateCopy.
     implementation("com.google.firebase:firebase-analytics-ktx")
+    // Crash reporting. Needs no init code: the SDK ships a ContentProvider in
+    // its own manifest, so it starts and installs its uncaught-exception
+    // handler before any Activity does. WedoraApplication only attaches the
+    // user identifier — see CrashReporting.
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
     implementation("com.google.firebase:firebase-config-ktx")
     // Profile photo hosting — see PhotoUploadService.
     implementation("com.google.firebase:firebase-storage-ktx")
@@ -138,4 +146,28 @@ dependencies {
     // only ever resolve against a Play-installed build; a locally-signed APK
     // reports the install source as unavailable and every surface stays silent.
     implementation("com.google.android.play:app-update-ktx:2.1.0")
+
+    // On-device face detection, gating profile photo uploads — see
+    // ProfilePhotoPipeline. Runs entirely on the device, so no image ever
+    // leaves it for this check.
+    //
+    // The UNBUNDLED variant (play-services-*), deliberately: it ships a thin
+    // client and has Play services deliver the model, where the bundled
+    // com.google.mlkit:face-detection statically links native detector
+    // libraries for every ABI. Measured on this project, bundled added ~36MB
+    // to the APK against ~350KB for this one plus the cropper together. The
+    // cost is that the model can be missing right after install, which
+    // ProfilePhotoPipeline handles by failing open — see FaceCheck.Unavailable.
+    implementation("com.google.android.gms:play-services-mlkit-face-detection:17.1.0")
+
+    // Crop/pan/zoom UI for the profile photo, and the resize + JPEG re-encode
+    // of its output. Maven Central; uCrop, the other obvious candidate, is
+    // published on JitPack only and would mean adding a repository to
+    // settings.gradle.kts (which sets FAIL_ON_PROJECT_REPOS).
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+
+    // EXIF orientation, for ProfilePhotoPipeline's normalize step. Not
+    // optional: BitmapFactory ignores the orientation tag, so a decoded
+    // camera photo is sideways without this.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

@@ -85,6 +85,35 @@ class FirstTwoThenFourAdGap {
 }
 
 /**
+ * Ad cadence for the conversation list: never before the 5th chat, then one
+ * every 5 after that.
+ *
+ * Wider than the feed sequencers ([AlternatingAdGap]'s 3/4) on purpose. A
+ * chat list is a utility surface people scan to find a specific person, not
+ * a browse surface — the same density that reads as acceptable between
+ * discovery cards reads as clutter here, and AdMob's ad-density guidance
+ * points the same way. The leading gap of 5 also keeps an ad off the top of
+ * the list entirely, where it would sit above real conversations.
+ *
+ * Stateful and single-use, like the other two: create one per build.
+ */
+class ChatAdGap {
+    private companion object {
+        const val GAP = 5
+    }
+
+    private var sinceLastAd = 0
+
+    /** Call once per real chat row appended, in order. */
+    fun afterChat(): Boolean {
+        sinceLastAd++
+        if (sinceLastAd < GAP) return false
+        sinceLastAd = 0
+        return true
+    }
+}
+
+/**
  * Keeps up to [target] native ads loaded and ready, and refills itself as
  * they're consumed — the shared shape behind HomeActivity's swipe stack,
  * ExploreActivity's Discover grid, and LikesActivity's likes grid, extracted

@@ -21,7 +21,7 @@ import com.wedora.app.databinding.ItemPremiumFeatureBinding
  * not have resolved yet by the time this screen opens, hence the
  * placeholder-first approach rather than blocking on it).
  */
-class PaymentSubscriptionActivity : WedoraBaseActivity() {
+class PaymentSubscriptionActivity : WedoraBaseActivity(), RateAppBottomSheet.Host {
 
     private lateinit var binding: ActivityPaymentSubscriptionBinding
 
@@ -174,6 +174,7 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
                     // this screen flips to premiumMemberSection immediately
                     // rather than waiting on it.
                     applyPremiumState()
+                    maybeShowRatePrompt()
                 }
                 BillingManager.PurchaseResult.Cancelled -> {
                     // The user backed out of Google's own payment sheet —
@@ -184,6 +185,29 @@ class PaymentSubscriptionActivity : WedoraBaseActivity() {
                 is BillingManager.PurchaseResult.Failed -> showPurchaseFailed()
             }
         }
+    }
+
+    /**
+     * Asks for a rating right after a successful subscription — deliberately
+     * hooked to this callback rather than anywhere inside [BillingManager].
+     *
+     * BillingManager.handlePurchase runs for restores too (syncEntitlement
+     * reconciles previously-unacknowledged purchases on startup), so hooking
+     * it there would re-ask every existing subscriber on launch. This
+     * callback only ever fires for a purchase the user just completed —
+     * syncEntitlement's path passes a null callback and never reaches it.
+     */
+    private fun maybeShowRatePrompt() {
+        if (isFinishing || isDestroyed) return
+        if (!RatePromptPrefs.shouldPrompt(this, RatePromptPrefs.Trigger.PREMIUM_PURCHASE)) return
+
+        RatePromptPrefs.recordPromptShown(this)
+        RateAppBottomSheet.show(supportFragmentManager)
+    }
+
+    override fun onRateAppRequested() {
+        RatePromptPrefs.settle(this)
+        openPlayStoreListing()
     }
 
     private fun restorePurchase() {

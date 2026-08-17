@@ -4,4 +4,8 @@
     <dimen name="indicator_dot_size">8dp</dimen>
     <dimen name="indicator_dot_active_width">24dp</dimen>
     <dimen name="indicator_dot_spacing">8dp</dimen>
+
+    <!-- Gap between a bottom-sheet button's leading icon and its label
+         (ConfirmBottomSheet.setLeadingIcon). -->
+    <dimen name="sheet_button_icon_padding">12dp</dimen>
 </resources>

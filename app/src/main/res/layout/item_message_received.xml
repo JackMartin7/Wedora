@@ -2,6 +2,7 @@
 <!-- Incoming message: left-aligned, surface bubble, dark text. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/messageRow"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -9,18 +10,94 @@
     android:paddingHorizontal="16dp"
     android:paddingVertical="4dp">
 
-    <TextView
-        android:id="@+id/tvMessageText"
+    <!-- Carries the bubble background — moved off tvMessageText so the quote
+         block below can share the same bubble rather than floating above it.
+
+         No maxWidth here: it's a TextView attribute and is silently ignored
+         on a LinearLayout. The bubble's width cap lives on the TextViews
+         inside instead (252dp = the old 280dp bubble minus this container's
+         14dp horizontal padding on each side). -->
+    <LinearLayout
+        android:id="@+id/bubbleContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="280dp"
+        android:orientation="vertical"
         android:background="@drawable/bg_bubble_received"
         android:paddingHorizontal="14dp"
-        android:paddingVertical="10dp"
-        android:textColor="@color/wedora_text"
-        android:textSize="14sp"
-        android:lineSpacingExtra="2sp"
-        tools:text="Pretty good! Just got back from a hike." />
+        android:paddingTop="8dp"
+        android:paddingBottom="10dp">
+
+        <!-- Quoted-reply preview — GONE unless this message has a replyTo.
+             Tapping it jumps to (and briefly highlights) the original. -->
+        <LinearLayout
+            android:id="@+id/quoteBlock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="6dp"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_quote_block_received"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="6dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <View
+                android:layout_width="3dp"
+                android:layout_height="match_parent"
+                android:background="@color/wedora_accent" />
+
+            <!-- wrap_content, NOT 0dp+weight: this column's parent chain is
+                 wrap_content all the way up to the bubble, so a match_parent
+                 quoteBlock is measured AT_MOST rather than EXACTLY. That
+                 leaves no excess width for a weight to distribute, and a
+                 weighted 0dp child collapses to zero — the block still
+                 renders (and stays tappable) but both labels below become
+                 invisible. Sizing to content avoids depending on a leftover
+                 that never exists here. -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvQuoteSender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxWidth="216dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="@color/wedora_accent"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    tools:text="Amelia" />
+
+                <TextView
+                    android:id="@+id/tvQuoteText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxWidth="216dp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="12sp"
+                    tools:text="Pretty good! Just got back from a hike." />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvMessageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="252dp"
+            android:textColor="@color/wedora_text"
+            android:textSize="14sp"
+            android:lineSpacingExtra="2sp"
+            tools:text="Pretty good! Just got back from a hike." />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvMessageTime"

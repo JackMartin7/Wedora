@@ -14,11 +14,11 @@ import com.wedora.app.databinding.SheetMessageActionsBinding
  * Long-press-a-message sheet: quick-react emoji row, then delete options.
  *
  * No emoji picker exists anywhere in this app — rather than build one, the
- * reaction row is a fixed 6-emoji set (WhatsApp's own default set), matching
- * "one reaction per user" simplicity. Tapping the emoji that's already this
- * user's reaction removes it; tapping any other one sets/replaces it — the
- * caller (ChatThreadActivity) decides which, since only it knows the
- * message's current reactions map.
+ * reaction row is a fixed, scrollable set (WhatsApp's own default six, plus
+ * a few more), matching "one reaction per user" simplicity. Tapping the
+ * emoji that's already this user's reaction removes it; tapping any other
+ * one sets/replaces it — the caller (ChatThreadActivity) decides which,
+ * since only it knows the message's current reactions map.
  *
  * "Delete for everyone" only shows when [isOwnMessage] — mirrors the same
  * conditional-row approach ReportBlockActionsBottomSheet uses for its own
@@ -30,6 +30,7 @@ class MessageActionsBottomSheet : WedoraBottomSheetDialog() {
     /** Implemented by the screen that shows this sheet (ChatThreadActivity). */
     interface Host {
         fun onReactionPicked(messageId: String, emoji: String)
+        fun onReplyRequested(messageId: String)
         fun onDeleteForMeRequested(messageId: String)
         fun onDeleteForEveryoneRequested(messageId: String)
     }
@@ -58,15 +59,23 @@ class MessageActionsBottomSheet : WedoraBottomSheetDialog() {
                 LayoutInflater.from(requireContext()), b.reactionRow, true
             )
             row.tvReactionEmoji.text = emoji
-            // A subtle highlight on whichever emoji is already this user's
-            // reaction, so the sheet shows current state, not just options.
-            row.tvReactionEmoji.alpha = if (emoji == currentReaction) 1f else 0.55f
+            // Whichever emoji is already this user's reaction gets a subtle
+            // background wash instead of dimming every other one — dimming
+            // the rest read as the whole row being disabled on the (far more
+            // common) case of no reaction picked yet.
+            if (emoji == currentReaction) {
+                row.tvReactionEmoji.setBackgroundResource(R.drawable.bg_reaction_emoji_selected)
+            }
             row.tvReactionEmoji.setOnClickListener {
                 (activity as? Host)?.onReactionPicked(messageId, emoji)
                 dismiss()
             }
         }
 
+        addOption(R.drawable.ic_reply, R.string.message_action_reply) {
+            dismiss()
+            (activity as? Host)?.onReplyRequested(messageId)
+        }
         addOption(R.drawable.ic_delete, R.string.message_action_delete_for_me) {
             dismiss()
             (activity as? Host)?.onDeleteForMeRequested(messageId)
@@ -102,9 +111,13 @@ class MessageActionsBottomSheet : WedoraBottomSheetDialog() {
         private const val ARG_CURRENT_REACTION = "arg_current_reaction"
         private const val TAG = "message_actions"
 
-        /** WhatsApp's own default quick-react set. */
+        /**
+         * WhatsApp's own default six, plus four more common reactions —
+         * scrollable now (see sheet_message_actions.xml) rather than a fixed
+         * row, so there's no hard ceiling on this list beyond "reasonable."
+         */
         private val QUICK_REACT_EMOJI =
-            listOf("❤️", "😂", "😮", "😢", "🙏", "👍")
+            listOf("❤️", "😂", "😮", "😢", "🙏", "👍", "🔥", "😍", "👏", "😘")
 
         fun show(
             fragmentManager: FragmentManager,

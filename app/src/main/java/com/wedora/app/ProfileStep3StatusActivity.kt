@@ -18,6 +18,7 @@ class ProfileStep3StatusActivity : ProfileStepActivity() {
     private lateinit var chipsLookingFor: ChipGroup
 
     override val stepNumber = 3
+    override val stepId = OnboardingAnalytics.STEP_NAME_STATUS
     override val titleRes = R.string.step3_title
     override val subtitleRes = R.string.step3_subtitle
     override val contentLayoutRes = R.layout.view_step_status

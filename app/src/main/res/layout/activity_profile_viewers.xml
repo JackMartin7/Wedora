@@ -113,6 +113,23 @@
 
         </LinearLayout>
 
+        <!--
+            Free-tier ad slot. Placed BELOW the upgrade banner on purpose:
+            that puts the banner between the blurred tiles and the ad, so the
+            ad never reads as the thing standing between the user and the
+            content it's next to. AdMob prohibits implying an ad unlocks
+            gated content, and adjacency alone can imply it.
+        -->
+        <include
+            android:id="@+id/adBanner"
+            layout="@layout/view_native_ad_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="20dp"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
     </LinearLayout>
 
     <!-- ===== Premium: plain list ===== -->

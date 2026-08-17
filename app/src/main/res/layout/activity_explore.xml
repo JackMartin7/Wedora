@@ -209,15 +209,37 @@
 
             <!-- Section 2: Discover -->
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
                 android:layout_marginTop="28dp"
-                android:text="@string/explore_discover_label"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/explore_discover_label"
+                    android:textColor="@color/wedora_text"
+                    android:textSize="16sp"
+                    android:fontFamily="@font/poppins_semibold" />
+
+                <TextView
+                    android:id="@+id/tvDiscoverSeeAll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="4dp"
+                    android:text="@string/explore_see_all"
+                    android:textColor="@color/wedora_accent"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/poppins_medium" />
+
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvDiscover"
@@ -227,6 +249,24 @@
                 android:paddingHorizontal="14dp"
                 android:nestedScrollingEnabled="false"
                 tools:listitem="@layout/item_discover_grid" />
+
+            <!-- Shown only when the preview above is truncating something —
+                 see ExploreActivity.showDiscover. Same destination as See
+                 All above, just a second, closer-at-hand way to reach it. -->
+            <TextView
+                android:id="@+id/btnDiscoverLoadMore"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_pill_outline"
+                android:gravity="center"
+                android:text="@string/explore_load_more"
+                android:textColor="@color/wedora_accent"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
             <ProgressBar
                 android:id="@+id/progressDiscover"

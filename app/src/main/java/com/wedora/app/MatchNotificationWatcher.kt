@@ -135,6 +135,12 @@ object MatchNotificationWatcher {
     private fun handleModified(match: Match, previous: Match?, otherUid: String) {
         val becameMutual = match.isMutual() && previous?.isMutual() != true
         if (becameMutual) {
+            // Armed regardless of who completed the match — liking someone
+            // back is as good a moment to ask as being liked back. Only
+            // armed here; whether it actually surfaces is decided by the
+            // shared budget in RatePromptPrefs when HomeActivity consumes it.
+            RatePromptPrefs.armMatchTrigger(appContext)
+
             // Whoever's UID is newly present is who just completed the match.
             val completedBy = match.likedUsers.firstOrNull { it !in previous?.likedUsers.orEmpty() }
             if (completedBy == otherUid) {

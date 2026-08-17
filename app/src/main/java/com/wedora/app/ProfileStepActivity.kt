@@ -32,7 +32,7 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
         const val TAG = "WedoraProfileStep"
 
         /** Denominator for the progress indicator and the "Step n of N" label. */
-        const val TOTAL_STEPS = 6
+        const val TOTAL_STEPS = 7
     }
 
     protected lateinit var binding: ActivityProfileStepBinding
@@ -43,6 +43,9 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
     protected lateinit var uid: String
 
     protected abstract val stepNumber: Int
+
+    /** [OnboardingAnalytics] step_name — one of its STEP_NAME_* constants. */
+    protected abstract val stepId: String
 
     @get:StringRes
     protected abstract val titleRes: Int
@@ -102,6 +105,8 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
         updateContinueEnabled()
 
         loadExistingProfile()
+
+        OnboardingAnalytics.stepView(stepNumber, stepId)
     }
 
     /**
@@ -155,6 +160,7 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
 
         val updates = stepUpdates()
         if (updates.isEmpty()) {
+            onStepCompleteAnalytics()
             onStepSaved()
             return
         }
@@ -162,7 +168,10 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
         setSaving(true)
         firestore.collection(UserProfile.COLLECTION).document(uid)
             .set(updates, SetOptions.merge())
-            .addOnSuccessListener { onStepSaved() }
+            .addOnSuccessListener {
+                onStepCompleteAnalytics()
+                onStepSaved()
+            }
             .addOnFailureListener { e ->
                 logFirestoreWriteFailure(TAG, "Failed to save profile step $stepNumber", e)
                 setSaving(false)
@@ -170,6 +179,17 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
                     .show()
             }
     }
+
+    private fun onStepCompleteAnalytics() {
+        OnboardingAnalytics.stepComplete(stepNumber, stepId, analyticsItemsSelected())
+    }
+
+    /**
+     * Extra context for [OnboardingAnalytics.stepComplete] — currently only
+     * overridden by the Interests step, whose selection count is otherwise
+     * invisible to this generic completion hook.
+     */
+    protected open fun analyticsItemsSelected(): Int? = null
 
     /**
      * Last check before the write, for rules a step wants to *explain* rather
@@ -193,5 +213,21 @@ abstract class ProfileStepActivity : WedoraBaseActivity() {
         binding.btnContinue.isEnabled = !saving
         binding.btnContinue.setText(if (saving) R.string.btn_saving else R.string.btn_continue)
         if (!saving) updateContinueEnabled()
+    }
+
+    /**
+     * See [OnboardingAnalytics.stepAbandon] for what this signal does and
+     * doesn't catch. `isFinishing` is false for backgrounding/leaving the
+     * app and true for every in-flow transition (Continue, Skip, the back
+     * arrow all call finish() before or as part of triggering this), so this
+     * fires only for the former. `isChangingConfigurations` excludes a
+     * rotation, which stops and recreates this same Activity rather than
+     * abandoning it.
+     */
+    override fun onStop() {
+        super.onStop()
+        if (!isFinishing && !isChangingConfigurations) {
+            OnboardingAnalytics.stepAbandon(stepNumber, stepId)
+        }
     }
 }

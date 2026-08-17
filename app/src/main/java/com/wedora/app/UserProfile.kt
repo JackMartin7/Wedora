@@ -76,6 +76,23 @@ data class UserProfile(
      */
     val lookingFor: String?,
     /**
+     * [Interest.firestoreValue] ids the user picked on Sign Up or Edit
+     * Profile. Optional — empty for anyone who skipped it or predates this
+     * field, same as [bio]. Not currently used to narrow the Home/Explore
+     * feed (see FilterActivity's own Interests section).
+     */
+    val interests: List<String>,
+    /**
+     * When this profile became visible in the feed — written once, at the
+     * details step (see ProfileStep4DetailsActivity), not at sign-up, since
+     * that's the point there's enough on the profile to show anyone.
+     *
+     * Drives "newest first" ordering in the feed (see Feed.kt's
+     * withRecencyPriority / withNewSignupPriority). Null on accounts that
+     * predate the field, which sort as oldest — the safe reading.
+     */
+    val createdAt: Date?,
+    /**
      * When this user was last seen — updated on every app foreground/background
      * transition (see PresenceTracker). Null for anyone who predates presence or
      * whose server timestamp hasn't resolved yet; consumers show nothing then.
@@ -104,6 +121,11 @@ data class UserProfile(
     val messagesSentToday: Int,
     /** "yyyy-MM-dd", device-local calendar day the count above is for. */
     val messagesSentDate: String?,
+    /** Rewarded-ad bonuses on top of the flat free-tier caps — see [FIELD_BONUS_LIKES_TODAY]. */
+    val bonusLikesToday: Int,
+    val bonusLikesDate: String?,
+    val bonusMessagesToday: Int,
+    val bonusMessagesDate: String?,
     /**
      * The hosted URL of this user's uploaded photo (see PhotoUploadService),
      * for OTHER users' devices to load — the local file [LocalProfilePrefs]
@@ -148,12 +170,59 @@ data class UserProfile(
         const val FIELD_ONLY_MATCHES_CAN_MESSAGE = "onlyMatchesCanMessage"
         const val FIELD_MY_STATUS = "myStatus"
         const val FIELD_LOOKING_FOR = "lookingFor"
+        const val FIELD_INTERESTS = "interests"
         const val FIELD_LAST_SEEN = "lastSeen"
         const val FIELD_IS_PREMIUM = "isPremium"
         const val FIELD_LIKES_GIVEN_TODAY = "likesGivenToday"
         const val FIELD_LIKES_GIVEN_DATE = "likesGivenDate"
         const val FIELD_MESSAGES_SENT_TODAY = "messagesSentToday"
         const val FIELD_MESSAGES_SENT_DATE = "messagesSentDate"
+
+        /**
+         * Extra daily allowance earned by watching a rewarded ad, on top of
+         * the free tier's flat caps — see RewardedAds, LikeLimit.kt and
+         * MessageLimit.kt.
+         *
+         * Kept as separate fields rather than just letting the client push
+         * likesGivenToday past 10, because firestore.rules caps that value
+         * directly: the bonus has to be visible to the rules for them to
+         * widen the ceiling by exactly the amount earned. Each carries its
+         * own date and resets the same way the base counters do.
+         */
+        const val FIELD_BONUS_LIKES_TODAY = "bonusLikesToday"
+        const val FIELD_BONUS_LIKES_DATE = "bonusLikesDate"
+        const val FIELD_BONUS_MESSAGES_TODAY = "bonusMessagesToday"
+        const val FIELD_BONUS_MESSAGES_DATE = "bonusMessagesDate"
+
+        /**
+         * Ceilings on rewarded bonuses per day, mirrored in firestore.rules.
+         *
+         * Bounded because the rules can't verify an ad was actually watched
+         * — same documented trust boundary as the daily-limit date itself.
+         * The cap turns "a modified client grants itself unlimited likes"
+         * into "a modified client gets at most double", which is the same
+         * shape of gap the rest of this file's limits already accept.
+         *
+         * One constant per quota, not one shared value: each is set to its
+         * own base allowance (10 likes, 5 messages) so that "at most double"
+         * holds for both. A single shared 10 against the lower message base
+         * would quietly make the ad path worth 2x the free allowance on
+         * messages alone.
+         */
+        const val MAX_DAILY_BONUS_LIKES = 10
+        const val MAX_DAILY_BONUS_MESSAGES = 5
+
+        /**
+         * When this user last earned a rewarded bonus, as a SERVER
+         * timestamp — the cooldown in firestore.rules compares it against
+         * request.time, so a client-supplied value would defeat the point.
+         * See [RewardedCooldownPrefs] for the local mirror that drives the
+         * countdown UI, and RewardedAds.grantBonus for the write.
+         *
+         * One field for both quotas: the cooldown is global, rate-limiting
+         * ad views rather than either quota individually.
+         */
+        const val FIELD_LAST_REWARDED_AD_AT = "lastRewardedAdAt"
         const val FIELD_PHOTO_URL = "photoUrl"
         /**
          * This device's current FCM registration token — write-only from the
@@ -201,6 +270,9 @@ data class UserProfile(
                 snapshot.getBoolean(FIELD_ONLY_MATCHES_CAN_MESSAGE) ?: false,
             myStatus = snapshot.getString(FIELD_MY_STATUS),
             lookingFor = snapshot.getString(FIELD_LOOKING_FOR),
+            interests = (snapshot.get(FIELD_INTERESTS) as? List<*>)
+                ?.filterIsInstance<String>() ?: emptyList(),
+            createdAt = snapshot.getTimestamp(FIELD_CREATED_AT)?.toDate(),
             // Null while a just-written serverTimestamp is still pending.
             lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate(),
             isPremium = snapshot.getBoolean(FIELD_IS_PREMIUM) ?: false,
@@ -208,6 +280,10 @@ data class UserProfile(
             likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE),
             messagesSentToday = snapshot.getLong(FIELD_MESSAGES_SENT_TODAY)?.toInt() ?: 0,
             messagesSentDate = snapshot.getString(FIELD_MESSAGES_SENT_DATE),
+            bonusLikesToday = snapshot.getLong(FIELD_BONUS_LIKES_TODAY)?.toInt() ?: 0,
+            bonusLikesDate = snapshot.getString(FIELD_BONUS_LIKES_DATE),
+            bonusMessagesToday = snapshot.getLong(FIELD_BONUS_MESSAGES_TODAY)?.toInt() ?: 0,
+            bonusMessagesDate = snapshot.getString(FIELD_BONUS_MESSAGES_DATE),
             photoUrl = snapshot.getString(FIELD_PHOTO_URL),
             isBanned = snapshot.getBoolean(FIELD_IS_BANNED) ?: false,
             banReason = snapshot.getString(FIELD_BAN_REASON)

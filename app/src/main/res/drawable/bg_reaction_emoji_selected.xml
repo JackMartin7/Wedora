@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marks whichever quick-react emoji is already this user's current
+     reaction — a subtle accent wash behind it, replacing the old
+     dim-everything-else-to-55%-alpha approach (see
+     MessageActionsBottomSheet.kt), which read as the whole row being
+     disabled on the (overwhelmingly common) case of no reaction yet. -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/wedora_accent_shadow">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/wedora_accent_tint_12" />
+        </shape>
+    </item>
+</ripple>

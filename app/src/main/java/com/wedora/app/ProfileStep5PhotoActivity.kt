@@ -10,13 +10,15 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.firebase.firestore.SetOptions
 import java.io.File
-import java.io.IOException
 
 /**
- * Step 5: the profile photo — the only optional step.
+ * Step 6: the profile photo. Optional, like [ProfileStep6InterestsActivity]
+ * that follows it — neither blocks Continue.
  *
  * The local copy (see [LocalProfilePrefs]) is what this device's own Profile
  * screen reads, and that part of the flow is unchanged: writing nothing here
@@ -32,8 +34,9 @@ import java.io.IOException
  * covers this user's own Profile screen either way.
  *
  * Unlike the other steps it saves on pick rather than on Continue. There is no
- * document write to batch it with, and both Continue and Skip end the flow at
- * the same place, so deferring would only create a way to lose the picked file.
+ * document write to batch it with, and both Continue and Skip end at the same
+ * place — Interests, now the final step — so deferring would only create a
+ * way to lose the picked file.
  */
 class ProfileStep5PhotoActivity : ProfileStepActivity() {
 
@@ -53,14 +56,35 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      */
     private var suggestedGooglePhotoUrl: String? = null
 
+    /**
+     * The downloaded, upright, face-checked Google photo — set only once
+     * [validateThenSuggestGooglePhoto] has cleared it, and the thing
+     * [onStepSaved] actually re-hosts. Null means there is nothing to accept,
+     * whatever [suggestedGooglePhotoUrl] says.
+     */
+    private var validatedGooglePhotoFile: File? = null
+
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) savePickedPhoto(uri)
+            if (uri != null) photoFlow.start(uri, File(filesDir, "profile_photos/$uid.jpg"))
         }
+
+    /**
+     * Normalise -> face check -> crop -> re-check, before anything is saved.
+     * The picked image no longer reaches the filesystem untouched: what
+     * lands at the destination is the finished 1024px JPEG.
+     */
+    private val photoFlow = ProfilePhotoFlow(
+        activity = this,
+        onReady = ::onPhotoReady,
+        onRejected = { messageRes -> Toast.makeText(this, messageRes, Toast.LENGTH_LONG).show() },
+        onBusyChanged = ::setPhotoBusy
+    )
 
     // Visual step number only — class name and its own string resources
     // (step5_title/step5_subtitle) stay as-is.
     override val stepNumber = 6
+    override val stepId = OnboardingAnalytics.STEP_NAME_PHOTO
     override val titleRes = R.string.step5_title
     override val subtitleRes = R.string.step5_subtitle
     override val contentLayoutRes = R.layout.view_step_photo
@@ -72,7 +96,10 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
         if (isFinishing) return
 
         binding.tvStepSkip.visibility = View.VISIBLE
-        binding.tvStepSkip.setOnClickListener { finishSetup() }
+        binding.tvStepSkip.setOnClickListener {
+            OnboardingAnalytics.stepSkip(stepNumber, stepId)
+            finishSetup()
+        }
     }
 
     override fun bindContent(content: View) {
@@ -95,7 +122,9 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
             // change" treatment as ProfileStep1NameActivity's pre-filled
             // name field. See [suggestedGooglePhotoUrl]'s own doc comment
             // for what turns this into an actual saved photo.
-            googlePhoto != null -> showSuggestedGooglePhoto(googlePhoto)
+            // Not shown until it has passed the same face check a picked
+            // photo would — see validateThenSuggestGooglePhoto.
+            googlePhoto != null -> validateThenSuggestGooglePhoto(googlePhoto)
             else -> Unit
         }
     }
@@ -106,12 +135,9 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
     /** Nothing goes to Firestore: the photo never leaves the device. */
     override fun stepUpdates(): Map<String, Any?> = emptyMap()
 
-    override fun nextStep(): Class<*> = HomeActivity::class.java
+    override fun nextStep(): Class<*> = ProfileStep6InterestsActivity::class.java
 
     /**
-     * Ends the setup flow rather than stacking Home on top of five steps that
-     * should no longer be reachable by back.
-     *
      * Tapping Continue with [suggestedGooglePhotoUrl] still set — meaning the
      * user saw the Google account photo pre-filled and didn't replace it —
      * is what actually accepts it: only now does it get saved as this
@@ -122,51 +148,140 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      * string.
      */
     override fun onStepSaved() {
-        val acceptedGooglePhoto = suggestedGooglePhotoUrl
-        if (acceptedGooglePhoto != null) {
-            firestore.collection(UserProfile.COLLECTION).document(uid)
-                .set(mapOf(UserProfile.FIELD_PHOTO_URL to acceptedGooglePhoto), SetOptions.merge())
-                .addOnFailureListener { e ->
-                    logFirestoreWriteFailure(TAG, "Failed to save accepted Google photo url", e)
-                }
+        val validated = validatedGooglePhotoFile
+        if (suggestedGooglePhotoUrl != null && validated != null) {
+            acceptGooglePhoto(validated)
         }
         finishSetup()
     }
 
+    /**
+     * Re-hosts the accepted Google photo through the app's own Storage rather
+     * than saving Google's URL directly.
+     *
+     * This reverses the previous decision, which called re-hosting "a slower
+     * path to an equivalent string". That was true when the URL was all this
+     * step produced; it isn't any more. A photo reaching other users' feeds
+     * without passing the face check, or at whatever dimensions Google
+     * happens to serve, would be the one way around both new guarantees.
+     * [ProfilePhotoPipeline.compressUprightToOutput] never upscales, so a
+     * small Google avatar stays small rather than being inflated to 1024.
+     *
+     * No crop UI on this path: the user never picked this image or asked to
+     * frame it, and hijacking Continue with a crop screen would be a worse
+     * trade than accepting Google's own framing.
+     *
+     * Fire-and-forget, like [uploadThenSaveUrl] — Continue has already
+     * navigated by the time any of this lands.
+     */
+    private fun acceptGooglePhoto(uprightFile: File) {
+        val destination = File(filesDir, "profile_photos/$uid.jpg")
+        ProfilePhotoPipeline.compressUprightToOutput(uprightFile, destination) { ok ->
+            if (!ok) {
+                Log.w(TAG, "Couldn't compress the accepted Google photo; leaving photoUrl unset")
+                return@compressUprightToOutput
+            }
+            LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
+            uploadThenSaveUrl(destination)
+        }
+    }
+
+    /**
+     * Downloads the Google account photo and runs it through the same
+     * normalise + face check the picker path uses, before it is ever offered.
+     *
+     * Done here rather than at Continue so the block stays silent: a Google
+     * photo with no detectable face simply isn't suggested, and the user sees
+     * the ordinary "Add Photo" state instead of an error about a photo they
+     * never chose.
+     */
+    private fun validateThenSuggestGooglePhoto(url: Uri) {
+        val working = File(cacheDir, GOOGLE_PHOTO_FILENAME)
+        Glide.with(this)
+            .asFile()
+            .load(url)
+            .into(object : CustomTarget<File>() {
+                override fun onResourceReady(resource: File, transition: Transition<in File>?) {
+                    if (isFinishing || isDestroyed) return
+                    ProfilePhotoPipeline.prepare(
+                        this@ProfileStep5PhotoActivity,
+                        Uri.fromFile(resource),
+                        working
+                    ) { prepared ->
+                        if (!prepared || isFinishing || isDestroyed) return@prepare
+                        ProfilePhotoPipeline.detectFace(
+                            this@ProfileStep5PhotoActivity,
+                            Uri.fromFile(working)
+                        ) { check ->
+                            if (isFinishing || isDestroyed) return@detectFace
+                            // Unavailable fails open here too, matching the
+                            // picker path: an undownloaded model shouldn't
+                            // silently withhold a perfectly good suggestion.
+                            if (check is ProfilePhotoPipeline.FaceCheck.None) {
+                                Log.w(TAG, "Google account photo has no detectable face; not suggesting it")
+                                return@detectFace
+                            }
+                            validatedGooglePhotoFile = working
+                            showSuggestedGooglePhoto(url)
+                        }
+                    }
+                }
+
+                override fun onLoadCleared(placeholder: android.graphics.drawable.Drawable?) = Unit
+
+                override fun onLoadFailed(errorDrawable: android.graphics.drawable.Drawable?) {
+                    Log.w(TAG, "Couldn't download the Google account photo; not suggesting it")
+                }
+            })
+    }
+
+    /**
+     * Both Continue and Skip land here — the photo is optional either way, so
+     * unlike every other step there's nothing that distinguishes them beyond
+     * whether a suggested Google photo gets accepted (see [onStepSaved]).
+     * Interests is now the final step, so this is a normal
+     * goToNextStep()-style handoff rather than ending the flow.
+     */
     private fun finishSetup() {
-        startActivity(
-            Intent(this, HomeActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        )
+        startActivity(Intent(this, ProfileStep6InterestsActivity::class.java))
         finish()
     }
 
     /**
-     * Copies the picked image into internal storage straight away rather than
-     * holding the picker's Uri, whose grant isn't guaranteed to outlive this
-     * screen.
+     * The finished photo, already face-checked, cropped and compressed by
+     * [ProfilePhotoFlow], and already written to the destination file.
+     *
+     * Nothing here waits on the picker's Uri any more — the flow consumed it
+     * well before this point, so the old concern about that grant not
+     * outliving the screen is handled upstream.
      */
-    private fun savePickedPhoto(uri: Uri) {
-        try {
-            val destination = File(filesDir, "profile_photos/$uid.jpg")
-            destination.parentFile?.mkdirs()
-            contentResolver.openInputStream(uri)?.use { input ->
-                destination.outputStream().use { output -> input.copyTo(output) }
-            } ?: throw IOException("openInputStream returned null")
+    private fun onPhotoReady(file: File) {
+        // An explicit pick replaces any Google suggestion outright —
+        // onStepSaved only checks this for the case where the user never
+        // did this, so clearing it here isn't strictly load-bearing, but
+        // leaving a stale suggestion around after a real pick would be
+        // confusing for anything added later that reads it.
+        suggestedGooglePhotoUrl = null
+        LocalProfilePrefs.setPhotoPath(this, uid, file.absolutePath)
+        showPhoto(file)
+        uploadThenSaveUrl(file)
+    }
 
-            // An explicit pick replaces any Google suggestion outright —
-            // onStepSaved only checks this for the case where the user never
-            // did this, so clearing it here isn't strictly load-bearing, but
-            // leaving a stale suggestion around after a real pick would be
-            // confusing for anything added later that reads it.
-            suggestedGooglePhotoUrl = null
-            LocalProfilePrefs.setPhotoPath(this, uid, destination.absolutePath)
-            showPhoto(destination)
-            uploadThenSaveUrl(destination)
-        } catch (e: IOException) {
-            Log.w(TAG, "Failed to copy picked profile photo", e)
-            Toast.makeText(this, R.string.error_photo_copy_failed, Toast.LENGTH_SHORT).show()
-        }
+    /**
+     * Disables the two pick affordances while the pipeline runs. Decoding a
+     * 12MP image and running the detector takes a second or two, and a tap
+     * that appears to do nothing invites a second tap and a second pick.
+     */
+    private fun setPhotoBusy(busy: Boolean) {
+        photoView.isEnabled = !busy
+        actionLabel.isEnabled = !busy
+        actionLabel.setText(
+            when {
+                busy -> R.string.photo_processing
+                LocalProfilePrefs.getPhotoPath(this, uid) != null -> R.string.change_photo
+                else -> R.string.add_photo
+            }
+        )
     }
 
     /**
@@ -229,6 +344,8 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
      * underneath the same uid.
      */
     private fun showSuggestedGooglePhoto(uri: Uri) {
+        // Reached only from validateThenSuggestGooglePhoto, i.e. only once
+        // the photo has been downloaded and cleared the face check.
         suggestedGooglePhotoUrl = uri.toString()
         photoView.setPadding(0, 0, 0, 0)
         actionLabel.setText(R.string.change_photo)
@@ -237,5 +354,12 @@ class ProfileStep5PhotoActivity : ProfileStepActivity() {
             .load(uri)
             .centerCrop()
             .into(photoView)
+    }
+
+    private companion object {
+        /** cacheDir, not filesDir: this is only ever an intermediate — the
+         *  accepted photo is written to the real destination by
+         *  [acceptGooglePhoto]. */
+        const val GOOGLE_PHOTO_FILENAME = "google_photo_working.jpg"
     }
 }

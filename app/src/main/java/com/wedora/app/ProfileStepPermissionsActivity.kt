@@ -45,6 +45,7 @@ class ProfileStepPermissionsActivity : ProfileStepActivity() {
         }
 
     override val stepNumber = 4
+    override val stepId = OnboardingAnalytics.STEP_NAME_PERMISSIONS
     override val titleRes = R.string.step_permissions_title
     override val subtitleRes = R.string.step_permissions_subtitle
     override val contentLayoutRes = R.layout.view_step_permissions

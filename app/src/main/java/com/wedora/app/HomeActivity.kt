@@ -1,6 +1,8 @@
 package com.wedora.app
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
@@ -25,6 +27,7 @@ class HomeActivity :
     WedoraBaseActivity(),
     DailyLimitReachedBottomSheet.Host,
     GuestProfileLimitBottomSheet.Host,
+    RateAppBottomSheet.Host,
     UpdateFlowHost {
 
     /**
@@ -35,6 +38,14 @@ class HomeActivity :
     override val updateFlowLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result -> UpdateRepository.onFlowResult(result.resultCode) }
+
+    private val locationResolver by lazy { LocationResolver(this) }
+
+    /** Fires from tapping [ActivityHomeBinding.bannerLocationPrompt]. */
+    private val requestLocationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) detectLocationForBanner() else openEditProfileForManualLocation()
+        }
 
     private companion object {
         const val TAG = "WedoraMatching"
@@ -106,10 +117,10 @@ class HomeActivity :
      * [loadFeedExclusions], so in the common case no card is ever bound for
      * one and the filled heart doesn't appear. Two things put one on screen
      * anyway: the exclusion read fails *open* on a network failure, and — by
-     * design — [resolveFeedExclusions]'s small-pool fallback deliberately
-     * reintroduces already-liked people rather than showing a hard empty
-     * state. Either way the heart should be red and unlike-in-place should
-     * work, which is what this set drives.
+     * design — [buildFeedCards]' widest tier deliberately reintroduces
+     * already-liked people rather than showing a hard empty state. Either way
+     * the heart should be red and unlike-in-place should work, which is what
+     * this set drives.
      */
     private val likedUserIds = mutableSetOf<String>()
 
@@ -135,11 +146,13 @@ class HomeActivity :
         override fun onSwipedRight(position: Int) {
             (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
             (displayItems.getOrNull(position) as? StackItem.Profile)?.let { likeUser(it.card) }
+            maybeShowInterstitial()
         }
 
         override fun onSwipedLeft(position: Int) {
             (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
             (displayItems.getOrNull(position) as? StackItem.Profile)?.let { recordPass(it.card) }
+            maybeShowInterstitial()
         }
 
         override fun onEmptied() {
@@ -267,6 +280,8 @@ class HomeActivity :
         }
         showFilterIndicator()
 
+        binding.bannerLocationPrompt.setOnClickListener { onLocationBannerTapped() }
+
         // Tapping your own avatar/name opens your profile — the same
         // destination as the Profile tab, so it navigates the same way the tab
         // does: start it and finish this one.
@@ -294,6 +309,7 @@ class HomeActivity :
         super.onStart()
         observeMatches()
         applyPremiumCrownTint()
+        maybeShowRatePrompt()
 
         UpdateRepository.addObserver(updateObserver)
         // First Home resume after a cold start is where the Play check runs —
@@ -447,10 +463,16 @@ class HomeActivity :
 
                 showNotificationBadge(matches.count { it.isUnseenLikeFor(selfUid) })
 
-                likedUserIds.addAll(
-                    matches.filter { it.isLikeBy(selfUid) }
-                        .mapNotNull { it.otherUserId(selfUid) }
-                )
+                val likedFromMatches = matches.filter { it.isLikeBy(selfUid) }
+                    .mapNotNull { it.otherUserId(selfUid) }
+                likedUserIds.addAll(likedFromMatches)
+                // Piggybacks on this listener as the cache's rebuild path: a
+                // fresh install or new device has an empty LikedProfilesCache
+                // until this fires, at which point it's repopulated from real
+                // Firestore data the same way likedUserIds always has been —
+                // no separate one-time sync needed. See LikedProfilesCache's
+                // own doc comment.
+                likedFromMatches.forEach { LikedProfilesCache.add(this, selfUid, it) }
                 binding.cardStack.rebindVisibleCards()
             }
     }
@@ -489,6 +511,8 @@ class HomeActivity :
         val user = FirebaseAuth.getInstance().currentUser
         binding.tvUserName.text = user?.displayName?.takeIf { it.isNotBlank() }
             ?: getString(R.string.default_greeting_name)
+        // Local-only here — the hosted URL isn't known until loadMatches'
+        // own profile read lands, which rebinds with it (see there).
         user?.uid?.let { binding.ivMyAvatar.loadLocalProfilePhoto(this, it) }
     }
 
@@ -519,11 +543,14 @@ class HomeActivity :
         // prompt is required — but querying unfiltered beats showing an
         // empty feed or crashing over a missing value).
         if (GuestPrefs.isGuest(this)) {
+            // A guest has no profile document to add a location to, so the
+            // nudge has nothing to point at.
+            binding.bannerLocationPrompt.visibility = View.GONE
             showLoading()
             queryMatches(
                 interestedIn = GuestPrefs.guestInterestedIn(this),
                 selfUid = null,
-                exclusions = FeedExclusions(blocked = emptySet(), all = emptySet()),
+                exclusions = FeedExclusions.EMPTY,
                 myLat = null,
                 myLon = null
             )
@@ -545,6 +572,14 @@ class HomeActivity :
             .addOnSuccessListener { selfDoc ->
                 if (!isUsable()) return@addOnSuccessListener
                 val self = UserProfile.from(selfDoc)
+
+                // Rebind the avatar now that photoUrl is known — showSignedInUser
+                // could only try the local file, which doesn't exist for an
+                // account whose photo was uploaded from another device.
+                binding.ivMyAvatar.loadOwnProfilePhoto(this, uid, self.photoUrl)
+
+                binding.bannerLocationPrompt.visibility =
+                    if (self.latitude == null || self.longitude == null) View.VISIBLE else View.GONE
                 val interestedIn = self.interestedIn
                 if (interestedIn.isNullOrBlank()) {
                     showEmptyState(
@@ -567,12 +602,70 @@ class HomeActivity :
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load own profile for matching", e)
                 if (!isUsable()) return@addOnFailureListener
+                binding.bannerLocationPrompt.visibility = View.GONE
                 showEmptyState(
                     icon = R.drawable.ic_sparkle_heart,
                     title = R.string.empty_home_error_title,
                     subtitle = R.string.empty_home_error_subtitle
                 )
             }
+    }
+
+    /**
+     * Tap on [ActivityHomeBinding.bannerLocationPrompt]: GPS-detect first,
+     * falling back to manual entry in Edit Profile if permission is missing,
+     * denied, or detection otherwise fails — the same GPS-then-manual chain
+     * ProfileStep4DetailsActivity uses during onboarding.
+     */
+    private fun onLocationBannerTapped() {
+        val alreadyGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (alreadyGranted) {
+            detectLocationForBanner()
+        } else {
+            requestLocationPermission.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+    }
+
+    private fun detectLocationForBanner() {
+        locationResolver.resolve(
+            onSuccess = { place -> saveDetectedLocation(place) },
+            onFailure = {
+                // Detection failing (no fix, no geocoder backend) is a normal
+                // outcome, not an error — same reasoning as onboarding's own
+                // detectLocation().
+                Log.i(TAG, "Location detection unavailable from Home banner; falling back to manual entry")
+                openEditProfileForManualLocation()
+            }
+        )
+    }
+
+    private fun saveDetectedLocation(place: LocationResolver.Place) {
+        if (!isUsable() || place.latitude == null || place.longitude == null) return
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        firestore.collection(UserProfile.COLLECTION).document(uid)
+            .update(
+                mapOf(
+                    UserProfile.FIELD_CITY to place.city,
+                    UserProfile.FIELD_COUNTRY to place.country,
+                    UserProfile.FIELD_LATITUDE to fuzzCoordinate(place.latitude),
+                    UserProfile.FIELD_LONGITUDE to fuzzCoordinate(place.longitude)
+                )
+            )
+            .addOnSuccessListener {
+                if (!isUsable()) return@addOnSuccessListener
+                binding.bannerLocationPrompt.visibility = View.GONE
+                loadMatches()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Failed to save detected location from Home banner", e)
+            }
+    }
+
+    private fun openEditProfileForManualLocation() {
+        startActivity(Intent(this, EditProfileActivity::class.java))
     }
 
     /**
@@ -583,10 +676,11 @@ class HomeActivity :
      * is trivially true and excludes nobody — the same "no self to filter
      * out" a guest already has no exclusion set for.
      *
-     * [exclusions] is resolved via [resolveFeedExclusions] — the same shared
+     * [exclusions] is resolved via [buildFeedCards] — the same shared tiered
      * fallback Explore/Nearby use (see Feed.kt), so a small user base
-     * reintroduces passed/already-liked profiles here too rather than each
-     * screen deciding independently. Blocked users are never reintroduced.
+     * reintroduces passed and then already-liked profiles here too rather
+     * than each screen deciding independently. Blocked and already-matched
+     * users are never reintroduced at any tier.
      */
     private fun queryMatches(
         interestedIn: String?,
@@ -595,6 +689,20 @@ class HomeActivity :
         myLat: Double?,
         myLon: Double?
     ) {
+        // Cached pool first (signed-in only — selfUid is null for a guest).
+        // The size check is the same bypass Feed.kt documents: an exhausted
+        // feed must always re-query rather than sit on a stale pool.
+        val cachedPool = selfUid?.let { FeedCache.load(this, it, interestedIn) }
+        if (cachedPool != null) {
+            val cards = buildFeedCards(this, cachedPool, selfUid, exclusions, myLat, myLon)
+                .withRecencyPriority()
+                .withPremiumPriority()
+            if (cards.size >= FALLBACK_MIN_RESULTS) {
+                showCards(cards)
+                return
+            }
+        }
+
         val baseQuery = firestore.collection(UserProfile.COLLECTION)
         val query = if (interestedIn.isNullOrBlank()) {
             baseQuery
@@ -611,16 +719,22 @@ class HomeActivity :
                 // would then try to Glide.with(this) on a destroyed
                 // Activity, which throws rather than no-oping. See isUsable().
                 if (!isUsable()) return@addOnSuccessListener
-                val excludedUids = resolveFeedExclusions(snapshot.documents, selfUid, exclusions)
-                val candidates = snapshot.documents
-                    .filter { it.id != selfUid && it.id !in excludedUids }
-                    .mapNotNull { it.toMatchCard()?.withDistanceFrom(myLat, myLon) }
 
-                // Premium accounts to the front of the stack; otherwise the
-                // order the query returned is left as-is (withPremiumPriority
-                // is a stable sort).
-                val loaded = candidates
-                    .filter { matchesActiveFilters(this, it, myLat, myLon) }
+                val pool = snapshot.documents.toFeedPool()
+                selfUid?.let { FeedCache.save(this, it, interestedIn, pool) }
+
+                // Everyone this user could ever be shown, before the active
+                // filters — only used to tell the two empty states apart below.
+                val candidates = feedCandidatePool(pool, selfUid, exclusions)
+
+                // Newest profiles first, then Premium accounts to the front of
+                // that — both stable sorts, applied in reverse priority order.
+                // Recency replaces what used to be "the order the query
+                // returned": a plain equality query hands back documents in
+                // document-ID order, which is arbitrary AND identical on every
+                // load, so the same faces led the deck indefinitely.
+                val loaded = buildFeedCards(this, pool, selfUid, exclusions, myLat, myLon)
+                    .withRecencyPriority()
                     .withPremiumPriority()
 
                 when {
@@ -793,6 +907,18 @@ class HomeActivity :
             return
         }
 
+        // Cache hit: already on record as liked, from a real Firestore-backed
+        // sync (see LikedProfilesCache's own doc comment) — nothing to write
+        // and nothing to check against the daily limit, since re-liking an
+        // already-liked profile was never going to cost one anyway (see
+        // likeUserRespectingDailyLimit's own matchExistsQuery check). The card
+        // has already swiped away by the time this runs regardless — this
+        // just skips bothering Firestore for something it already has.
+        if (LikedProfilesCache.isLiked(this, selfUid, card.id)) {
+            likedUserIds.add(card.id)
+            return
+        }
+
         // Not optimistic here the way the rest of this function used to be:
         // the daily-limit check needs a read before anything is written, so
         // likedUserIds/the card's departure only reflect a like that's
@@ -804,9 +930,11 @@ class HomeActivity :
                 is LikeAttempt.DailyLimitReached -> showDailyLimitReachedSheet()
                 is LikeAttempt.Started -> {
                     likedUserIds.add(card.id)
+                    LikedProfilesCache.add(this, selfUid, card.id)
                     attempt.task.addOnFailureListener { e ->
                         logFirestoreWriteFailure(TAG, "Failed to like ${card.id}", e)
                         likedUserIds.remove(card.id)
+                        LikedProfilesCache.remove(this, selfUid, card.id)
                         toast(getString(R.string.error_match_failed))
                     }
                 }
@@ -822,17 +950,67 @@ class HomeActivity :
         startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
     }
 
+    override fun onWatchAdForBonusRequested(kind: DailyLimitReachedBottomSheet.Kind) {
+        runRewardedBonusFlow(kind)
+    }
+
+    /**
+     * Consumes the new-match rate trigger armed by [MatchNotificationWatcher].
+     *
+     * Home rather than the match notification itself: the watcher runs
+     * app-wide with no Activity to show a sheet on, and this is where users
+     * land afterwards. The arming flag is persisted, so a match that arrived
+     * by push while the app was dead still surfaces here on next open.
+     *
+     * Guests can't reach this — they have no matches to become mutual.
+     */
+    private fun maybeShowRatePrompt() {
+        if (!isUsable()) return
+        if (!RatePromptPrefs.shouldPrompt(this, RatePromptPrefs.Trigger.NEW_MATCH)) return
+
+        RatePromptPrefs.recordPromptShown(this)
+        RateAppBottomSheet.show(supportFragmentManager)
+    }
+
+    override fun onRateAppRequested() {
+        RatePromptPrefs.settle(this)
+        openPlayStoreListing()
+    }
+
+    /**
+     * Offers the between-sessions interstitial — see [InterstitialAds] for
+     * the cadence and the three caps that bound it.
+     *
+     * Called after a card has already flown off, never during a drag: the
+     * swipe the user asked for always completes first, so the ad reads as
+     * arriving between actions rather than interrupting one. That ordering
+     * is the difference between an acceptable placement and the kind AdMob
+     * treats as an accidental-click trap.
+     */
+    private fun maybeShowInterstitial() {
+        if (!isUsable()) return
+        if (InterstitialAds.onEvent(this, InterstitialAds.Trigger.SWIPE)) {
+            // No onClosed: this Activity is staying put, so there's nothing
+            // to resume once the ad is dismissed.
+            InterstitialAds.show(this)
+        }
+    }
+
     private fun unlikeInPlace(card: MatchCard, heartButton: ImageButton) {
         val selfUid = FirebaseAuth.getInstance().realUid ?: return
 
-        // Optimistic grey; revert if the delete fails (e.g. offline).
+        // Optimistic grey; revert if the delete fails (e.g. offline). The
+        // cache entry comes out too — a genuine unlike must be re-likeable
+        // for real later, not silently swallowed by the fast path above.
         likedUserIds.remove(card.id)
+        LikedProfilesCache.remove(this, selfUid, card.id)
         heartButton.setImageResource(R.drawable.ic_like_outline)
 
         deleteMatchDocument(firestore, selfUid, card.id)
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to unlike ${card.id}", e)
                 likedUserIds.add(card.id)
+                LikedProfilesCache.add(this, selfUid, card.id)
                 heartButton.setImageResource(R.drawable.ic_like_filled)
                 toast(getString(R.string.error_unlike_failed))
             }
@@ -849,6 +1027,14 @@ class HomeActivity :
             return
         }
 
+        // Cache hit: a liked profile always has a match doc (liking is what
+        // creates one — see LikeLimit.kt), so this skips straight past the
+        // matchExistsQuery read that would only confirm what's already known.
+        if (LikedProfilesCache.isLiked(this, selfUid, card.id)) {
+            openChatThread(card)
+            return
+        }
+
         matchExistsQuery(firestore, selfUid, card.id)
             .addOnSuccessListener { snapshot ->
                 if (!snapshot.isEmpty) {
@@ -861,6 +1047,7 @@ class HomeActivity :
                         is LikeAttempt.Started -> attempt.task
                             .addOnSuccessListener {
                                 likedUserIds.add(card.id)
+                                LikedProfilesCache.add(this, selfUid, card.id)
                                 openChatThread(card)
                             }
                             .addOnFailureListener { e ->
@@ -965,8 +1152,8 @@ class HomeActivity :
      * Premium), so "not Premium" already means "free signed-in or guest"
      * without needing to ask [GuestPrefs.isGuest] here too. [profiles] itself
      * is agnostic to where each card came from — including whether Feed.kt's
-     * small-pool fallback (see resolveFeedExclusions) reintroduced it — so
-     * ads are woven in purely by position, the same for a fresh card or a
+     * tiered fallback (see buildFeedCards) reintroduced it — so ads are woven
+     * in purely by position, the same for a fresh card or a
      * fallback-recycled one.
      */
     private fun buildDisplayItems(profiles: List<MatchCard>): List<StackItem> {

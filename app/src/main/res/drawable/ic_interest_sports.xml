@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trophy, for the Sports interest chip. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M7,4 L17,4 L17,10 C17,13.3 14.8,15.5 12,15.5 C9.2,15.5 7,13.3 7,10 Z M10.8,15.4 L13.2,15.4 L13.2,18 L10.8,18 Z M7,19 L17,19 L17,20.5 L7,20.5 Z" />
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M7,5.5 L4.5,5.5 L4.5,8.5 C4.5,10 5.6,11.2 7,11.4 L7,9.3 C6.7,9.1 6.5,8.7 6.5,8.2 L6.5,7.5 L7,7.5 Z" />
+    <path
+        android:fillColor="@color/wedora_text_secondary"
+        android:pathData="M17,5.5 L19.5,5.5 L19.5,8.5 C19.5,10 18.4,11.2 17,11.4 L17,9.3 C17.3,9.1 17.5,8.7 17.5,8.2 L17.5,7.5 L17,7.5 Z" />
+</vector>

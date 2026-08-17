@@ -98,6 +98,51 @@
             app:layout_constraintBottom_toBottomOf="@id/adMedia"
             tools:text="Install Now" />
 
+        <!--
+            Everything that only makes sense once an ad exists. Hidden as a
+            group while the slot is reserved but unfilled (see
+            DiscoverAdapter.AdViewHolder.bind).
+
+            Set INVISIBLE, never GONE: adMedia's 1:1 ratio is what gives this
+            tile its height, so removing it from layout would collapse the
+            square the placeholder is supposed to be holding open.
+
+            tvAdBadge is deliberately NOT in the group — it stays visible
+            through both states, so a reserved slot reads as "an ad is coming
+            here" rather than as an unexplained blank square.
+        -->
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/adContent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="adMedia,scrim,tvAdHeadline,tvAdCta" />
+
+        <!--
+            Placeholder shown at a reserved-but-unfilled slot. Sized to
+            adMedia rather than to parent so it occupies exactly the square
+            the real ad will, which is what makes the swap a content change
+            with no resize.
+        -->
+        <FrameLayout
+            android:id="@+id/adLoading"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/bg_card"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:layout_constraintTop_toTopOf="@id/adMedia"
+            app:layout_constraintBottom_toBottomOf="@id/adMedia"
+            app:layout_constraintStart_toStartOf="@id/adMedia"
+            app:layout_constraintEnd_toEndOf="@id/adMedia">
+
+            <ProgressBar
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="@color/wedora_accent" />
+
+        </FrameLayout>
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.gms.ads.nativead.NativeAdView>

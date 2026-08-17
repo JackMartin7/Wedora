@@ -25,6 +25,35 @@
             android:value="ca-app-pub-6998303779941960~4404028839" />
 
         <!--
+            Asks Play services to fetch the ML Kit face model at install time
+            rather than on first use.
+
+            The unbundled detector (see app/build.gradle.kts) keeps ~36MB of
+            native model out of the APK, but the trade is that the model can
+            be absent the first time someone opens the photo step. Without
+            this, that user gets ProfilePhotoPipeline's fail-open path — their
+            photo is accepted unchecked — which is the right behaviour but not
+            the intended one. This makes that window small in practice.
+        -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="face" />
+
+        <!--
+            Gives the cropper's Activity an ActionBar to put its Crop action
+            in — see Theme.Wedora.Crop for why it can't use the app theme.
+
+            Overriding a library-declared Activity rather than declaring a new
+            one: android-image-cropper declares CropImageActivity with no
+            android:theme, so the merger takes this attribute without a
+            conflict and no tools:replace is needed. Nothing else about the
+            declaration is restated, so its own android:exported stands.
+        -->
+        <activity
+            android:name="com.canhub.cropper.CropImageActivity"
+            android:theme="@style/Theme.Wedora.Crop" />
+
+        <!--
             Ads and Analytics each ship their own AD_SERVICES_CONFIG pointing at
             a different resource, which the manifest merger cannot reconcile on
             its own. tools:replace picks ours — see the file's own comment for
@@ -125,8 +154,32 @@
             android:exported="false" />
 
         <activity
-            android:name=".HomeActivity"
+            android:name=".ProfileStep6InterestsActivity"
             android:exported="false" />
+
+        <!--
+            Portrait-locked, alone among the five tab screens.
+
+            The swipe deck is a full-bleed photo card: item_match_card.xml is
+            a vertical stack whose photo is the one weighted view, so it gets
+            whatever height the fixed rows (mini profile, actions, bio) leave
+            over. In landscape those rows alone need more height than the
+            whole card has, so the photo collapses to a thin band and
+            centerCrop fills it with a horizontal slice of a portrait shot.
+
+            No scale type or aspect ratio can fix that — there is no height
+            left to divide up. The alternative was a landscape-specific
+            horizontal reflow (layout-land); locking is the deliberate choice,
+            matching how swipe decks in this category generally behave.
+
+            Scoped to this Activity only. Explore, Likes, Chats and Profile
+            stay free to rotate and are handled by the horizontal insets in
+            WedoraBaseActivity.
+        -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".ProfileDetailActivity"
@@ -189,6 +242,10 @@
 
         <activity
             android:name=".NearbyListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DiscoverListActivity"
             android:exported="false" />
 
         <activity

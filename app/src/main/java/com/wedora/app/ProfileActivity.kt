@@ -194,6 +194,10 @@ class ProfileActivity :
         }
 
         user?.uid?.let {
+            // Local-only for now — the hosted URL isn't known until
+            // loadProfileDocument lands, which rebinds with it (see there).
+            // Binding here too keeps the common case (photo uploaded from
+            // this device) instant rather than waiting on a network read.
             binding.ivProfilePhoto.loadLocalProfilePhoto(this, it)
             // Fired together, not chained: the two reads are independent, so
             // each stat appears as soon as its own data lands.
@@ -314,6 +318,14 @@ class ProfileActivity :
                 // Authoritative value from this screen's own read — reconciles
                 // the cached guess shown at the top of showSignedInUser().
                 showPremiumState(profile.isPremium)
+
+                // Rebind now that photoUrl is known: showSignedInUser could
+                // only try the local file, which doesn't exist for an account
+                // that uploaded its photo from another device. Re-running the
+                // local branch here is harmless — Glide dedupes an identical
+                // request — and this is the only path that can recover the
+                // remote one.
+                binding.ivProfilePhoto.loadOwnProfilePhoto(this, uid, profile.photoUrl)
 
                 val line = profile.ageLocationLine(this)
                 if (line == null) {
@@ -462,13 +474,38 @@ class ProfileActivity :
             SettingsRow(R.drawable.ic_eye, R.string.settings_profile_viewers) {
                 startActivity(Intent(this, ProfileViewersActivity::class.java))
             },
-            SettingsRow(R.drawable.ic_help, R.string.settings_help) {
+            // The three rows below are guestEnabled for the same reason: they
+            // show static content and need no account. Locking them behind
+            // sign-up meant a guest could neither read the terms and privacy
+            // policy they are already bound by, nor reach support to ask why —
+            // which is the wrong way round, since a guest is precisely the
+            // person still deciding whether to sign up.
+            //
+            // Terms was already reachable pre-auth from the sign-up flow (see
+            // TermsOfServiceActivity.intent's fromSignup flag), so gating it
+            // here was inconsistent with the app's own behaviour elsewhere.
+            SettingsRow(R.drawable.ic_help, R.string.settings_help, guestEnabled = true) {
                 startActivity(Intent(this, HelpCenterActivity::class.java))
             },
-            SettingsRow(R.drawable.ic_terms, R.string.settings_terms) {
+            // The always-available route to the Play listing, independent of
+            // the automatic prompt's triggers and budget. guestEnabled
+            // because rating the app needs no account.
+            //
+            // Settles the automatic prompt: someone who came here on their
+            // own has already answered the question it would interrupt them
+            // to ask. This row itself never disappears.
+            SettingsRow(R.drawable.ic_star, R.string.settings_rate_app, guestEnabled = true) {
+                RatePromptPrefs.settle(this)
+                openPlayStoreListing()
+            },
+            SettingsRow(R.drawable.ic_terms, R.string.settings_terms, guestEnabled = true) {
                 startActivity(TermsOfServiceActivity.intent(this, fromSignup = false))
             },
-            SettingsRow(R.drawable.ic_policy, R.string.settings_privacy_policy) {
+            SettingsRow(
+                R.drawable.ic_policy,
+                R.string.settings_privacy_policy,
+                guestEnabled = true
+            ) {
                 startActivity(Intent(this, PrivacyPolicyActivity::class.java))
             }
         )
@@ -674,6 +711,10 @@ class ProfileActivity :
         // LoginActivity.continueAsGuest) or real, the same way.
         FirebaseAuth.getInstance().signOut()
         GuestPrefs.clearGuest(this)
+        // Account-scoped preferences don't survive a sign-out — otherwise the
+        // next account on this device inherits them. See its own doc for what
+        // is deliberately left alone (theme, onboarding, rate prompt).
+        clearAccountScopedData(this)
         startActivity(
             Intent(this, LoginActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
