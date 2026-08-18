@@ -84,10 +84,32 @@ object BillingManager {
             BillingClient.BillingResponseCode.USER_CANCELED ->
                 callback?.invoke(PurchaseResult.Cancelled)
             else -> {
-                Log.w(TAG, "Purchase flow failed: ${billingResult.responseCode} ${billingResult.debugMessage}")
-                callback?.invoke(PurchaseResult.Failed(billingResult.debugMessage))
+                val subCode = billingResult.onPurchasesUpdatedSubResponseCode
+                Log.w(
+                    TAG,
+                    "Purchase flow failed: ${billingResult.responseCode} " +
+                        "sub=$subCode ${billingResult.debugMessage}"
+                )
+                callback?.invoke(PurchaseResult.Failed(messageFor(subCode, billingResult)))
             }
         }
+    }
+
+    /**
+     * Turns a failed purchase into something worth showing the user.
+     *
+     * PBL 9 added a sub-response code alongside the response code, and the
+     * two it defines beyond "none" are both things a user can act on — where
+     * the raw debugMessage is written for developers and routinely says
+     * nothing a buyer can use. Anything without a specific sub-code falls
+     * back to that debugMessage exactly as before.
+     */
+    private fun messageFor(subCode: Int, billingResult: BillingResult): String = when (subCode) {
+        BillingClient.OnPurchasesUpdatedSubResponseCode.PAYMENT_DECLINED_DUE_TO_INSUFFICIENT_FUNDS ->
+            "Payment declined — insufficient funds."
+        BillingClient.OnPurchasesUpdatedSubResponseCode.USER_INELIGIBLE ->
+            "This offer isn't available on your account."
+        else -> billingResult.debugMessage
     }
 
     /**
@@ -103,6 +125,11 @@ object BillingManager {
             // the only opt-in flag the current API exposes; subscriptions'
             // own pending-purchase support isn't gated by it.
             .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+            // The library's own reconnection, replacing the hand-rolled retry
+            // that used to live in onBillingServiceDisconnected. That one
+            // called connect() immediately with no backoff, so a persistently
+            // unavailable Play Store meant an unbounded reconnect loop.
+            .enableAutoServiceReconnection()
             .build()
         connect()
 
@@ -128,12 +155,15 @@ object BillingManager {
                 }
             }
 
-            // Play's own guidance is to retry, not to treat this as terminal —
-            // a later launchBillingFlow/syncEntitlement call simply no-ops
-            // (isConnected stays false) until the next successful reconnect.
+            // No reconnect call here: enableAutoServiceReconnection() (see
+            // attach) owns that now, and running both would race two
+            // reconnection mechanisms against each other. Clearing the flag
+            // still matters — launchBillingFlow/syncEntitlement no-op while
+            // it's false, until the library's own reconnect lands and
+            // onBillingSetupFinished sets it back.
             override fun onBillingServiceDisconnected() {
                 isConnected = false
-                connect()
+                Log.w(TAG, "Billing service disconnected; awaiting automatic reconnection")
             }
         })
     }
@@ -146,11 +176,26 @@ object BillingManager {
                 .build()
         }
         val params = QueryProductDetailsParams.newBuilder().setProductList(products).build()
-        billingClient.queryProductDetailsAsync(params) { billingResult, productDetailsList ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                productDetailsList.forEach { productDetailsCache[it.productId] = it }
-            } else {
+        billingClient.queryProductDetailsAsync(params) { billingResult, result ->
+            if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
                 Log.w(TAG, "queryProductDetails failed: ${billingResult.debugMessage}")
+                return@queryProductDetailsAsync
+            }
+
+            result.productDetailsList.forEach { productDetailsCache[it.productId] = it }
+
+            // New in PBL 8: products that couldn't be fetched come back
+            // explicitly with a status code instead of being silently omitted.
+            // Worth logging — this is exactly how a mistyped or unpublished
+            // product ID reaches the user, as a Payment screen still showing
+            // its placeholder copy because formattedPrice() returned null with
+            // nothing anywhere saying why.
+            result.unfetchedProductList.forEach { unfetched ->
+                Log.w(
+                    TAG,
+                    "Product not fetched: ${unfetched.productId} " +
+                        "(type=${unfetched.productType} status=${unfetched.statusCode})"
+                )
             }
         }
     }

@@ -140,7 +140,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-ads:23.3.0")
 
     // Play Billing for Premium subscriptions — see BillingManager.
-    implementation("com.android.billingclient:billing-ktx:7.1.1")
+    implementation("com.android.billingclient:billing-ktx:9.1.0")
 
     // Play In-App Updates — see UpdateRepository. The flexible/immediate flows
     // only ever resolve against a Play-installed build; a locally-signed APK
