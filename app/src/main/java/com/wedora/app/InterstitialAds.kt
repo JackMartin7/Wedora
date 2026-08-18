@@ -70,8 +70,26 @@ object InterstitialAds : DefaultLifecycleObserver {
      * three sources firing three ads in quick succession.
      */
     enum class Trigger(val threshold: Int) {
-        /** Cards swiped on Home — by far the highest-volume action. */
-        SWIPE(20),
+        /**
+         * Cards swiped on Home — by far the highest-volume action.
+         *
+         * 10, lowered from 20. This threshold is a one-time warm-up gate
+         * rather than a per-ad cadence: [counts] is only ever incremented
+         * (cleared per foreground session by resetCounters, never on a
+         * show), so once it is crossed shouldShow stays true and the actual
+         * rate limiter for the rest of the session is MIN_GAP_MS. Lowering
+         * it therefore changes when the FIRST interstitial of a session
+         * becomes eligible, and nothing else — density is unaffected.
+         *
+         * 20 was unreachable for the users who matter most here. Free tier
+         * gets 10 likes a day; passes are unlimited, so a session is bounded
+         * by likes, not swipes. At a 70% like rate the wall arrives at ~14
+         * swipes and the interstitial never fired at all; at 50% it landed
+         * at swipe 20, exactly as the user ran out of likes. 10 is reachable
+         * across that whole range and puts the first ad mid-session instead
+         * of at the wall.
+         */
+        SWIPE(10),
 
         /**
          * Profile detail screens closed. Deliberate, medium-volume; closing

@@ -144,15 +144,17 @@ class HomeActivity :
         }
 
         override fun onSwipedRight(position: Int) {
-            (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
-            (displayItems.getOrNull(position) as? StackItem.Profile)?.let { likeUser(it.card) }
-            maybeShowInterstitial()
+            val item = displayItems.getOrNull(position)
+            (item as? StackItem.Ad)?.let { it.ad.destroy() }
+            (item as? StackItem.Profile)?.let { likeUser(it.card) }
+            maybeShowInterstitialAfter(item)
         }
 
         override fun onSwipedLeft(position: Int) {
-            (displayItems.getOrNull(position) as? StackItem.Ad)?.let { it.ad.destroy() }
-            (displayItems.getOrNull(position) as? StackItem.Profile)?.let { recordPass(it.card) }
-            maybeShowInterstitial()
+            val item = displayItems.getOrNull(position)
+            (item as? StackItem.Ad)?.let { it.ad.destroy() }
+            (item as? StackItem.Profile)?.let { recordPass(it.card) }
+            maybeShowInterstitialAfter(item)
         }
 
         override fun onEmptied() {
@@ -987,9 +989,29 @@ class HomeActivity :
      * is the difference between an acceptable placement and the kind AdMob
      * treats as an accidental-click trap.
      */
-    private fun maybeShowInterstitial() {
+    /**
+     * The swipe-triggered interstitial, held back when the card just swiped
+     * away was itself an ad.
+     *
+     * Without this, eligibility landing on an ad card shows a full-screen ad
+     * roughly 220ms after the user dismissed a native one — two ads back to
+     * back with no content between them. That is not an accidental-click risk
+     * (the card is detached before this runs, see SwipeCardStackView.flingOff)
+     * and breaks no policy, but it is the worst-feeling moment this logic can
+     * produce.
+     *
+     * onEvent is still called for an ad swipe, so the swipe counts toward the
+     * warm-up threshold and keeps the preload warm — only the *showing* is
+     * withheld. Nothing is lost by declining: InterstitialAds.counts is never
+     * reset on a show, so eligibility that goes unused here is still true on
+     * the next swipe and the ad simply appears after the following profile
+     * card. That property is also why this needs no "peek" variant of
+     * onEvent — the counter isn't consumed by reading it.
+     */
+    private fun maybeShowInterstitialAfter(item: StackItem?) {
         if (!isUsable()) return
-        if (InterstitialAds.onEvent(this, InterstitialAds.Trigger.SWIPE)) {
+        val eligible = InterstitialAds.onEvent(this, InterstitialAds.Trigger.SWIPE)
+        if (eligible && item !is StackItem.Ad) {
             // No onClosed: this Activity is staying put, so there's nothing
             // to resume once the ad is dismissed.
             InterstitialAds.show(this)
