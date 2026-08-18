@@ -58,10 +58,28 @@ object NativeAdLoader {
      * app-id mismatch, or a unit created with the wrong format),
      * 2=NETWORK_ERROR, 0=INTERNAL_ERROR. Every code is still logged to
      * logcat regardless, so NO_FILL stays diagnosable on demand.
+     *
+     * One caveat on code 1 now that [NativeAdPool] retries: the SDK itself
+     * throttles a unit that has failed several times in a row and answers
+     * requests made during that window with INVALID_REQUEST rather than
+     * sending them to Google at all. A burst of code 1 therefore means
+     * "requesting too fast" at least as readily as "this unit is wrong" —
+     * which is precisely why the retry backoff starts at 60s, far outside
+     * that window.
      */
     private fun isReportable(code: Int): Boolean = code != ERROR_CODE_NO_FILL
 
-    fun loadAd(context: Context, adUnitId: String, onLoaded: (NativeAd) -> Unit, onFailed: () -> Unit) {
+    /**
+     * [onFailed] receives the LoadAdError code so the caller can tell NO_FILL
+     * apart from everything else — [NativeAdPool] retries only code 3, since
+     * retrying code 1 would be retrying into the SDK's own throttle.
+     */
+    fun loadAd(
+        context: Context,
+        adUnitId: String,
+        onLoaded: (NativeAd) -> Unit,
+        onFailed: (code: Int) -> Unit
+    ) {
         val loader = AdLoader.Builder(context, adUnitId)
             .forNativeAd { nativeAd ->
                 consecutiveFailures.remove(adUnitId)
@@ -96,7 +114,7 @@ object NativeAdLoader {
                             )
                         }
                     }
-                    onFailed()
+                    onFailed(adError.code)
                 }
             })
             .build()

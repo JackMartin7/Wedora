@@ -1,6 +1,9 @@
 package com.wedora.app
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import com.google.android.gms.ads.nativead.NativeAd
 
 /**
@@ -137,12 +140,57 @@ class NativeAdPool(
     private val target: Int = DEFAULT_TARGET
 ) {
     private companion object {
+        private const val TAG = "WedoraAds"
+
         /** How many native ads to keep loaded and ready at once. */
         const val DEFAULT_TARGET = 2
+
+        /** AdMob's NO_FILL. The only code worth retrying — see [scheduleRetry]. */
+        const val ERROR_CODE_NO_FILL = 3
+
+        /**
+         * Backoff before each retry, in order. Also caps the retries: three
+         * entries, three attempts, then the pool gives up until the screen is
+         * recreated.
+         *
+         * 60s is the shortest interval here on purpose, and the floor is a
+         * policy one rather than a technical one. AdMob's own configurable
+         * refresh range starts at 30s, and anything below that is not offered
+         * *because* it breaches ad-serving policy; automated request
+         * generation is separately covered by the invalid-traffic rules. 60s
+         * is double that floor.
+         *
+         * It also has to clear the SDK's own throttle: a unit that fails
+         * repeatedly gets its requests answered locally with INVALID_REQUEST
+         * for "a few seconds" without ever reaching Google. Retrying inside
+         * that window would achieve nothing except manufacturing code 1
+         * failures, which NativeAdLoader reports to Crashlytics as a broken
+         * unit. A minute is comfortably outside it.
+         *
+         * Worst case per surface: 4 requests over roughly 7 minutes.
+         */
+        val RETRY_DELAYS_MS = longArrayOf(60_000L, 120_000L, 240_000L)
     }
 
     private val pool = ArrayDeque<NativeAd>()
     private var inFlight = 0
+
+    private val retryHandler = Handler(Looper.getMainLooper())
+
+    /** How many retries this pool has already spent, indexing [RETRY_DELAYS_MS]. */
+    private var retriesUsed = 0
+
+    /**
+     * Whether a retry is already queued.
+     *
+     * [refill] issues up to [target] requests at once, so a cold start on a
+     * unit with no inventory produces several NO_FILLs within milliseconds of
+     * each other. Without this they would each schedule their own retry,
+     * collapsing the backoff into a burst — the exact request pattern the
+     * delays exist to avoid. One timer per pool; it re-enters [refill], which
+     * tops the pool back up to target in a single pass anyway.
+     */
+    private var retryScheduled = false
 
     /** Takes the next ready ad out of the pool, or null if none is ready yet. */
     fun poll(): NativeAd? = pool.removeFirstOrNull()
@@ -171,13 +219,55 @@ class NativeAdPool(
                     inFlight--
                     if (onBackfilled(ad)) refill(onBackfilled) else pool.addLast(ad)
                 },
-                onFailed = { inFlight-- }
+                onFailed = { code ->
+                    inFlight--
+                    if (code == ERROR_CODE_NO_FILL) scheduleRetry(onBackfilled)
+                }
             )
         }
     }
 
-    /** Releases every ad still sitting in the pool — call from onDestroy. */
+    /**
+     * Queues one more [refill] attempt after the next backoff interval, if
+     * this pool has any left.
+     *
+     * Only ever called for NO_FILL. That is an inventory outcome rather than
+     * a fault, and inventory varies minute to minute, so a later request can
+     * genuinely fill where the first didn't. Every other failure code is left
+     * alone: code 1 is the SDK throttling us (retrying makes it worse), and
+     * network/internal errors resolve on the screen's next natural rebuild.
+     *
+     * Deliberately bounded. Once [RETRY_DELAYS_MS] is exhausted the pool
+     * stops asking for the rest of the session — reopening the screen builds
+     * a new pool and starts over, which is the user-driven request pattern
+     * AdMob expects rather than an app-driven one.
+     */
+    private fun scheduleRetry(onBackfilled: (NativeAd) -> Boolean) {
+        if (retryScheduled || retriesUsed >= RETRY_DELAYS_MS.size) return
+        if (PremiumStatus.isPremium()) return
+
+        val delay = RETRY_DELAYS_MS[retriesUsed]
+        retriesUsed++
+        retryScheduled = true
+        Log.w(TAG, "No fill on $adUnitId — retry ${retriesUsed}/${RETRY_DELAYS_MS.size} in ${delay}ms")
+
+        retryHandler.postDelayed({
+            retryScheduled = false
+            refill(onBackfilled)
+        }, delay)
+    }
+
+    /**
+     * Releases every ad still sitting in the pool — call from onDestroy.
+     *
+     * Cancels any queued retry too, and that part is load-bearing rather than
+     * tidy: this pool holds the Activity it was constructed with (Home, Likes
+     * and Chats all pass `this`), so a pending 4-minute callback would keep a
+     * destroyed Activity reachable for that long.
+     */
     fun destroyAll() {
+        retryHandler.removeCallbacksAndMessages(null)
+        retryScheduled = false
         pool.forEach { it.destroy() }
         pool.clear()
     }
