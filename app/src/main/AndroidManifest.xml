@@ -179,7 +179,30 @@
         <activity
             android:name=".HomeActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait">
+
+            <!--
+                Keeps the screenOrientation lock above working on large
+                screens. Apps targeting API 36 have screenOrientation,
+                resizableActivity and the aspect-ratio attributes IGNORED on
+                any display >= 600dp wide, so without this the lock silently
+                stops applying on tablets and unfolded foldables — and the
+                swipe card's photo collapses there exactly as it does in
+                landscape on a phone.
+
+                TEMPORARY. Google states this opt-out does not apply when
+                targeting API 37 or higher, so it buys roughly one release
+                cycle. The real fix is a landscape reflow of
+                item_match_card.xml (photo left, details right) so the card
+                stops needing a portrait window at all.
+
+                Phones are unaffected either way — under 600dp the
+                restrictions still apply and this property does nothing.
+            -->
+            <property
+                android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+                android:value="true" />
+        </activity>
 
         <activity
             android:name=".ProfileDetailActivity"

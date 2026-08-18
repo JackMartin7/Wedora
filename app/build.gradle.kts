@@ -23,19 +23,27 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.wedora.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.wedora.app"
         minSdk = 24
-        // Play Console requires targeting API 35 (Android 15) as of this
-        // bump. See this file's own note by the AGP version in the root
-        // build.gradle.kts for why that plugin needed bumping alongside
-        // this. Apps targeting 35 get edge-to-edge display forced on by
-        // default — WedoraBaseActivity's enableEdgeToEdge()/inset handling
-        // is what actually covers that now, wired app-wide across every
-        // screen rather than left as a bare manifest bump.
-        targetSdk = 35
+        // Play Console requires targeting API 36 (Android 16) by Nov 1 2026
+        // (extension granted; the base deadline was Aug 31). AGP 9.x supports
+        // a max API level of 36, so the toolchain already covers this.
+        //
+        // Two behaviour changes from targeting 36 that this app actually
+        // meets: edge-to-edge can no longer be opted out of at all (already
+        // handled app-wide by WedoraBaseActivity's enableEdgeToEdge() and
+        // inset plumbing), and onBackPressed()/KEYCODE_BACK are no longer
+        // dispatched (nothing here overrides onBackPressed — every screen
+        // uses onBackPressedDispatcher already).
+        //
+        // The one that needed action is orientation: screenOrientation is
+        // ignored on displays >= 600dp wide, which would un-lock HomeActivity
+        // on tablets. See its PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY
+        // opt-out in AndroidManifest.xml.
+        targetSdk = 36
         versionCode = 25
         versionName = "1.3.5"
     }
