@@ -1,24 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Explore tab: a compass rose — outer ring with the classic two-triangle
-    needle. White fill so the nav's ColorStateList tints it per state.
+    Explore tab. Converted from the Figma nav icon (node 118:515): a SOLID
+    filled disc with the compass needle and centre dot knocked out of it.
+
+    The previous version was an outlined ring with a needle inside. Against
+    four solid-filled neighbours it read as visibly lighter and less
+    substantial, which is what made it stand out as inconsistent in the bar.
+
+    The knockout depends on subpath winding direction under the default
+    non-zero fill rule, which Android shares with SVG — so the path data is
+    copied verbatim rather than reconstructed, and fillType is deliberately
+    left at its default. Changing either would fill the needle in solid.
+
+    Group scale/translate: see ic_discover for why the 0..20 export is fitted
+    into a 24-unit viewport spanning 3..21.
+
+    fillColor is a placeholder: the nav ColorStateList tints it per state.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Ring, drawn as an outline so the needle reads inside it. -->
-    <path
-        android:fillColor="@color/white"
-        android:pathData="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 Z M12,4 A8,8 0 1 1 12,20 A8,8 0 1 1 12,4 Z" />
-    <!-- Needle: north-east half. -->
-    <path
-        android:fillColor="@color/white"
-        android:pathData="M16.5,7.5 L10.6,10.6 L13.4,13.4 Z" />
-    <!-- Needle: south-west half, lighter so the pointer has direction. -->
-    <path
-        android:fillColor="@color/white"
-        android:fillAlpha="0.5"
-        android:pathData="M7.5,16.5 L13.4,13.4 L10.6,10.6 Z" />
+    <group
+        android:scaleX="0.9"
+        android:scaleY="0.9"
+        android:translateX="3"
+        android:translateY="3">
+        <path
+            android:fillColor="@color/wedora_text_secondary"
+            android:pathData="M10,20C15.5192,20 20,15.5192 20,10C20,4.48085 15.5192,0 10,0C4.48085,0 0,4.48085 0,10C0,15.5192 4.48085,20 10,20V20M11.9805,12.6992L6.34375,14.8672C5.58594,15.1602 4.83984,14.4141 5.13281,13.6562L7.30078,8.01953C7.42969,7.6875 7.6875,7.42969 8.01953,7.30078L13.6562,5.13281C14.4141,4.83984 15.1602,5.58594 14.8672,6.34375L12.6992,11.9805C12.5742,12.3125 12.3125,12.5703 11.9805,12.6992V12.6992M11.25,10C11.25,9.31011 10.6899,8.75 10,8.75C9.31011,8.75 8.75,9.31011 8.75,10C8.75,10.6899 9.31011,11.25 10,11.25C10.6899,11.25 11.25,10.6899 11.25,10V10" />
+    </group>
 </vector>

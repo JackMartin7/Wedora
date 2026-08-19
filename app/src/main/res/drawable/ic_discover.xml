@@ -1,20 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Discover tab: two offset rounded cards, reading as a deck to swipe.
-    White fill so the nav's ColorStateList tints it per state.
+    Discover tab. Converted from the Figma nav icon (node 118:510) rather than
+    hand-drawn: two overlapping rounded squares, the back one HOLLOW and the
+    front one FILLED.
+
+    The previous version drew both cards filled in the same colour with only a
+    small offset, so at the 20dp the nav renders them at they merged into what
+    read as a single card with a fold. The hollow back card is what makes the
+    deck legible at this size.
+
+    Path data is verbatim from the exported SVG, whose coordinate space is
+    0..20. The group fits it into this 24-unit viewport: scale 0.9 makes the glyph
+    18 units and translate 3 centres it, so it spans 3..21 — exactly the box
+    ic_likes occupies, and within a unit of ic_nav_chats. Sizing it to the
+    neighbours rather than to the export matters because the raw 0..20 glyph
+    would otherwise be full-bleed and render noticeably larger than the rest
+    of the bar.
+
+    fillColor is a placeholder: the nav ColorStateList tints it per state.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- Back card, rotated slightly and drawn first so it sits behind. -->
-    <path
-        android:fillColor="@color/white"
-        android:fillAlpha="0.45"
-        android:pathData="M8.4,3.1 L15.6,4.9 A2,2 0 0 1 17.1,7.3 L14.6,17.5 A2,2 0 0 1 12.2,19 L11.4,18.8 L14.2,7.4 A2,2 0 0 0 12.7,5 L7.6,3.7 A2,2 0 0 1 8.4,3.1 Z" />
-    <!-- Front card. -->
-    <path
-        android:fillColor="@color/white"
-        android:pathData="M6,4 L12,4 A2,2 0 0 1 14,6 L14,18 A2,2 0 0 1 12,20 L6,20 A2,2 0 0 1 4,18 L4,6 A2,2 0 0 1 6,4 Z" />
+    <group
+        android:scaleX="0.9"
+        android:scaleY="0.9"
+        android:translateX="3"
+        android:translateY="3">
+        <path
+            android:fillColor="@color/wedora_text_secondary"
+            android:pathData="M11.25,17.5H2.5V8.75H5V6.25H2.5C1.12109,6.25 0,7.37109 0,8.75V17.5C0,18.8789 1.12109,20 2.5,20H11.25C12.6289,20 13.75,18.8789 13.75,17.5V15H11.25V17.5V17.5M8.75,13.75H17.5C18.8789,13.75 20,12.6289 20,11.25V2.5C20,1.12109 18.8789,0 17.5,0H8.75C7.37109,0 6.25,1.12109 6.25,2.5V11.25C6.25,12.6289 7.37109,13.75 8.75,13.75V13.75" />
+    </group>
 </vector>
