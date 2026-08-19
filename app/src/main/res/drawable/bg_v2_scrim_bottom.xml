@@ -29,4 +29,17 @@
         android:startColor="@android:color/transparent"
         android:centerColor="@android:color/transparent"
         android:endColor="#CC000000" />
+    <!--
+        All four corners: this view is match_parent, so its bounds ARE the
+        card's bounds. The top pair are invisible (the gradient is fully
+        transparent up there) but omitting them would be wrong the moment the
+        ramp is ever moved.
+
+        Without this the scrim drew as a hard rectangle over a photo clipped
+        to 40dp — most visible at the bottom two corners, where the gradient
+        is at 80% black.
+
+        40dp must stay in step with bg_v2_card and WedoraCardImageV2.
+    -->
+    <corners android:radius="40dp" />
 </shape>

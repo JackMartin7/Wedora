@@ -8,4 +8,19 @@
         android:angle="270"
         android:startColor="#99000000"
         android:endColor="@android:color/transparent" />
+    <!--
+        Top corners only. This view is 88dp pinned to the top of the card, so
+        its top edge follows the card's rounding while its bottom edge sits
+        mid-photo and has to stay square.
+
+        Without this the scrim drew as a hard rectangle over a photo clipped
+        to 40dp, leaving square dark corners proud of the rounded image.
+
+        40dp must stay in step with bg_v2_card and WedoraCardImageV2.
+    -->
+    <corners
+        android:topLeftRadius="40dp"
+        android:topRightRadius="40dp"
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp" />
 </shape>
