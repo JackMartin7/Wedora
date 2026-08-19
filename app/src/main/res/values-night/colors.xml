@@ -121,4 +121,56 @@
     <!-- Base -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+
+    <!-- ===================================================================
+         REDESIGN (v2) TOKENS — the real values, from Figma node 118:417
+         ("wedoranew"). See values/colors.xml for why these are additive and
+         why light mode aliases the old tokens instead of getting values of
+         its own.
+
+         Two values deviate from the Figma file, both to clear WCAG AA:
+
+         1. wedora_v2_on_accent is #120D12 (dark), NOT white. White on
+            #F43F5E measures 3.67:1 against a 4.5:1 requirement — the same
+            failure #E8536B hit in the earlier rebrand. Darkening the fill to
+            #EB0D33 would also clear it (4.53:1) but would change the
+            designer's accent; dark text on the unchanged accent measures
+            5.24:1 and preserves it. This mirrors what the base
+            wedora_text_on_primary token already does in dark mode.
+
+         2. wedora_v2_text_muted is #737B8A, lightened from the specified
+            #6B7280. As given it measures 3.98:1 on #120D12, and it is used
+            for 14sp-bold section headings and 10sp-bold nav labels — both
+            below WCAG's large-text threshold, so 4.5:1 genuinely applies.
+            #737B8A is the nearest lightening of the same hue that clears it,
+            at 4.51:1.
+
+         Everything else is verbatim from the design and measured passing:
+         white on page 19.23:1, #9CA3AF on page 7.57:1, #F43F5E on page
+         5.24:1, #FB7185 on the rose-15% pill 5.57:1.
+
+         Text overlaid on profile photos (card name, age/location, distance)
+         cannot be certified — contrast depends on the photo. The design's
+         gradient scrims are the mitigation.
+         =================================================================== -->
+    <color name="wedora_v2_bg">#120D12</color>
+    <color name="wedora_v2_surface">#1E161E</color>
+    <color name="wedora_v2_accent">#F43F5E</color>
+    <color name="wedora_v2_accent_soft">#FB7185</color>
+    <color name="wedora_v2_on_accent">#120D12</color>
+    <color name="wedora_v2_text">#FFFFFF</color>
+    <color name="wedora_v2_text_secondary">#9CA3AF</color>
+    <color name="wedora_v2_text_muted">#737B8A</color>
+    <color name="wedora_v2_caption">#D1D5DB</color>
+    <color name="wedora_v2_online">#22C55E</color>
+    <!-- white 10% / white 5% — the design's hairline borders and glass fills -->
+    <color name="wedora_v2_hairline">#1AFFFFFF</color>
+    <color name="wedora_v2_glass">#0DFFFFFF</color>
+    <color name="wedora_v2_glass_strong">#1AFFFFFF</color>
+    <!-- black 30%, behind the circular icon buttons that sit over photos -->
+    <color name="wedora_v2_scrim_dark">#4D000000</color>
+    <!-- rose 15% fill / rose 30% border — the status pills on the card -->
+    <color name="wedora_v2_pill_bg">#26F43F5E</color>
+    <color name="wedora_v2_pill_border">#4DF43F5E</color>
+    <color name="wedora_v2_pill_text">#FB7185</color>
 </resources>

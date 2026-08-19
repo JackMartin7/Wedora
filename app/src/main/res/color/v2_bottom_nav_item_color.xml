@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav item tint for the redesigned screens. Active is the accent; inactive
+    is wedora_v2_text_muted (#737B8A), which is the WCAG-corrected form of the
+    design's #6B7280 — as specified it measured 3.98:1 on the page, and these
+    labels are 10sp bold, well under the large-text threshold.
+
+    A v2 copy for the same reason as bg_v2_bottom_nav — the base selector is
+    shared by the three tab screens not in this pass.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/wedora_v2_accent" android:state_checked="true" />
+    <item android:color="@color/wedora_v2_text_muted" />
+</selector>

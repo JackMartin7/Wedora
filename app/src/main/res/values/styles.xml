@@ -135,6 +135,22 @@
         <item name="cornerSize">16dp</item>
     </style>
 
+    <!-- 40dp corners, matching bg_v2_card. The redesigned swipe card has its
+         photo filling the whole card rather than sitting in a slot, so the
+         photo itself has to carry the card's radius — the parent's background
+         is entirely hidden behind it. -->
+    <style name="WedoraCardImageV2">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">40dp</item>
+    </style>
+
+    <!-- Explore's 2-up cards in the redesign — 24dp, between the swipe card's
+         40dp and the 16dp used by the smaller thumbnails. -->
+    <style name="WedoraCardImageV2Grid">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
     <!-- Interest-tag chip label (onboarding slide 2) -->
     <style name="WedoraChipLabel">
         <item name="android:background">@drawable/bg_chip</item>

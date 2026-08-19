@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small accent-filled control. Anything placed on this MUST use
+     wedora_v2_on_accent for its text — white measures 3.67:1 here and fails
+     WCAG AA. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_v2_accent" />
+    <corners android:radius="12dp" />
+</shape>

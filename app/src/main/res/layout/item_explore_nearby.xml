@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    One person in the Explore "People Nearby" strip: a circular avatar ringed in
-    accent (the same treatment as the Chats matches strip) with the name below,
-    truncated so long names don't stretch the cell.
+    One person in the Explore "People Nearby" strip.
+
+    Redesigned to the "NEW FACES" treatment from Figma node 118:659 — a
+    rounded SQUARE thumbnail with a hairline border, rather than the circular
+    accent-ringed avatar it was. The design shows these as a 3-up grid with no
+    labels; the strip keeps its horizontal scroll and its name/distance labels,
+    since those carry information the grid version simply omits rather than
+    replaces.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -23,9 +28,9 @@
         android:scaleType="centerCrop"
         android:src="@drawable/ic_avatar_placeholder"
         android:contentDescription="@string/cd_avatar"
-        app:strokeColor="@color/wedora_avatar_ring"
-        app:strokeWidth="2dp"
-        app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
+        app:strokeColor="@color/wedora_v2_hairline"
+        app:strokeWidth="1dp"
+        app:shapeAppearanceOverlay="@style/WedoraCardImage" />
 
     <TextView
         android:id="@+id/tvNearbyName"
@@ -35,7 +40,7 @@
         android:gravity="center"
         android:singleLine="true"
         android:ellipsize="end"
-        android:textColor="@color/wedora_text"
+        android:textColor="@color/wedora_v2_text"
         android:textSize="12sp"
         tools:text="Amelia" />
 
@@ -45,10 +50,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:background="@drawable/bg_distance_pill"
+        android:background="@drawable/bg_v2_glass_pill"
         android:paddingHorizontal="8dp"
         android:paddingVertical="2dp"
-        android:textColor="@color/white"
+        android:textColor="@color/wedora_v2_caption"
         android:textSize="10sp"
         android:fontFamily="@font/poppins_medium"
         android:visibility="gone"

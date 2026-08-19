@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The swipe card's surface in the redesign: 40dp corners, a raised surface
+     tone, and a hairline border. The border is load-bearing — at #1E161E on
+     #120D12 the two tones are only ~1.3:1 apart, so without the stroke the
+     card edge effectively disappears against the page. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_v2_surface" />
+    <corners android:radius="40dp" />
+    <stroke android:width="1dp" android:color="@color/wedora_v2_hairline" />
+</shape>

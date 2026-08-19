@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular icon buttons sitting directly on a photo. A darker scrim than
+     the glass pills, since these have no border and must hold their own
+     against a bright image. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/wedora_v2_scrim_dark" />
+</shape>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Darkens the top of a card photo so the overlaid name and buttons stay
+     legible over a bright image. This is the only thing between white text
+     and an arbitrary photo, so it is not decorative. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="#99000000"
+        android:endColor="@android:color/transparent" />
+</shape>

@@ -1,38 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    A single match card:
-      mini profile row  ->  photo (fills remaining space)  ->  action row  ->  bio
+    A single match card, redesigned from Figma node 118:447.
 
-    Root fills the full height SwipeCardStackView gives it (that container is
-    itself constrained to fill the space between the top bar and bottom nav
-    in activity_home.xml) rather than wrap_content, so the card doesn't leave
-    empty space below it on tall screens. The photo is the one flexible
-    piece — 0dp height + weight so it absorbs whatever's left over after the
-    other, naturally wrap_content, rows are measured — everything else keeps
-    its natural size the way a fixed-height photo already did.
+    STRUCTURAL CHANGE, not a restyle. The previous card was a vertical stack —
+    mini profile row, then photo, then action row, then bio — where the photo
+    was the one weighted child and took whatever height the fixed rows left
+    over. This version inverts that: the PHOTO FILLS THE WHOLE CARD and
+    everything else overlays it on scrims.
+
+    Two things follow from that, both deliberate:
+
+    1. The photo no longer competes with the text rows for height, which is
+       what made it collapse to a thin band whenever the card was short (the
+       landscape defect that forced HomeActivity into a portrait lock). This
+       layout has no leftover-space calculation left to lose.
+
+    2. Text now sits on an arbitrary photo rather than on a themed surface, so
+       the two scrims below are load-bearing for legibility, not decoration.
+
+    Every id from the previous version is preserved — MatchCard's binding and
+    HomeActivity.bindCard reference all of them, and none of that code changed.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:layout_marginHorizontal="16dp"
     android:layout_marginBottom="20dp"
-    android:padding="12dp"
-    android:background="@drawable/bg_card"
+    android:background="@drawable/bg_v2_card"
     android:foreground="?attr/selectableItemBackground">
 
-    <!-- ===== Mini profile row ===== -->
+    <!-- Fills the card and carries the 40dp radius itself: the parent's
+         background is completely hidden behind it, so the corners have to be
+         cut here or they render square. -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivCardPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_avatar_placeholder"
+        android:contentDescription="@string/cd_profile_photo"
+        app:shapeAppearanceOverlay="@style/WedoraCardImageV2" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_v2_scrim_top" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_v2_scrim_bottom" />
+
+    <!-- ===== Header overlay: avatar, name/role, dismiss + more ===== -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingBottom="12dp">
+        android:layout_gravity="top"
+        android:padding="20dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivCardAvatar"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:scaleType="centerCrop"
             android:contentDescription="@string/cd_avatar"
             app:shapeAppearanceOverlay="@style/WedoraCircleImage" />
@@ -43,15 +76,17 @@
             android:layout_alignEnd="@id/ivCardAvatar"
             android:layout_alignBottom="@id/ivCardAvatar" />
 
+        <!-- btnMore is outermost so btnDismiss can anchor to its start. -->
         <ImageButton
             android:id="@+id/btnMore"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:padding="6dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="7dp"
+            android:background="@drawable/bg_v2_glass_circle"
             android:src="@drawable/ic_menu_dots"
+            android:tint="@color/wedora_v2_text"
             android:contentDescription="@string/cd_more" />
 
         <ImageButton
@@ -59,10 +94,12 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_toStartOf="@id/btnMore"
+            android:layout_marginEnd="12dp"
             android:layout_centerVertical="true"
-            android:padding="7dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:background="@drawable/bg_v2_glass_circle"
             android:src="@drawable/ic_close"
+            android:tint="@color/wedora_v2_text"
             android:contentDescription="@string/cd_dismiss" />
 
         <TextView
@@ -71,12 +108,15 @@
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/ivCardAvatar"
             android:layout_toStartOf="@id/btnDismiss"
-            android:layout_marginStart="10dp"
-            android:singleLine="true"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:layout_alignTop="@id/ivCardAvatar"
+            android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="@color/wedora_text"
-            android:textSize="14sp"
-            android:fontFamily="@font/poppins_semibold" />
+            android:textColor="@color/wedora_v2_text"
+            android:textSize="18sp"
+            android:fontFamily="@font/poppins_semibold"
+            tools:text="Jane Nyambura" />
 
         <TextView
             android:id="@+id/tvCardRole"
@@ -85,163 +125,158 @@
             android:layout_below="@id/tvCardName"
             android:layout_alignStart="@id/tvCardName"
             android:layout_toStartOf="@id/btnDismiss"
-            android:singleLine="true"
+            android:layout_marginEnd="8dp"
+            android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="@color/wedora_text_secondary"
-            android:textSize="12sp" />
+            android:textColor="@color/wedora_v2_caption"
+            android:textSize="12sp"
+            tools:text="Photographer" />
 
     </RelativeLayout>
 
-    <!-- ===== Photo + swipe stamps ===== -->
-    <!-- 0dp + weight: the one part of the card that stretches, so the photo
-         (still centerCrop, so it fills any resulting height without
-         distorting) fills whatever room the fixed-height rows above and
-         below leave rather than sitting at a constant 330dp. -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+    <!-- Swipe feedback, above the scrims so it reads during a drag. Alpha is
+         driven by SwipeCardStackView. -->
+    <ImageView
+        android:id="@+id/overlayLike"
+        android:layout_width="132dp"
+        android:layout_height="132dp"
+        android:layout_gravity="center"
+        android:alpha="0"
+        android:src="@drawable/ic_like_filled"
+        android:tint="@color/wedora_v2_accent"
+        android:contentDescription="@null" />
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/ivCardPhoto"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:contentDescription="@null"
-            app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+    <ImageView
+        android:id="@+id/overlayPass"
+        android:layout_width="132dp"
+        android:layout_height="132dp"
+        android:layout_gravity="center"
+        android:alpha="0"
+        android:src="@drawable/ic_action_pass"
+        android:tint="@color/wedora_v2_text"
+        android:contentDescription="@null" />
 
-        <!--
-            Alpha driven by SwipeCardStackView during a drag: heart on a right
-            swipe, cross on a left one. Centred and large so the signal reads
-            from the corner of the eye while the card is moving, and tinted
-            rather than shipping coloured assets.
-        -->
-        <ImageView
-            android:id="@+id/overlayLike"
-            android:layout_width="132dp"
-            android:layout_height="132dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_sparkle_heart"
-            android:tint="@color/wedora_success"
-            android:contentDescription="@null"
-            android:alpha="0" />
-
-        <ImageView
-            android:id="@+id/overlayPass"
-            android:layout_width="132dp"
-            android:layout_height="132dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_close"
-            android:tint="@color/wedora_error"
-            android:contentDescription="@null"
-            android:alpha="0" />
-
-    </FrameLayout>
-
-    <!-- ===== Action row ===== -->
+    <!-- ===== Bottom overlay: actions, bio, status ===== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingTop="12dp">
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="28dp">
 
-        <!-- No app:tint here on purpose: the liked/unliked colour lives in the
-             two drawables, so binding only has to swap src. -->
-        <ImageButton
-            android:id="@+id/btnLike"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:padding="9dp"
-            android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_like_outline"
-            android:contentDescription="@string/cd_like" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <ImageButton
-            android:id="@+id/btnPass"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="12dp"
-            android:padding="10dp"
-            android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_action_pass"
-            app:tint="@color/wedora_text_secondary"
-            android:contentDescription="@string/cd_pass" />
+            <!-- 56dp glass squares, per the design. The design also shows a
+                 like COUNT beside the heart; omitted rather than faked —
+                 nothing in this app tracks per-profile like counts. -->
+            <ImageButton
+                android:id="@+id/btnLike"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:padding="16dp"
+                android:background="@drawable/bg_v2_glass_pill"
+                android:src="@drawable/ic_like_outline"
+                android:tint="@color/wedora_v2_accent"
+                android:contentDescription="@string/cd_like" />
 
-        <!-- Opens the conversation, matching first if there isn't one yet. -->
-        <ImageButton
-            android:id="@+id/btnChat"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="10dp"
-            android:padding="9dp"
-            android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_nav_chats"
-            app:tint="@color/wedora_accent"
-            android:contentDescription="@string/cd_message" />
+            <ImageButton
+                android:id="@+id/btnPass"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="16dp"
+                android:padding="16dp"
+                android:background="@drawable/bg_v2_glass_pill"
+                android:src="@drawable/ic_action_pass"
+                android:tint="@color/wedora_v2_text"
+                android:contentDescription="@string/cd_pass" />
 
-        <!-- pushes the distance pill to the end -->
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+            <ImageButton
+                android:id="@+id/btnChat"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="16dp"
+                android:padding="16dp"
+                android:background="@drawable/bg_v2_glass_pill"
+                android:src="@drawable/ic_nav_chats"
+                android:tint="@color/wedora_v2_text"
+                android:contentDescription="@string/cd_message" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <!-- Keeps its id and its "2.4 km" content; the design renders it
+                 as a glass chip rather than the solid accent pill it was. -->
+            <TextView
+                android:id="@+id/tvDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_v2_glass_pill"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="10dp"
+                android:drawableStart="@drawable/ic_location_pin"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/wedora_v2_accent_soft"
+                android:maxLines="1"
+                android:textColor="@color/wedora_v2_caption"
+                android:textSize="12sp"
+                android:fontFamily="@font/poppins_medium"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:text="2.4 km" />
+
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tvDistance"
+            android:id="@+id/tvCardBio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="4sp"
+            android:textColor="@color/wedora_v2_text"
+            android:textSize="18sp"
+            android:fontFamily="@font/poppins_medium"
+            tools:text="24 • Islamabad, Pakistan" />
+
+        <TextView
+            android:id="@+id/tvCardBioPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:lineSpacingExtra="4sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textColor="@color/wedora_v2_caption"
+            android:textSize="13sp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Coffee, long walks and terrible puns." />
+
+        <TextView
+            android:id="@+id/tvCardIntent"
             android:layout_width="wrap_content"
-            android:layout_height="32dp"
-            android:gravity="center"
-            android:paddingHorizontal="14dp"
-            android:background="@drawable/bg_distance_pill"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:fontFamily="@font/poppins_medium" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_v2_status_pill"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="6dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textAllCaps="true"
+            android:letterSpacing="0.05"
+            android:textColor="@color/wedora_v2_pill_text"
+            android:textSize="11sp"
+            android:fontFamily="@font/poppins_semibold"
+            android:visibility="gone"
+            tools:visibility="visible"
+            tools:text="Divorced • Looking for Second Wife" />
 
     </LinearLayout>
 
-    <!-- ===== Bio ===== -->
-    <TextView
-        android:id="@+id/tvCardBio"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:lineSpacingExtra="4sp"
-        android:textColor="@color/wedora_text_secondary"
-        android:textSize="13sp" />
-
-    <!-- Truncated bio, below the age/location line. Hidden when this user
-         hasn't written one. -->
-    <TextView
-        android:id="@+id/tvCardBioPreview"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:lineSpacingExtra="4sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:textColor="@color/wedora_text_secondary"
-        android:textSize="13sp"
-        android:visibility="gone"
-        tools:visibility="visible"
-        tools:text="Coffee, long walks and terrible puns." />
-
-    <!-- "Divorced • Looking for Second Wife". Hidden entirely on accounts that
-         predate these fields, rather than shown as an empty pill. -->
-    <TextView
-        android:id="@+id/tvCardIntent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/bg_intent_badge"
-        android:paddingHorizontal="10dp"
-        android:paddingVertical="5dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:textColor="@color/wedora_tag_text"
-        android:textSize="12sp"
-        android:fontFamily="@font/poppins_medium"
-        android:visibility="gone"
-        tools:visibility="visible"
-        tools:text="Divorced • Looking for Second Wife" />
-
-</LinearLayout>
+</FrameLayout>
