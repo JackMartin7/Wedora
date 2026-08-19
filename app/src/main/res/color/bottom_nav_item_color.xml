@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Active tab uses the brand accent; the rest use secondary text colour -->
+<!--
+    Nav item tint, shared by all five tab screens.
+
+    Inactive is wedora_text_muted rather than wedora_text_secondary — the
+    redesign introduces a third text tier for exactly this, and in dark mode it
+    is the WCAG-corrected form of the board's #6B7280 (4.51:1 rather than
+    3.98:1, which matters because these labels are 10sp bold and so are not
+    "large text"). In light mode wedora_text_muted aliases
+    wedora_text_secondary, so light is unchanged.
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:color="@color/wedora_accent" android:state_checked="true" />
-    <item android:color="@color/wedora_text_secondary" />
+    <item android:color="@color/wedora_text_muted" />
 </selector>

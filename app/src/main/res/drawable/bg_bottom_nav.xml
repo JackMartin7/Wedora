@@ -1,14 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Surface with a hairline top border -->
+<!--
+    Bottom-nav surface, shared by all five tab screens.
+
+    Carries the redesign's treatment (Figma nodes 118:506 / 118:537): the page
+    colour with a 1dp hairline top border. Both tokens resolve to the existing
+    light values in light mode and to the board's values in dark, so applying
+    this everywhere restyles dark mode without touching light — which has no
+    design to restyle toward.
+
+    This replaces the split where Home and Explore used a v2 copy and the other
+    three used this file, which left the bar looking different depending on the
+    tab.
+-->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/wedora_border" />
+            <solid android:color="@color/wedora_hairline" />
         </shape>
     </item>
     <item android:top="1dp">
         <shape android:shape="rectangle">
-            <solid android:color="@color/wedora_surface" />
+            <solid android:color="@color/wedora_nav_bg" />
         </shape>
     </item>
 </layer-list>

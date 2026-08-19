@@ -4,5 +4,5 @@
      against a bright image. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="@color/wedora_v2_scrim_dark" />
+    <solid android:color="@color/wedora_scrim_dark" />
 </shape>

@@ -28,7 +28,7 @@
         android:scaleType="centerCrop"
         android:src="@drawable/ic_avatar_placeholder"
         android:contentDescription="@string/cd_avatar"
-        app:strokeColor="@color/wedora_v2_hairline"
+        app:strokeColor="@color/wedora_hairline"
         app:strokeWidth="1dp"
         app:shapeAppearanceOverlay="@style/WedoraCardImage" />
 
@@ -40,7 +40,7 @@
         android:gravity="center"
         android:singleLine="true"
         android:ellipsize="end"
-        android:textColor="@color/wedora_v2_text"
+        android:textColor="@color/wedora_text"
         android:textSize="12sp"
         tools:text="Amelia" />
 
@@ -53,7 +53,7 @@
         android:background="@drawable/bg_v2_glass_pill"
         android:paddingHorizontal="8dp"
         android:paddingVertical="2dp"
-        android:textColor="@color/wedora_v2_caption"
+        android:textColor="@color/wedora_caption"
         android:textSize="10sp"
         android:fontFamily="@font/poppins_medium"
         android:visibility="gone"

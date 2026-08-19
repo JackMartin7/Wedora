@@ -267,4 +267,18 @@
         <item name="rippleColor">@color/wedora_input_border</item>
     </style>
 
+    <!--
+        Bottom-nav label, shared by all five tabs. From the redesign board
+        (Figma 118:506): 10sp bold, uppercase, 1px tracking on a 10px size —
+        0.1em. The nav menu strings stay title case ("Discover"); textAllCaps
+        does the uppercasing at render time, so nothing about the strings or
+        their translations changes.
+    -->
+    <style name="WedoraNavLabel" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:fontFamily">@font/poppins_bold</item>
+    </style>
+
 </resources>

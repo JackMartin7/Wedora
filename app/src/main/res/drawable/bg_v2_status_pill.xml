@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The status / looking-for pills overlaying the card photo. Rose at 15%
-     with a 30% border, carrying wedora_v2_pill_text (#FB7185) — measured
+     with a 30% border, carrying wedora_tag_text (#FB7185) — measured
      5.57:1 once composited over the card surface. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/wedora_v2_pill_bg" />
+    <solid android:color="@color/wedora_tag_bg" />
     <corners android:radius="100dp" />
-    <stroke android:width="1dp" android:color="@color/wedora_v2_pill_border" />
+    <stroke android:width="1dp" android:color="@color/wedora_tag_border" />
 </shape>

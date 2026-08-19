@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/wedora_v2_bg">
+    android:background="@color/wedora_bg">
 
     <!-- ===== Top bar ===== -->
 
@@ -93,7 +93,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:text="@string/home_greeting_morning"
-                android:textColor="@color/wedora_v2_text_secondary"
+                android:textColor="@color/wedora_text_secondary"
                 android:textSize="12sp" />
 
             <TextView
@@ -103,7 +103,7 @@
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:text="@string/home_sample_name"
-                android:textColor="@color/wedora_v2_text"
+                android:textColor="@color/wedora_text"
                 android:textSize="18sp"
                 android:fontFamily="@font/poppins_bold" />
 
@@ -141,7 +141,7 @@
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_filter"
-        android:tint="@color/wedora_v2_text"
+        android:tint="@color/wedora_text"
         android:contentDescription="@string/cd_filter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/greetingContainer"
@@ -322,10 +322,13 @@
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_v2_bottom_nav"
+        android:background="@drawable/bg_bottom_nav"
         app:menu="@menu/bottom_nav_menu"
-        app:itemIconTint="@color/v2_bottom_nav_item_color"
-        app:itemTextColor="@color/v2_bottom_nav_item_color"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemIconSize="20dp"
+        app:itemTextAppearanceActive="@style/WedoraNavLabel"
+        app:itemTextAppearanceInactive="@style/WedoraNavLabel"
         app:itemActiveIndicatorStyle="@null"
         app:labelVisibilityMode="labeled"
         app:elevation="0dp"

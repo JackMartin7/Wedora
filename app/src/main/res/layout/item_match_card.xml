@@ -94,7 +94,7 @@
             android:padding="7dp"
             android:background="@drawable/bg_v2_glass_circle"
             android:src="@drawable/ic_menu_dots"
-            android:tint="@color/wedora_v2_text"
+            android:tint="@color/wedora_text"
             android:contentDescription="@string/cd_more" />
 
         <ImageButton
@@ -107,7 +107,7 @@
             android:padding="8dp"
             android:background="@drawable/bg_v2_glass_circle"
             android:src="@drawable/ic_close"
-            android:tint="@color/wedora_v2_text"
+            android:tint="@color/wedora_text"
             android:contentDescription="@string/cd_dismiss" />
 
         <TextView
@@ -121,7 +121,7 @@
             android:layout_alignTop="@id/ivCardAvatar"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="@color/wedora_v2_text"
+            android:textColor="@color/wedora_text"
             android:textSize="18sp"
             android:fontFamily="@font/poppins_semibold"
             tools:text="Jane Nyambura" />
@@ -136,7 +136,7 @@
             android:layout_marginEnd="8dp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:textColor="@color/wedora_v2_caption"
+            android:textColor="@color/wedora_caption"
             android:textSize="12sp"
             tools:text="Photographer" />
 
@@ -151,7 +151,7 @@
         android:layout_gravity="center"
         android:alpha="0"
         android:src="@drawable/ic_like_filled"
-        android:tint="@color/wedora_v2_accent"
+        android:tint="@color/wedora_accent"
         android:contentDescription="@null" />
 
     <ImageView
@@ -161,7 +161,7 @@
         android:layout_gravity="center"
         android:alpha="0"
         android:src="@drawable/ic_action_pass"
-        android:tint="@color/wedora_v2_text"
+        android:tint="@color/wedora_text"
         android:contentDescription="@null" />
 
     <!-- ===== Bottom overlay: actions, bio, status ===== -->
@@ -190,7 +190,7 @@
                 android:padding="16dp"
                 android:background="@drawable/bg_v2_glass_pill"
                 android:src="@drawable/ic_like_outline"
-                android:tint="@color/wedora_v2_accent"
+                android:tint="@color/wedora_accent"
                 android:contentDescription="@string/cd_like" />
 
             <ImageButton
@@ -201,7 +201,7 @@
                 android:padding="16dp"
                 android:background="@drawable/bg_v2_glass_pill"
                 android:src="@drawable/ic_action_pass"
-                android:tint="@color/wedora_v2_text"
+                android:tint="@color/wedora_text"
                 android:contentDescription="@string/cd_pass" />
 
             <ImageButton
@@ -212,7 +212,7 @@
                 android:padding="16dp"
                 android:background="@drawable/bg_v2_glass_pill"
                 android:src="@drawable/ic_nav_chats"
-                android:tint="@color/wedora_v2_text"
+                android:tint="@color/wedora_text"
                 android:contentDescription="@string/cd_message" />
 
             <Space
@@ -231,9 +231,9 @@
                 android:paddingVertical="10dp"
                 android:drawableStart="@drawable/ic_location_pin"
                 android:drawablePadding="6dp"
-                android:drawableTint="@color/wedora_v2_accent_soft"
+                android:drawableTint="@color/wedora_accent_soft"
                 android:maxLines="1"
-                android:textColor="@color/wedora_v2_caption"
+                android:textColor="@color/wedora_caption"
                 android:textSize="12sp"
                 android:fontFamily="@font/poppins_medium"
                 android:visibility="gone"
@@ -247,7 +247,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:lineSpacingExtra="4sp"
-            android:textColor="@color/wedora_v2_text"
+            android:textColor="@color/wedora_text"
             android:textSize="18sp"
             android:fontFamily="@font/poppins_medium"
             tools:text="24 • Islamabad, Pakistan" />
@@ -260,7 +260,7 @@
             android:lineSpacingExtra="4sp"
             android:maxLines="2"
             android:ellipsize="end"
-            android:textColor="@color/wedora_v2_caption"
+            android:textColor="@color/wedora_caption"
             android:textSize="13sp"
             android:visibility="gone"
             tools:visibility="visible"
@@ -278,7 +278,7 @@
             android:ellipsize="end"
             android:textAllCaps="true"
             android:letterSpacing="0.05"
-            android:textColor="@color/wedora_v2_pill_text"
+            android:textColor="@color/wedora_tag_text"
             android:textSize="11sp"
             android:fontFamily="@font/poppins_semibold"
             android:visibility="gone"

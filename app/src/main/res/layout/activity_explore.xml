@@ -10,7 +10,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/wedora_v2_bg">
+    android:background="@color/wedora_bg">
 
     <!-- ===== Top bar ===== -->
 
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:text="@string/explore_title"
-        android:textColor="@color/wedora_v2_text"
+        android:textColor="@color/wedora_text"
         android:textSize="24sp"
         android:fontFamily="@font/poppins_bold"
         app:layout_constraintStart_toStartOf="parent"
@@ -40,7 +40,7 @@
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_filter"
-        android:tint="@color/wedora_v2_text"
+        android:tint="@color/wedora_text"
         android:contentDescription="@string/cd_filter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -66,7 +66,7 @@
         android:padding="8dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_search"
-        android:tint="@color/wedora_v2_text"
+        android:tint="@color/wedora_text"
         android:contentDescription="@string/cd_search"
         app:layout_constraintEnd_toStartOf="@id/btnFilter"
         app:layout_constraintTop_toTopOf="@id/btnFilter"
@@ -96,7 +96,7 @@
             android:layout_width="18dp"
             android:layout_height="18dp"
             android:src="@drawable/ic_search"
-            android:tint="@color/wedora_v2_text_secondary"
+            android:tint="@color/wedora_text_secondary"
             android:contentDescription="@null" />
 
         <EditText
@@ -111,8 +111,8 @@
             android:imeOptions="actionSearch"
             android:maxLines="1"
             android:singleLine="true"
-            android:textColor="@color/wedora_v2_text"
-            android:textColorHint="@color/wedora_v2_text_secondary"
+            android:textColor="@color/wedora_text"
+            android:textColorHint="@color/wedora_text_secondary"
             android:textSize="14sp"
             android:fontFamily="@font/poppins"
             android:autofillHints="" />
@@ -124,7 +124,7 @@
             android:padding="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close"
-            android:tint="@color/wedora_v2_text_secondary"
+            android:tint="@color/wedora_text_secondary"
             android:contentDescription="@string/cd_close_search" />
 
     </LinearLayout>
@@ -166,7 +166,7 @@
                     android:text="@string/explore_nearby_label"
                     android:textAllCaps="true"
                     android:letterSpacing="0.1"
-                    android:textColor="@color/wedora_v2_text_muted"
+                    android:textColor="@color/wedora_text_muted"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_bold" />
 
@@ -178,7 +178,7 @@
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="4dp"
                     android:text="@string/explore_see_all"
-                    android:textColor="@color/wedora_v2_accent"
+                    android:textColor="@color/wedora_accent"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_bold" />
 
@@ -204,7 +204,7 @@
                 android:layout_marginEnd="20dp"
                 android:layout_marginTop="4dp"
                 android:text="@string/explore_nearby_empty"
-                android:textColor="@color/wedora_v2_text_secondary"
+                android:textColor="@color/wedora_text_secondary"
                 android:textSize="14sp"
                 android:visibility="gone"
                 tools:visibility="visible" />
@@ -227,7 +227,7 @@
                     android:text="@string/explore_discover_label"
                     android:textAllCaps="true"
                     android:letterSpacing="0.1"
-                    android:textColor="@color/wedora_v2_text_muted"
+                    android:textColor="@color/wedora_text_muted"
                     android:textSize="14sp"
                     android:fontFamily="@font/poppins_bold" />
 
@@ -239,7 +239,7 @@
                     android:paddingHorizontal="6dp"
                     android:paddingVertical="4dp"
                     android:text="@string/explore_see_all"
-                    android:textColor="@color/wedora_v2_accent"
+                    android:textColor="@color/wedora_accent"
                     android:textSize="12sp"
                     android:fontFamily="@font/poppins_bold" />
 
@@ -266,7 +266,7 @@
                 android:background="@drawable/bg_pill_outline"
                 android:gravity="center"
                 android:text="@string/explore_load_more"
-                android:textColor="@color/wedora_v2_accent"
+                android:textColor="@color/wedora_accent"
                 android:textSize="14sp"
                 android:fontFamily="@font/poppins_medium"
                 android:visibility="gone"
@@ -278,7 +278,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="40dp"
                 android:layout_gravity="center_horizontal"
-                android:indeterminateTint="@color/wedora_v2_accent"
+                android:indeterminateTint="@color/wedora_accent"
                 android:visibility="gone"
                 tools:visibility="visible" />
 
@@ -302,10 +302,13 @@
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_v2_bottom_nav"
+        android:background="@drawable/bg_bottom_nav"
         app:menu="@menu/bottom_nav_menu"
-        app:itemIconTint="@color/v2_bottom_nav_item_color"
-        app:itemTextColor="@color/v2_bottom_nav_item_color"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemIconSize="20dp"
+        app:itemTextAppearanceActive="@style/WedoraNavLabel"
+        app:itemTextAppearanceInactive="@style/WedoraNavLabel"
         app:itemActiveIndicatorStyle="@null"
         app:labelVisibilityMode="labeled"
         app:elevation="0dp"

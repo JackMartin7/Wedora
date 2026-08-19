@@ -20,10 +20,10 @@
          text on wedora_accent_pressed's ORIGINAL, unadjusted spec value
          (#D85A72) still clears AA at 4.99:1, so accent_pressed needed no
          hex change at all here, only the light-mode file's did. -->
-    <color name="wedora_accent">#F0748A</color>
+    <color name="wedora_accent">#F43F5E</color>
     <color name="wedora_accent_pressed">#D85A72</color>
     <!-- The dark-mode flip described above. -->
-    <color name="wedora_text_on_primary">#1A1013</color>
+    <color name="wedora_text_on_primary">#120D12</color>
     <color name="wedora_gradient_start">#FF93A8</color>
     <color name="wedora_gradient_end">#FE4667</color>
     <color name="wedora_success">#3FB56E</color>
@@ -41,12 +41,12 @@
          value) at 12%, per the exact rgba given for this token — tagText
          itself reuses wedora_accent's dark-mode value (#F0748A), which
          passes at 5.87:1 once composited against this. -->
-    <color name="wedora_tag_bg">#1FE8536B</color>
-    <color name="wedora_tag_text">#F0748A</color>
+    <color name="wedora_tag_bg">#26F43F5E</color>
+    <color name="wedora_tag_text">#FB7185</color>
     <!-- Same fixed 60%-black scrim as light mode — see that file's comment. -->
     <color name="wedora_badge_overlay">#99000000</color>
-    <color name="wedora_accent_shadow">#4DF0748A</color>
-    <color name="wedora_accent_tint_12">#1FF0748A</color>
+    <color name="wedora_accent_shadow">#4DF43F5E</color>
+    <color name="wedora_accent_tint_12">#1FF43F5E</color>
     <!-- Same value as light mode — see that file's comment. -->
     <color name="wedora_read_receipt">#4FC3F7</color>
     <color name="wedora_premium_gold">#E5A93B</color>
@@ -87,8 +87,8 @@
          #1A1013 (was #1C1417, barely different) and cards are #241419
          (was #2A2124, also slightly darker than before) — same "card reads
          very slightly duller than the page" relationship as light mode. -->
-    <color name="wedora_bg">#1A1013</color>
-    <color name="wedora_surface">#241419</color>
+    <color name="wedora_bg">#120D12</color>
+    <color name="wedora_surface">#1E161E</color>
     <color name="wedora_border">#3A2A2E</color>
     <!-- Same tone as wedora_border — see light values.xml's own comment for
          why the light value is a shade darker than its wedora_border; in
@@ -97,8 +97,8 @@
     <color name="wedora_avatar_ring">#3A2A2E</color>
 
     <!-- Text -->
-    <color name="wedora_text">#F5EEF0</color>
-    <color name="wedora_text_secondary">#9B8A8E</color>
+    <color name="wedora_text">#FFFFFF</color>
+    <color name="wedora_text_secondary">#9CA3AF</color>
 
     <!-- Skeleton loading placeholders -->
     <color name="wedora_skeleton">#2E2529</color>
@@ -123,54 +123,51 @@
     <color name="black">#000000</color>
 
     <!-- ===================================================================
-         REDESIGN (v2) TOKENS — the real values, from Figma node 118:417
-         ("wedoranew"). See values/colors.xml for why these are additive and
-         why light mode aliases the old tokens instead of getting values of
-         its own.
+         Tokens introduced by the Figma redesign (node 118:417) that had no
+         pre-existing equivalent. Folded in from the wedora_v2_* set, which
+         has now been deleted — these are the base names.
 
-         Two values deviate from the Figma file, both to clear WCAG AA:
-
-         1. wedora_v2_on_accent is #120D12 (dark), NOT white. White on
-            #F43F5E measures 3.67:1 against a 4.5:1 requirement — the same
-            failure #E8536B hit in the earlier rebrand. Darkening the fill to
-            #EB0D33 would also clear it (4.53:1) but would change the
-            designer's accent; dark text on the unchanged accent measures
-            5.24:1 and preserves it. This mirrors what the base
-            wedora_text_on_primary token already does in dark mode.
-
-         2. wedora_v2_text_muted is #737B8A, lightened from the specified
-            #6B7280. As given it measures 3.98:1 on #120D12, and it is used
-            for 14sp-bold section headings and 10sp-bold nav labels — both
-            below WCAG's large-text threshold, so 4.5:1 genuinely applies.
-            #737B8A is the nearest lightening of the same hue that clears it,
-            at 4.51:1.
-
-         Everything else is verbatim from the design and measured passing:
-         white on page 19.23:1, #9CA3AF on page 7.57:1, #F43F5E on page
-         5.24:1, #FB7185 on the rose-15% pill 5.57:1.
-
-         Text overlaid on profile photos (card name, age/location, distance)
-         cannot be certified — contrast depends on the photo. The design's
-         gradient scrims are the mitigation.
+         Light values live in values/colors.xml and alias existing light
+         tokens: the board specifies a dark palette only, so inventing light
+         values for these would be making up a design that does not exist.
          =================================================================== -->
-    <color name="wedora_v2_bg">#120D12</color>
-    <color name="wedora_v2_surface">#1E161E</color>
-    <color name="wedora_v2_accent">#F43F5E</color>
-    <color name="wedora_v2_accent_soft">#FB7185</color>
-    <color name="wedora_v2_on_accent">#120D12</color>
-    <color name="wedora_v2_text">#FFFFFF</color>
-    <color name="wedora_v2_text_secondary">#9CA3AF</color>
-    <color name="wedora_v2_text_muted">#737B8A</color>
-    <color name="wedora_v2_caption">#D1D5DB</color>
-    <color name="wedora_v2_online">#22C55E</color>
-    <!-- white 10% / white 5% — the design's hairline borders and glass fills -->
-    <color name="wedora_v2_hairline">#1AFFFFFF</color>
-    <color name="wedora_v2_glass">#0DFFFFFF</color>
-    <color name="wedora_v2_glass_strong">#1AFFFFFF</color>
-    <!-- black 30%, behind the circular icon buttons that sit over photos -->
-    <color name="wedora_v2_scrim_dark">#4D000000</color>
-    <!-- rose 15% fill / rose 30% border — the status pills on the card -->
-    <color name="wedora_v2_pill_bg">#26F43F5E</color>
-    <color name="wedora_v2_pill_border">#4DF43F5E</color>
-    <color name="wedora_v2_pill_text">#FB7185</color>
+
+    <!-- The lighter rose used for text ON a rose-tinted surface (status
+         pills, the distance chip's pin). -->
+    <color name="wedora_accent_soft">#FB7185</color>
+
+    <!-- A third text tier below wedora_text_secondary: section headings and
+         inactive nav labels. #737B8A, lifted from the board's #6B7280 —
+         as specified that measured 3.98:1 on the page, and it carries
+         14sp-bold headings and 10sp-bold nav labels, both under WCAG's
+         large-text threshold, so 4.5:1 applies. This clears it at 4.51:1. -->
+    <color name="wedora_text_muted">#737B8A</color>
+
+    <!-- Small captions sitting on a photo rather than a themed surface. -->
+    <color name="wedora_caption">#D1D5DB</color>
+
+    <!-- white 10% / white 5%. The redesign draws its borders and its "glass"
+         control fills from these rather than from wedora_border, because
+         they sit over photos as often as over the page and a translucent
+         white reads consistently on both. wedora_border is left alone: it is
+         a divider colour used across every screen, and changing it was not
+         part of any design. -->
+    <color name="wedora_hairline">#1AFFFFFF</color>
+    <color name="wedora_glass">#0DFFFFFF</color>
+    <color name="wedora_glass_strong">#1AFFFFFF</color>
+
+    <!-- black 30%, behind circular icon buttons that sit directly on photos. -->
+    <color name="wedora_scrim_dark">#4D000000</color>
+
+    <!-- Border for the tag/status pill, paired with wedora_tag_bg. -->
+    <color name="wedora_tag_border">#4DF43F5E</color>
+
+    <!-- The board's online green. Light mode keeps its own value. -->
+    <color name="wedora_status_dot">#22C55E</color>
+
+    <!-- Bottom-nav surface — the board renders the bar as the page colour at
+         80% with a backdrop blur; opaque here, since a translucent bar with no
+         blur just smears whatever scrolls under it. -->
+    <color name="wedora_nav_bg">#120D12</color>
+
 </resources>

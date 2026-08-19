@@ -168,37 +168,25 @@
     <color name="black">#000000</color>
 
     <!-- ===================================================================
-         REDESIGN (v2) TOKENS — Home and Explore only.
-
-         Additive on purpose. Every other screen still reads wedora_accent /
-         wedora_bg / wedora_surface, so redefining those would restyle the
-         whole app in one step — exactly what this phased rollout is avoiding.
-         Home and Explore reference only the wedora_v2_* names below; once the
-         redesign is confirmed on device, phase 2 folds these values into the
-         base tokens and deletes this block.
-
-         LIGHT MODE IS DELIBERATELY UNCHANGED. The Figma board specifies a
-         dark palette only — there is no light counterpart in it — so rather
-         than invent values the designer never gave, every token here aliases
-         its existing light-mode equivalent. Light mode therefore looks
-         exactly as it does today; the redesign appears in dark mode only.
-         See values-night/colors.xml for the real values.
+         Tokens introduced by the Figma redesign. The board specifies a DARK
+         palette only, so every one of these aliases an existing light token
+         rather than inventing a light value the designer never gave. Light
+         mode is therefore unchanged by the redesign; see
+         values-night/colors.xml for the real values.
          =================================================================== -->
-    <color name="wedora_v2_bg">@color/wedora_bg</color>
-    <color name="wedora_v2_surface">@color/wedora_surface</color>
-    <color name="wedora_v2_accent">@color/wedora_accent</color>
-    <color name="wedora_v2_accent_soft">@color/wedora_accent</color>
-    <color name="wedora_v2_on_accent">@color/wedora_text_on_primary</color>
-    <color name="wedora_v2_text">@color/wedora_text</color>
-    <color name="wedora_v2_text_secondary">@color/wedora_text_secondary</color>
-    <color name="wedora_v2_text_muted">@color/wedora_text_secondary</color>
-    <color name="wedora_v2_caption">@color/wedora_text_secondary</color>
-    <color name="wedora_v2_online">@color/wedora_status_dot</color>
-    <color name="wedora_v2_hairline">@color/wedora_border</color>
-    <color name="wedora_v2_glass">@color/wedora_surface</color>
-    <color name="wedora_v2_glass_strong">@color/wedora_border</color>
-    <color name="wedora_v2_scrim_dark">#4D000000</color>
-    <color name="wedora_v2_pill_bg">@color/wedora_tag_bg</color>
-    <color name="wedora_v2_pill_border">@color/wedora_tag_text</color>
-    <color name="wedora_v2_pill_text">@color/wedora_tag_text</color>
+    <color name="wedora_accent_soft">@color/wedora_accent</color>
+    <color name="wedora_text_muted">@color/wedora_text_secondary</color>
+    <color name="wedora_caption">@color/wedora_text_secondary</color>
+    <color name="wedora_hairline">@color/wedora_border</color>
+    <color name="wedora_glass">@color/wedora_surface</color>
+    <color name="wedora_glass_strong">@color/wedora_border</color>
+    <color name="wedora_tag_border">@color/wedora_tag_text</color>
+    <!-- Fixed in both modes: this sits on a photo, not on a themed surface. -->
+    <color name="wedora_scrim_dark">#4D000000</color>
+
+    <!-- Bottom-nav surface. Light keeps the existing surface tone; dark uses
+         the board's page colour. Its own token so the dark value can follow
+         the design without altering light mode, which has no design. -->
+    <color name="wedora_nav_bg">@color/wedora_surface</color>
+
 </resources>

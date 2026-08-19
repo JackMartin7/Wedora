@@ -3,6 +3,6 @@
      from a photo it overlaps, which is why it is not simply a green oval. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="@color/wedora_v2_online" />
-    <stroke android:width="2dp" android:color="@color/wedora_v2_bg" />
+    <solid android:color="@color/wedora_status_dot" />
+    <stroke android:width="2dp" android:color="@color/wedora_bg" />
 </shape>
