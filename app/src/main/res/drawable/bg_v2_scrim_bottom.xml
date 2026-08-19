@@ -1,19 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Bottom scrim for a card photo, behind the action row, bio and pills.
+    Figma node 118:450.
 
-    The design ramps from transparent at 60% to 80% black. A shape gradient's
-    centre stop is fixed at 50%, so this holds transparent through the centre
-    and ramps to black below it — slightly earlier than the design's 60%, and
-    erring toward more contrast rather than less.
+    Spec: bg-gradient-to-b, transparent from 0% to 60%, ramping to
+    rgba(0,0,0,0.8) at 100%, covering the full card (size-full).
 
-    angle=270 runs top-to-bottom, so startColor is the BOTTOM of the view.
+    DIRECTION, and this is worth stating plainly because the first version of
+    this file got it backwards: android:angle="270" is top-to-bottom, which
+    means startColor is drawn at the TOP and endColor at the BOTTOM. The
+    canonical Android photo scrim is therefore
+    startColor=transparent / endColor=dark / angle=270 — exactly the shape
+    below. Inverting these two puts the dark band across the middle of the
+    photo and leaves the bottom edge clear, which is where all the overlaid
+    text actually sits.
+
+    The one remaining deviation from the spec: a shape gradient's centre stop
+    is fixed at 50% and cannot be moved to 60%, so the ramp begins slightly
+    higher up the card than designed. That errs toward more contrast, never
+    less. Matching 60% exactly needs the scrim sized to 40% of the card
+    height, which needs a ConstraintLayout root rather than the current
+    FrameLayout.
 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient
         android:angle="270"
-        android:startColor="#CC000000"
+        android:startColor="@android:color/transparent"
         android:centerColor="@android:color/transparent"
-        android:endColor="@android:color/transparent" />
+        android:endColor="#CC000000" />
 </shape>

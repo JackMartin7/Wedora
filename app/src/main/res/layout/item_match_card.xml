@@ -43,15 +43,23 @@
         android:contentDescription="@string/cd_profile_photo"
         app:shapeAppearanceOverlay="@style/WedoraCardImageV2" />
 
+    <!-- 88dp: the exact height of the design's "User Header on Card"
+         container (Figma 118:492, 341x88), which is what carries this
+         gradient there. It was 140dp, which darkened 52dp more of the photo
+         than designed. -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="140dp"
+        android:layout_height="88dp"
         android:layout_gravity="top"
         android:background="@drawable/bg_v2_scrim_top" />
 
+    <!-- Full card height, not a fixed band: the spec's gradient is size-full
+         with its ramp expressed as a percentage (transparent to 60%, then to
+         0.8 black). A fixed 320dp band cannot scale that ramp with the card,
+         and on a tall card left the top of the band as a visible hard edge. -->
     <View
         android:layout_width="match_parent"
-        android:layout_height="320dp"
+        android:layout_height="match_parent"
         android:layout_gravity="bottom"
         android:background="@drawable/bg_v2_scrim_bottom" />
 
