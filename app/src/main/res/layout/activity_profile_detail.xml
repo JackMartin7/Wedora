@@ -138,21 +138,10 @@
                 android:fontFamily="@font/poppins_semibold"
                 tools:text="Amelia Hart" />
 
-            <!-- "{age} • {city}, {country}"; hidden if this user hasn't
-                 completed their profile. -->
-            <TextView
-                android:id="@+id/tvDetailAgeLocation"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/wedora_text_secondary"
-                android:textSize="14sp"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="24 • Islamabad, Pakistan" />
-
             <!-- Hidden when either this user or the profile has no
-                 coordinates on file. -->
+                 coordinates on file. Stays in the header block rather than
+                 under Basics: it describes the VIEWER's relationship to this
+                 person, not a fact about the person. -->
             <TextView
                 android:id="@+id/tvDetailDistance"
                 android:layout_width="wrap_content"
@@ -168,35 +157,153 @@
                 tools:visibility="visible"
                 tools:text="2.4 km" />
 
-            <!-- "Divorced • Looking for Second Wife"; hidden on accounts that
-                 predate these fields. -->
-            <TextView
-                android:id="@+id/tvDetailIntent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_intent_badge"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="5dp"
-                android:textColor="@color/wedora_tag_text"
-                android:textSize="12sp"
-                android:fontFamily="@font/poppins_medium"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="Divorced • Looking for Second Wife" />
+            <!--
+                ===== Labelled sections =====
 
-            <!-- The user's bio; hidden entirely when they haven't written one. -->
-            <TextView
-                android:id="@+id/tvDetailBio"
+                Each section wraps its header WITH its content and is hidden
+                as a unit. That is the load-bearing part: profiles here are
+                often sparse, and a "BASICS" heading sitting above nothing
+                reads as a rendering bug rather than as missing data.
+
+                Always expanded, not collapsible. The bodies are a line or two
+                each plus a handful of chips, so collapsing would save almost
+                no height while adding state to restore across rotation and
+                tap targets competing with the like/pass row below. The screen
+                already scrolls.
+            -->
+
+            <LinearLayout
+                android:id="@+id/sectionBasics"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:lineSpacingExtra="4sp"
-                android:textColor="@color/wedora_text_secondary"
-                android:textSize="14sp"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
                 android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="Coffee, long walks and terrible puns." />
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/WedoraSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_section_basics" />
+
+                <!-- One combined line from formatAgeLocation rather than split
+                     into rows: that helper already handles the awkward
+                     combinations (age but no city, city but no country), and
+                     re-deriving that here would regress quietly on sparse
+                     profiles. -->
+                <TextView
+                    android:id="@+id/tvDetailAgeLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/wedora_text"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="24 • Islamabad, Pakistan" />
+
+                <TextView
+                    android:id="@+id/tvDetailGender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    tools:text="Female" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sectionAbout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/WedoraSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_section_about" />
+
+                <TextView
+                    android:id="@+id/tvDetailBio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="4sp"
+                    android:textColor="@color/wedora_text_secondary"
+                    android:textSize="14sp"
+                    tools:text="Coffee, long walks and terrible puns." />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sectionLookingFor"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/WedoraSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_section_looking_for" />
+
+                <!-- One line from MarriageIntent.summaryLine, same reasoning
+                     as the Basics line. Keeps its badge styling inside the
+                     section rather than becoming plain text. -->
+                <TextView
+                    android:id="@+id/tvDetailIntent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_intent_badge"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:textColor="@color/wedora_tag_text"
+                    android:textSize="12sp"
+                    android:fontFamily="@font/poppins_medium"
+                    tools:text="Divorced • Looking for Second Wife" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sectionInterests"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    style="@style/WedoraSectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_section_interests" />
+
+                <!-- Filled by setInterestsReadOnly, which renders only this
+                     profile's own interests and makes them inert. Interests
+                     shared with the viewer sort first and take an accent
+                     stroke. -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/chipsDetailInterests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:chipSpacingHorizontal="8dp"
+                    app:chipSpacingVertical="8dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

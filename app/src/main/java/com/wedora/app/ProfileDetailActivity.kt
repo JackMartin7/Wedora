@@ -53,6 +53,17 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
     private var selfCoordsLoaded = false
 
     /**
+     * The VIEWER's own interests, for cross-referencing against the profile
+     * being viewed. Free: loadSelfProfile is the same single read that was
+     * already happening for the distance badge, which previously discarded
+     * everything but the coordinates.
+     *
+     * Empty for a guest, who has no profile to compare against - the chips
+     * then render plainly rather than claiming nothing is shared.
+     */
+    private var selfInterests: Set<String> = emptySet()
+
+    /**
      * Whether the current user has liked this person (a match doc exists with
      * likedBy == me). Null until the check resolves — the heart shows a spinner
      * rather than guessing red or grey. Single source of truth for both the
@@ -100,18 +111,20 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         binding.btnMessage.setOnClickListener { messageUser() }
 
         loadProfile()
-        loadSelfCoordinatesThenApply()
+        loadSelfProfileThenApply()
         checkLikeState()
         observePresence()
         recordThisView()
     }
 
-    private fun loadSelfCoordinatesThenApply() {
-        loadSelfCoordinates(this, firestore) { lat, lon ->
-            selfLat = lat
-            selfLon = lon
+    private fun loadSelfProfileThenApply() {
+        loadSelfProfile(this, firestore) { self ->
+            selfLat = self?.latitude
+            selfLon = self?.longitude
+            selfInterests = self?.interests?.toSet() ?: emptySet()
             selfCoordsLoaded = true
             applyDistanceBadge()
+            applyInterests()
         }
     }
 
@@ -120,6 +133,23 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
      * Called from both loaders' success paths, so whichever finishes second is
      * the one that actually shows the badge.
      */
+    private fun applyInterests() {
+        val profile = otherProfile ?: return
+        // Same two-halves guard as applyDistanceBadge, and for the same
+        // reason: this loader and loadProfile race, so whichever finishes
+        // second is the one that actually renders. Without it the chips
+        // would paint before selfInterests arrived and silently show no
+        // shared highlighting at all.
+        if (!selfCoordsLoaded) return
+
+        if (profile.interests.isEmpty()) {
+            binding.sectionInterests.visibility = View.GONE
+            return
+        }
+        binding.sectionInterests.visibility = View.VISIBLE
+        binding.chipsDetailInterests.setInterestsReadOnly(profile.interests, selfInterests)
+    }
+
     private fun applyDistanceBadge() {
         val profile = otherProfile ?: return
         if (!selfCoordsLoaded) return
@@ -371,23 +401,40 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
             binding.tvDetailAgeLocation.visibility = View.VISIBLE
         }
 
+        val genderLabel = Gender.values()
+            .firstOrNull { it.firestoreValue == profile.gender }
+            ?.let { getString(it.labelRes) }
+        if (genderLabel == null) {
+            binding.tvDetailGender.visibility = View.GONE
+        } else {
+            binding.tvDetailGender.text = genderLabel
+            binding.tvDetailGender.visibility = View.VISIBLE
+        }
+
+        // Sections hide as a unit, header included. A "BASICS" heading above
+        // nothing reads as a rendering fault rather than as missing data, and
+        // sparse profiles are common here.
+        binding.sectionBasics.visibility =
+            if (line == null && genderLabel == null) View.GONE else View.VISIBLE
+
         val intentLine = MarriageIntent.summaryLine(this, profile.myStatus, profile.lookingFor)
         if (intentLine == null) {
-            binding.tvDetailIntent.visibility = View.GONE
+            binding.sectionLookingFor.visibility = View.GONE
         } else {
             binding.tvDetailIntent.text = intentLine
-            binding.tvDetailIntent.visibility = View.VISIBLE
+            binding.sectionLookingFor.visibility = View.VISIBLE
         }
 
         val bio = profile.bio?.trim()
         if (bio.isNullOrEmpty()) {
-            binding.tvDetailBio.visibility = View.GONE
+            binding.sectionAbout.visibility = View.GONE
         } else {
             binding.tvDetailBio.text = bio
-            binding.tvDetailBio.visibility = View.VISIBLE
+            binding.sectionAbout.visibility = View.VISIBLE
         }
 
         applyDistanceBadge()
+        applyInterests()
 
         binding.progressLoading.visibility = View.GONE
         binding.scrollContent.visibility = View.VISIBLE

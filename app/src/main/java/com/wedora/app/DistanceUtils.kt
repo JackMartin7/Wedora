@@ -86,17 +86,36 @@ fun loadSelfCoordinates(
     context: Context,
     firestore: FirebaseFirestore,
     onResult: (lat: Double?, lon: Double?) -> Unit
+) = loadSelfProfile(context, firestore) { self ->
+    onResult(self?.latitude, self?.longitude)
+}
+
+/**
+ * The signed-in viewer's own profile, or null for a guest or on failure.
+ *
+ * [loadSelfCoordinates] was always doing this read and then throwing all but
+ * two fields away. Callers that need more than coordinates — ProfileDetail,
+ * which cross-references the viewer's interests against the profile being
+ * viewed — use this instead, at no extra cost: it is the same single read.
+ *
+ * Kept as a separate function rather than widening loadSelfCoordinates'
+ * callback, which five screens depend on.
+ *
+ * Null for a guest is deliberate and load-bearing: a guest has no profile to
+ * compare against, so features built on this must degrade rather than guess.
+ */
+fun loadSelfProfile(
+    context: Context,
+    firestore: FirebaseFirestore,
+    onResult: (UserProfile?) -> Unit
 ) {
     val selfUid = FirebaseAuth.getInstance().currentUser
         ?.takeUnless { GuestPrefs.isGuest(context) }?.uid
     if (selfUid == null) {
-        onResult(null, null)
+        onResult(null)
         return
     }
     firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
-        .addOnSuccessListener { snapshot ->
-            val self = UserProfile.from(snapshot)
-            onResult(self.latitude, self.longitude)
-        }
-        .addOnFailureListener { onResult(null, null) }
+        .addOnSuccessListener { onResult(UserProfile.from(it)) }
+        .addOnFailureListener { onResult(null) }
 }

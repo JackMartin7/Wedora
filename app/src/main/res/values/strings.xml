@@ -858,4 +858,11 @@
     <string name="update_row_unreachable">%1$s · Can\'t check right now</string>
     <string name="update_row_action">Update</string>
     <string name="update_row_checking">Checking…</string>
+
+    <!-- ProfileDetail section headers -->
+    <string name="profile_section_basics">Basics</string>
+    <string name="profile_section_about">About</string>
+    <string name="profile_section_looking_for">Looking For</string>
+    <string name="profile_section_interests">Interests</string>
+
 </resources>
