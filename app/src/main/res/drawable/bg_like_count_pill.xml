@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Stadium backing for ProfileDetail's like control, which carries a count
+    beside the heart and so is wider than its circular Pass/Message siblings.
+
+    bg_icon_button cannot be reused: it is android:shape="oval", so stretching
+    it to the width of icon-plus-count would draw an ellipse rather than a
+    pill. Same fill and stroke, radius fixed at half the 64dp button height so
+    the ends stay true semicircles and the control still reads as part of the
+    same set.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_input_bg" />
+    <corners android:radius="32dp" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/wedora_input_border" />
+</shape>

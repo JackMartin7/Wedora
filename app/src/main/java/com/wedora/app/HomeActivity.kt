@@ -847,6 +847,11 @@ class HomeActivity :
             if (likedUserIds.contains(card.id)) R.drawable.ic_like_filled
             else R.drawable.ic_like_outline
         )
+        // Whatever the feed last read. Not adjusted when this viewer likes or
+        // unlikes: the count is maintained server-side by onMatchWritten, so
+        // incrementing it locally would double-count once the pool refreshes,
+        // and this viewer's own like is one of many the number represents.
+        b.tvLikeCount.text = card.likesReceivedCount.toString()
 
         b.root.setOnClickListener { startActivity(ProfileDetailActivity.intent(this, card.id)) }
         // Shallower than a button: the card is large, so the same 5% dip would

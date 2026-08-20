@@ -38,6 +38,13 @@ data class MatchCard(
      * apply a gender filter client-side; null on a profile that never set one.
      */
     val gender: String?,
+    /**
+     * Likes this profile has received, already floored at zero by
+     * [UserProfile.from]. Shown on the swipe card beside the heart; see
+     * item_match_card.xml. Zero renders as "0" rather than hiding, so the
+     * control keeps a stable width as the deck advances.
+     */
+    val likesReceivedCount: Int,
     /** Null on accounts predating the field — the badge is hidden, not blank. */
     val myStatus: String?,
     val lookingFor: String?,

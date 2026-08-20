@@ -262,6 +262,23 @@ service cloud.firestore {
       // Requiring it on update would reject steps 2 and 3 outright: their
       // merged document has no age yet, so hasValidAge() is false and the
       // write is denied.
+
+      // likesReceivedCount is maintained ONLY by the onMatchWritten Cloud
+      // Function (see functions/src/index.ts), which runs under the Admin
+      // SDK and is not subject to these rules. No client ever has a reason
+      // to write it, and the owner-only rule above would otherwise let
+      // someone set their own like count to anything they liked — the
+      // cheapest possible vanity forgery, and one that would be invisible
+      // since the value is displayed verbatim on their card.
+      //
+      // Unchanged-or-absent rather than simply absent: an ordinary profile
+      // edit sends the whole merged document, so the field is present on
+      // most writes and requiring its absence would reject them all.
+      function likesReceivedCountUnchanged() {
+        return request.resource.data.get('likesReceivedCount', 0)
+            == resource.data.get('likesReceivedCount', 0);
+      }
+
       allow create: if isOwner(userId)
           && ageAbsentOrValid()
           && genderAbsentOrValid()
@@ -275,7 +292,8 @@ service cloud.firestore {
           && (isPremiumUnchanged() || isPremiumChangeFromPurchase())
           && likesLimitRespected()
           && messagesLimitRespected()
-          && rewardedCooldownRespected();
+          && rewardedCooldownRespected()
+          && likesReceivedCountUnchanged();
 
       // Admin-only exception, evaluated as an OR alongside the owner-only
       // allow update above (Firestore grants a write if ANY matching allow

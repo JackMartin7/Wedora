@@ -180,18 +180,62 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- 56dp glass squares, per the design. The design also shows a
-                 like COUNT beside the heart; omitted rather than faked —
-                 nothing in this app tracks per-profile like counts. -->
-            <ImageButton
-                android:id="@+id/btnLike"
-                android:layout_width="56dp"
+            <!--
+                56dp glass squares for pass and chat; the like control is a
+                wider pill carrying the received-like count, which is what
+                Figma 118:454 specifies (93.66x58, a 24x24 heart at 118:456
+                plus a 27.66x20 text leaf at 118:458, against 56x56 for the
+                other two). The count was omitted when this card was first
+                built because nothing tracked it - the onMatchWritten Cloud
+                Function now does.
+
+                The background moved from the button onto this wrapper so the
+                heart and the number share one pill. btnLike keeps its id and
+                stays an ImageButton: HomeActivity calls setImageResource on
+                it and unlikeInPlace takes an ImageButton, so changing its
+                type would break the heart toggle.
+
+                48dp rather than the design's 41dp icon box: 48dp is the
+                minimum touch target, and it puts the pill at roughly 96dp
+                against the design's 93.66dp - closer than shrinking the tap
+                area would be worth.
+            -->
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="56dp"
-                android:padding="16dp"
-                android:background="@drawable/bg_v2_glass_pill_on_photo"
-                android:src="@drawable/ic_like_outline"
-                android:tint="@color/wedora_accent_on_photo"
-                android:contentDescription="@string/cd_like" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingEnd="16dp"
+                android:background="@drawable/bg_v2_glass_pill_on_photo">
+
+                <ImageButton
+                    android:id="@+id/btnLike"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:padding="12dp"
+                    android:background="@null"
+                    android:src="@drawable/ic_like_outline"
+                    android:tint="@color/wedora_accent_on_photo"
+                    android:contentDescription="@string/cd_like" />
+
+                <!-- A bare number, not "24 likes": the design's text leaf is
+                     27.66dp wide, which fits a figure and no word. minWidth
+                     stops the pill resizing as the deck advances between one
+                     and two digit counts. -->
+                <TextView
+                    android:id="@+id/tvLikeCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:minWidth="24dp"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:textColor="@color/wedora_text_on_photo"
+                    android:textSize="14sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    tools:text="42" />
+
+            </LinearLayout>
 
             <ImageButton
                 android:id="@+id/btnPass"

@@ -109,6 +109,17 @@ data class UserProfile(
      * way it's ever set — Console/Admin SDK writes aren't subject to rules.
      */
     val isPremium: Boolean,
+    /**
+     * How many likes this profile has received. Zero on any account that
+     * predates the counter.
+     *
+     * Floored at zero in [from] rather than at each call site. Without a
+     * backfill the stored value can legitimately go negative — an unlike of
+     * a like that was never counted decrements from zero — and
+     * FieldValue.increment cannot clamp server-side. Doing it at the single
+     * parse point means no screen can forget.
+     */
+    val likesReceivedCount: Int,
     /** How many likes this user has given on [likesGivenDate]. Free tier only. */
     val likesGivenToday: Int,
     /** "yyyy-MM-dd", device-local calendar day the count above is for. */
@@ -173,6 +184,13 @@ data class UserProfile(
         const val FIELD_INTERESTS = "interests"
         const val FIELD_LAST_SEEN = "lastSeen"
         const val FIELD_IS_PREMIUM = "isPremium"
+        /**
+         * Likes this profile has RECEIVED. Maintained solely by the
+         * onMatchWritten Cloud Function; firestore.rules blocks clients from
+         * writing it (see likesReceivedCountUnchanged there). Not backfilled,
+         * so it counts activity from that function's deploy onward.
+         */
+        const val FIELD_LIKES_RECEIVED_COUNT = "likesReceivedCount"
         const val FIELD_LIKES_GIVEN_TODAY = "likesGivenToday"
         const val FIELD_LIKES_GIVEN_DATE = "likesGivenDate"
         const val FIELD_MESSAGES_SENT_TODAY = "messagesSentToday"
@@ -276,6 +294,7 @@ data class UserProfile(
             // Null while a just-written serverTimestamp is still pending.
             lastSeen = snapshot.getTimestamp(FIELD_LAST_SEEN)?.toDate(),
             isPremium = snapshot.getBoolean(FIELD_IS_PREMIUM) ?: false,
+            likesReceivedCount = (snapshot.getLong(FIELD_LIKES_RECEIVED_COUNT) ?: 0L).toInt().coerceAtLeast(0),
             likesGivenToday = snapshot.getLong(FIELD_LIKES_GIVEN_TODAY)?.toInt() ?: 0,
             likesGivenDate = snapshot.getString(FIELD_LIKES_GIVEN_DATE),
             messagesSentToday = snapshot.getLong(FIELD_MESSAGES_SENT_TODAY)?.toInt() ?: 0,

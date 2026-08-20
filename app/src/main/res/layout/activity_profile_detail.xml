@@ -258,17 +258,52 @@
              app:tint), so the toggle only swaps src. Hidden until the like
              check resolves; likeLoading occupies its slot until then, so the
              heart never briefly shows the wrong state. -->
-        <ImageButton
-            android:id="@+id/btnLike"
-            android:layout_width="64dp"
+        <!--
+            Mirrors the swipe card's like control: heart plus the received-like
+            count, so the same affordance means the same thing on both screens.
+
+            The wrapper, not btnLike, carries the visibility toggle now.
+            applyLikeState hides this whole control until the like check
+            resolves, with likeLoading occupying the slot meanwhile; toggling
+            the button alone would leave the number sitting in an empty pill.
+
+            bg_like_count_pill rather than bg_icon_button: that one is an oval
+            and would draw as an ellipse at this width.
+        -->
+        <LinearLayout
+            android:id="@+id/likeControl"
+            android:layout_width="wrap_content"
             android:layout_height="64dp"
             android:layout_marginStart="28dp"
-            android:padding="16dp"
-            android:background="@drawable/bg_icon_button"
-            android:src="@drawable/ic_like_outline"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingEnd="20dp"
+            android:background="@drawable/bg_like_count_pill"
             android:visibility="gone"
-            tools:visibility="visible"
-            android:contentDescription="@string/cd_like" />
+            tools:visibility="visible">
+
+            <ImageButton
+                android:id="@+id/btnLike"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:padding="16dp"
+                android:background="@null"
+                android:src="@drawable/ic_like_outline"
+                android:contentDescription="@string/cd_like" />
+
+            <TextView
+                android:id="@+id/tvLikeCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="24dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="@color/wedora_text"
+                android:textSize="15sp"
+                android:fontFamily="@font/poppins_semibold"
+                tools:text="42" />
+
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/likeLoading"

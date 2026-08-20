@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
 import { onDocumentCreated, onDocumentWritten } from "firebase-functions/firestore";
@@ -166,6 +166,98 @@ async function displayNameFor(uid: string): Promise<string> {
 }
 
 /**
+ * Keeps `users/{uid}.likesReceivedCount` in step with the likes recorded on
+ * match documents.
+ *
+ * This lives server-side rather than in the client's like batch for two
+ * reasons, both hard blockers rather than preferences:
+ *
+ *  1. firestore.rules only lets a user write their OWN profile document
+ *     (`allow update: if isOwner(userId)`), and this counter lives on the
+ *     LIKED user's document. Doing it client-side would mean letting any
+ *     signed-in account write to any other account's profile — and even
+ *     scoped to one field with a delta check, nothing stops a modified
+ *     client calling it repeatedly to inflate its own count.
+ *  2. The client has five separate paths that record a like (the gated
+ *     batch, the already-matched refresh, two fail-open fallbacks, and
+ *     ProfileDetail). A trigger on the document they all converge on
+ *     covers every one of them, including any added later.
+ *
+ * The diff below is deliberately general rather than special-casing the
+ * three shapes that actually occur today, so a future arrayRemove on
+ * likedUsers is handled without touching this:
+ *
+ *   CREATE [A]        -> B +1        (one-sided like)
+ *   UPDATE [A]->[A,B] -> A +1        (liked back, match goes mutual)
+ *   DELETE [A]        -> B -1        (unlike)
+ *   DELETE [A,B]      -> A -1, B -1  (unlike destroys BOTH likes, since
+ *                                     deleteMatchDocument removes the whole
+ *                                     document rather than one uid)
+ *
+ * Every other update — lastMessage, seenBy, hiddenBy, lastReadAt, or a
+ * re-like refresh — leaves likedUsers untouched, so both diff sets come out
+ * empty and this returns without writing.
+ *
+ * FieldValue.increment is an atomic server-side transform, so concurrent
+ * likes on the same profile cannot lose an update. No transaction is needed
+ * or wanted here. (The daily-like counter in LikeLimit.kt genuinely does
+ * read-then-write, but it cannot use increment: its reset depends on
+ * comparing a stored date.)
+ *
+ * NOT backfilled. Counts start from zero at deploy and reflect activity from
+ * then on; existing matches were never counted. Readers must therefore floor
+ * the value at zero, since an unlike of a pre-existing like can drive it
+ * negative and increment cannot clamp.
+ *
+ * Failures are logged and swallowed: a missed count must never cost the user
+ * their match notification.
+ */
+async function syncLikesReceivedCounts(
+  change: { before: FirebaseFirestore.DocumentSnapshot;
+            after: FirebaseFirestore.DocumentSnapshot }
+): Promise<void> {
+  const before = (change.before.get("likedUsers") as string[] | undefined) ?? [];
+  const after = (change.after.get("likedUsers") as string[] | undefined) ?? [];
+
+  // On a delete there is no `after`, so the participants come from `before`.
+  const users = ((change.after.exists
+    ? change.after.get("users")
+    : change.before.get("users")) as string[] | undefined) ?? [];
+  if (users.length !== 2) return;
+
+  const added = after.filter((u) => !before.includes(u));
+  const removed = before.filter((u) => !after.includes(u));
+  if (added.length === 0 && removed.length === 0) return;
+
+  // Each uid in likedUsers means "this person liked the other one", so the
+  // count moves on the OTHER participant, not the liker.
+  const deltas = new Map<string, number>();
+  const bump = (liker: string, by: number) => {
+    const recipient = users.find((u) => u !== liker);
+    if (!recipient) return;
+    deltas.set(recipient, (deltas.get(recipient) ?? 0) + by);
+  };
+  added.forEach((u) => bump(u, 1));
+  removed.forEach((u) => bump(u, -1));
+
+  try {
+    const db = getFirestore();
+    const batch = db.batch();
+    for (const [uid, delta] of deltas) {
+      if (delta === 0) continue;
+      batch.set(
+        db.collection("users").doc(uid),
+        { likesReceivedCount: FieldValue.increment(delta) },
+        { merge: true }
+      );
+    }
+    await batch.commit();
+  } catch (e) {
+    logger.error("Failed to sync likesReceivedCount", e);
+  }
+}
+
+/**
  * Fires on every write to a match document — create, update, or delete —
  * and decides for itself whether either push applies. That's this app's
  * match model leaving no simpler option, not a stylistic choice: a match
@@ -183,7 +275,13 @@ export const onMatchWritten = onDocumentWritten(
   "matches/{matchId}",
   async (event) => {
     const change = event.data;
-    if (!change || !change.after.exists) return; // deleted (an unlike) — nothing to notify
+    if (!change) return;
+
+    // Before the early-return below: the counter has to observe deletes too,
+    // which is exactly the case the push logic skips.
+    await syncLikesReceivedCounts(change);
+
+    if (!change.after.exists) return; // deleted (an unlike) — nothing to notify
 
     const after = change.after;
     const users = (after.get("users") as string[] | undefined) ?? [];

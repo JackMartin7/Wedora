@@ -70,7 +70,11 @@ object FeedCache {
      * sorting the entire pool as "oldest" and making the newest-first
      * ordering look broken exactly when a user first sees it.
      */
-    private const val SCHEMA_VERSION = 2
+    // 3: added likesReceivedCount. A v2 payload would deserialize it as 0
+    //    via optInt's default, which is silently wrong rather than merely
+    //    stale — a real count would read as zero until the pool refreshed.
+    //    Bumping discards those payloads instead.
+    private const val SCHEMA_VERSION = 3
 
     private const val FIELD_VERSION = "version"
     private const val FIELD_SAVED_AT = "savedAt"
@@ -136,6 +140,7 @@ object FeedCache {
         .put("latitude", latitude ?: JSONObject.NULL)
         .put("longitude", longitude ?: JSONObject.NULL)
         .put("gender", gender ?: JSONObject.NULL)
+        .put("likesReceivedCount", likesReceivedCount)
         .put("myStatus", myStatus ?: JSONObject.NULL)
         .put("lookingFor", lookingFor ?: JSONObject.NULL)
         .put("lastSeen", lastSeen?.time ?: JSONObject.NULL)
@@ -164,6 +169,7 @@ object FeedCache {
             latitude = if (isNull("latitude")) null else optDouble("latitude"),
             longitude = if (isNull("longitude")) null else optDouble("longitude"),
             gender = optString("gender").orEmptyNull(),
+            likesReceivedCount = optInt("likesReceivedCount"),
             myStatus = optString("myStatus").orEmptyNull(),
             lookingFor = optString("lookingFor").orEmptyNull(),
             lastSeen = if (isNull("lastSeen")) null else Date(optLong("lastSeen")),

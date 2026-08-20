@@ -38,6 +38,7 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         latitude = profile.latitude,
         longitude = profile.longitude,
         gender = profile.gender,
+        likesReceivedCount = profile.likesReceivedCount,
         myStatus = profile.myStatus,
         lookingFor = profile.lookingFor,
         lastSeen = profile.lastSeen,

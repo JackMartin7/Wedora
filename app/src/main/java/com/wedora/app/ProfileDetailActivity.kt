@@ -237,7 +237,10 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         hasLiked = liked
 
         binding.likeLoading.visibility = View.GONE
-        binding.btnLike.visibility = View.VISIBLE
+        // The wrapper, not the button: the heart and its count share one pill
+        // now, and showing the button alone would reveal a pill with an empty
+        // slot beside it. See activity_profile_detail.xml.
+        binding.likeControl.visibility = View.VISIBLE
         binding.btnLike.setImageResource(
             if (liked) R.drawable.ic_like_filled else R.drawable.ic_like_outline
         )
@@ -352,6 +355,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         otherProfile = profile
         binding.tvDetailName.text = name
         binding.ivDetailPhoto.loadRemoteProfilePhoto(profile.photoUrl)
+        binding.tvLikeCount.text = profile.likesReceivedCount.toString()
 
         val line = formatAgeLocation(
             this,
