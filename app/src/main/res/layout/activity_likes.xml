@@ -305,6 +305,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!--
+        itemMinHeight 64dp: 56dp is Material's design_bottom_navigation_height
+        default and reads as too thin. 64dp is what Figma 118:506 specifies -
+        its content container sits at y=17 with height 47, so content ends at
+        64. The rest of the board's 102dp bar is an iPhone home indicator,
+        which on Android is the system gesture inset that
+        applyBottomNavScreenInsets already pads for.
+
+        itemMinHeight rather than a fixed layout_height: that inset is applied
+        as padding INSIDE this view, so a fixed height would be eaten by it on
+        a gesture-nav device. Growing the item also grows the touch target,
+        which padding would not.
+    -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="0dp"
@@ -314,6 +327,7 @@
         app:itemIconTint="@color/bottom_nav_item_color"
         app:itemTextColor="@color/bottom_nav_item_color"
         app:itemIconSize="20dp"
+        app:itemMinHeight="64dp"
         app:itemTextAppearanceActive="@style/WedoraNavLabel"
         app:itemTextAppearanceInactive="@style/WedoraNavLabel"
         app:itemActiveIndicatorStyle="@null"

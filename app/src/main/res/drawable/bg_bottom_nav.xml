@@ -2,25 +2,21 @@
 <!--
     Bottom-nav surface, shared by all five tab screens.
 
-    Carries the redesign's treatment (Figma nodes 118:506 / 118:537): the page
-    colour with a 1dp hairline top border. Both tokens resolve to the existing
-    light values in light mode and to the board's values in dark, so applying
-    this everywhere restyles dark mode without touching light — which has no
-    design to restyle toward.
+    Deliberately a flat fill with NO top border. It carried a 1dp hairline
+    (wedora_hairline, the board's rgba(255,255,255,0.1) from Figma 118:506 /
+    118:537) until that line was judged too visible in use.
 
-    This replaces the split where Home and Explore used a v2 copy and the other
-    three used this file, which left the bar looking different depending on the
-    tab.
+    The consequence is intended, not overlooked: wedora_nav_bg and wedora_bg are
+    the same #120D12 in dark, so the bar has no boundary against the page at
+    all, and content scrolls up to it with nothing marking where it begins. If a
+    separation is ever wanted back, shifting wedora_nav_bg is the lever - not
+    reinstating a rule.
+
+    Both tokens resolve to existing light values in light mode and to the
+    board's in dark, so this restyles dark without touching light, which has no
+    design to restyle toward.
 -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="@color/wedora_hairline" />
-        </shape>
-    </item>
-    <item android:top="1dp">
-        <shape android:shape="rectangle">
-            <solid android:color="@color/wedora_nav_bg" />
-        </shape>
-    </item>
-</layer-list>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_nav_bg" />
+</shape>
