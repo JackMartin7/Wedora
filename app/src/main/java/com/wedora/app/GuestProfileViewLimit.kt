@@ -7,7 +7,7 @@ import androidx.fragment.app.FragmentActivity
  * [GuestPrefs]' single daily pool across every screen that renders the
  * discovery feed, bounded preview or full list alike — Home's swipe stack,
  * Explore's Discover grid/strip, and both of Explore's own "See All"
- * screens ([NearbyListActivity], [DiscoverListActivity]) — so a guest can't
+ * screens ([DiscoverListActivity]) — so a guest can't
  * dodge the cap by switching screens, extracted here so each of those
  * doesn't carry its own copy.
  *

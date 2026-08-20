@@ -264,10 +264,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".NearbyListActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".DiscoverListActivity"
             android:exported="false" />
 

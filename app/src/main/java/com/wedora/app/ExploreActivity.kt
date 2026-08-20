@@ -17,7 +17,7 @@ import com.wedora.app.databinding.ActivityExploreBinding
  * Both sections are the same feed — opposite gender, minus everyone blocked,
  * passed or already liked, within the distance filter — sorted closest first
  * (see [loadDiscoveryFeed]). Both are previews, not the full lists: Nearby's
- * "See All" opens [NearbyListActivity]; Discover's own "See All" and "Load
+ * "See All" opens [DiscoverListActivity]; Discover's own "See All" and "Load
  * More" both open [DiscoverListActivity] — two entry points to the same
  * destination, not two different ones (Load More is just a second, more
  * natural place to reach it from the bottom of the preview grid).
@@ -122,21 +122,21 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         })
 
         binding.tvNearbySeeAll.setOnClickListener {
-            startActivity(NearbyListActivity.intent(this, NearbyListActivity.Mode.NEARBY))
+            startActivity(DiscoverListActivity.intent(this, DiscoverListActivity.Mode.NEARBY))
         }
 
         binding.tvTrendingSeeAll.setOnClickListener {
-            startActivity(NearbyListActivity.intent(this, NearbyListActivity.Mode.TRENDING))
+            startActivity(DiscoverListActivity.intent(this, DiscoverListActivity.Mode.TRENDING))
         }
 
         // See All and Load More both just open the full grid — Load More is
         // a second, more natural entry point at the bottom of the preview
         // rather than a different destination.
         binding.tvDiscoverSeeAll.setOnClickListener {
-            startActivity(Intent(this, DiscoverListActivity::class.java))
+            startActivity(DiscoverListActivity.intent(this, DiscoverListActivity.Mode.DISCOVER))
         }
         binding.btnDiscoverLoadMore.setOnClickListener {
-            startActivity(Intent(this, DiscoverListActivity::class.java))
+            startActivity(DiscoverListActivity.intent(this, DiscoverListActivity.Mode.DISCOVER))
         }
 
         // Kicked off before loadFeed's own network round trip — same

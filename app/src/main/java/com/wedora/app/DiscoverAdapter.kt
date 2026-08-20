@@ -19,8 +19,13 @@ data class DiscoverProfile(
     val name: String,
     val meta: String?,
     val photoUrl: String?,
-    /** Null when either this user or the profile has no coordinates on file. */
-    val distanceBadge: String? = null
+    /**
+     * Whatever the surface showing this tile captions it with - a distance for
+     * Discover and Nearby, a like count for Trending - or null to hide the
+     * pill. Named for the slot rather than for distance since
+     * DiscoverListActivity gained its sort modes.
+     */
+    val badge: String? = null
 )
 
 /**
@@ -103,11 +108,11 @@ class DiscoverAdapter(
                 tvDiscoverMeta.text = profile.meta
             }
 
-            if (profile.distanceBadge == null) {
+            if (profile.badge == null) {
                 tvDiscoverDistance.visibility = View.GONE
             } else {
                 tvDiscoverDistance.visibility = View.VISIBLE
-                tvDiscoverDistance.text = profile.distanceBadge
+                tvDiscoverDistance.text = profile.badge
             }
 
             root.setOnClickListener { onClick(profile) }
