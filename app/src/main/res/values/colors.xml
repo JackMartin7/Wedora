@@ -235,8 +235,9 @@
          designed value. -->
     <color name="wedora_gold">#B45309</color>
 
-    <!-- Resting background for a READ-ONLY interest chip
-         (WedoraInterestChipReadOnly). Not wedora_surface, deliberately.
+    <!-- Resting background for a chip - the read-only ones on ProfileDetail
+         and, since the filter restyle dropped their unselected borders, the
+         interactive pickers too. Not wedora_surface, deliberately.
 
          wedora_surface is #F9F9F9 here and #1E161E in dark, which against
          their respective pages is 1.05:1 and 1.09:1 - so a chip painted with

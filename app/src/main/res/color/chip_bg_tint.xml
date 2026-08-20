@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Choice-chip fill: accent when checked, surface when not. -->
+<!--
+    Choice-chip fill. Selected and unselected are the SAME surface: the
+    selection is carried by the border and the label colour instead (see
+    chip_stroke_tint / chip_text_tint), which is the treatment the filter
+    reference uses.
+
+    wedora_chip_surface, not wedora_surface: at #1E161E a chip is 1.09:1
+    against the page and does not read as a pill at all - and with the
+    unselected border now gone there is nothing else giving it an edge.
+
+    It was a solid accent fill when checked. On a screen where several chips
+    are selected at once that turned whole sections into blocks of accent -
+    the same problem the read-only interest chips on ProfileDetail had, and
+    fixed the same way.
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/wedora_accent" android:state_checked="true" />
-    <item android:color="@color/wedora_surface" />
+    <item android:color="@color/wedora_chip_surface" android:state_checked="true" />
+    <item android:color="@color/wedora_chip_surface" />
 </selector>

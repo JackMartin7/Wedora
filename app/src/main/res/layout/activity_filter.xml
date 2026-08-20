@@ -56,19 +56,15 @@
         app:layout_constraintTop_toTopOf="@id/btnClose"
         app:layout_constraintBottom_toBottomOf="@id/btnClose" />
 
-    <View
-        android:id="@+id/dividerTopBar"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="12dp"
-        android:background="@color/wedora_border"
-        app:layout_constraintTop_toBottomOf="@id/btnClose" />
-
+    <!-- No rule under the header: the reference separates the bar from the
+         content with space alone. The ScrollView therefore anchors straight to
+         btnClose and carries the gap the divider used to sit in. -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:layout_marginTop="12dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toBottomOf="@id/dividerTopBar"
+        app:layout_constraintTop_toBottomOf="@id/btnClose"
         app:layout_constraintBottom_toTopOf="@id/btnApply">
 
         <LinearLayout
@@ -85,9 +81,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
                 android:text="@string/filter_age_range"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                style="@style/WedoraSectionHeader" />
 
             <TextView
                 android:id="@+id/tvAgeValue"
@@ -110,6 +104,10 @@
                 app:thumbColor="@color/wedora_accent"
                 app:trackColorActive="@color/wedora_accent"
                 app:trackColorInactive="@color/wedora_input_border"
+                app:thumbRadius="11dp"
+                app:thumbStrokeColor="@color/wedora_bg"
+                app:thumbStrokeWidth="3dp"
+                app:trackHeight="6dp"
                 app:labelBehavior="gone" />
 
             <!-- ===== Status ===== -->
@@ -119,11 +117,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="26dp"
                 android:text="@string/filter_by_status"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                style="@style/WedoraSectionHeader" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipsStatusFilter"
@@ -139,11 +135,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="26dp"
                 android:text="@string/filter_by_looking_for"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                style="@style/WedoraSectionHeader" />
 
             <!-- Shown while the gender that decides these options is loading, so
                  the wrong chips can't flash up first. Swapped for the chips once
@@ -173,11 +167,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="26dp"
                 android:text="@string/filter_distance"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                style="@style/WedoraSectionHeader" />
 
             <TextView
                 android:id="@+id/tvDistanceValue"
@@ -200,6 +192,10 @@
                 app:thumbColor="@color/wedora_accent"
                 app:trackColorActive="@color/wedora_accent"
                 app:trackColorInactive="@color/wedora_input_border"
+                app:thumbRadius="11dp"
+                app:thumbStrokeColor="@color/wedora_bg"
+                app:thumbStrokeWidth="3dp"
+                app:trackHeight="6dp"
                 app:labelBehavior="gone" />
 
             <!-- ===== Interests ===== -->
@@ -211,11 +207,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="26dp"
                 android:text="@string/filter_by_interests"
-                android:textColor="@color/wedora_text"
-                android:textSize="16sp"
-                android:fontFamily="@font/poppins_semibold" />
+                style="@style/WedoraSectionHeader" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipsInterestsFilter"
@@ -232,7 +226,7 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnApply"
-        style="@style/WedoraPrimaryButton"
+        style="@style/WedoraFilterApplyButton"
         android:layout_width="0dp"
         android:layout_height="54dp"
         android:layout_marginHorizontal="20dp"

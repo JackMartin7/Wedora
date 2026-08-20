@@ -313,6 +313,17 @@
         <item name="android:paddingEnd">20dp</item>
     </style>
 
+    <!-- The filter screen's Apply button: WedoraPrimaryButton as a full pill
+         with a trailing check, per the restyle reference. Scoped here rather
+         than applied to WedoraPrimaryButton itself so the rest of the app's
+         buttons keep their 14dp radius. -->
+    <style name="WedoraFilterApplyButton" parent="WedoraPrimaryButton">
+        <item name="android:background">@drawable/bg_button_pill_accent</item>
+        <item name="android:drawableEnd">@drawable/ic_check_thin</item>
+        <item name="android:drawableTint">@color/white</item>
+        <item name="android:drawablePadding">8dp</item>
+    </style>
+
     <style name="WedoraChip" parent="Widget.MaterialComponents.Chip.Choice">
         <item name="chipBackgroundColor">@color/chip_bg_tint</item>
         <item name="android:textColor">@color/chip_text_tint</item>
@@ -339,7 +350,11 @@
     <style name="WedoraInterestChip" parent="Widget.MaterialComponents.Chip.Choice">
         <item name="chipBackgroundColor">@color/interest_chip_bg_tint</item>
         <item name="android:textColor">@color/interest_chip_text_tint</item>
-        <item name="chipStrokeWidth">0dp</item>
+        <!-- Was 0dp: the selected state used to be a solid accent fill, which
+             needed no outline. Selection is now carried by an accent border
+             and label, so the stroke has to exist to be coloured. -->
+        <item name="chipStrokeColor">@color/interest_chip_stroke_tint</item>
+        <item name="chipStrokeWidth">1dp</item>
         <item name="chipCornerRadius">20dp</item>
         <item name="chipMinHeight">40dp</item>
         <item name="android:textSize">13sp</item>

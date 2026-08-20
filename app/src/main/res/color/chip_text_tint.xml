@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Choice-chip label: white on the accent fill, normal text otherwise. -->
+<!--
+    Choice-chip label. Accent when selected, since the fill no longer signals
+    it; ordinary text otherwise.
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/white" android:state_checked="true" />
+    <item android:color="@color/wedora_accent" android:state_checked="true" />
     <item android:color="@color/wedora_text" />
 </selector>

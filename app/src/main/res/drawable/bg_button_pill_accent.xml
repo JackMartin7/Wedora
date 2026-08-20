@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Full-pill accent CTA, used ONLY by the filter screen's Apply button
+    (WedoraFilterApplyButton).
+
+    Deliberately not a change to bg_button_primary_stateful, whose 14dp radius
+    every primary button in the app shares: reshaping all of them off one
+    reference screenshot would be a far bigger identity change than the screen
+    being restyled asked for.
+
+    27dp is half WedoraPrimaryButton's 54dp height, so the ends are true
+    semicircles. States mirror the primary drawable exactly - disabled wash,
+    a solid pressed fill under the ripple rather than relying on the ripple
+    alone - so only the corner radius differs.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_btn_disabled_bg" />
+            <corners android:radius="27dp" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_accent_pressed" />
+            <corners android:radius="27dp" />
+        </shape>
+    </item>
+    <item>
+        <ripple android:color="#33FFFFFF">
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/wedora_accent" />
+                    <corners android:radius="27dp" />
+                </shape>
+            </item>
+        </ripple>
+    </item>
+</selector>

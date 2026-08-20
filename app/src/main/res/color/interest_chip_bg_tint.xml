@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Interest chip fill: solid accent when selected, light accent-tinted wash
-     when not — distinct from chip_bg_tint.xml (WedoraChip's neutral-surface
-     unselected state), per the interest-picker's own reference design. -->
+<!--
+    Interest-picker chip fill. Same reasoning as chip_bg_tint: one surface for
+    both states, selection carried by border and label.
+
+    Unselected was wedora_tag_bg, an accent-tinted pink, which made a grid of
+    unselected interests read as half-chosen. Now a neutral surface.
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/wedora_accent" android:state_checked="true" />
-    <item android:color="@color/wedora_tag_bg" />
+    <item android:color="@color/wedora_chip_surface" android:state_checked="true" />
+    <item android:color="@color/wedora_chip_surface" />
 </selector>

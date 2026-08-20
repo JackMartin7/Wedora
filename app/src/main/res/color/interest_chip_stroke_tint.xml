@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Choice-chip border. Accent when selected; NONE otherwise - an unselected
-    chip in the reference is a plain filled pill with no outline, so the border
-    appearing is itself part of the selected signal.
+    Interest-picker chip border. New: this style had no stroke at all, because
+    its selected state used to be a solid accent fill that needed none.
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:color="@color/wedora_accent" android:state_checked="true" />
