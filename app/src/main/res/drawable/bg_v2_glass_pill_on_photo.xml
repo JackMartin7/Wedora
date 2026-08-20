@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The "glass" action controls overlaying the card photo (item_match_card).
+
+    A near-copy of bg_v2_glass_pill, kept SEPARATE on purpose. That drawable
+    is also used by item_explore_nearby, where the chip sits on a themed
+    surface and its light-mode fill is correct as-is. Making the shared
+    drawable fixed-translucent-white would have turned that chip into white
+    on white in light mode.
+
+    What differs here: the fill and border are fixed light in both themes.
+    The shared version resolves to an OPAQUE #EFEFEF in light mode, which on
+    a photo is not glass at all but a solid grey block — and, worse, it was
+    the reason the dark icons on it still read, so the icon tints on this
+    card could not be fixed without fixing this at the same time.
+
+    The design specifies a backdrop blur behind a 10% white fill. Android has
+    no backdrop blur in a shape drawable (RenderEffect is API 31+, and this
+    app's minSdk is 24), so this approximates it with the translucent fill
+    alone. The photo shows through un-softened; the control still reads as a
+    distinct surface because the fill and hairline border both survive.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_glass_on_photo" />
+    <corners android:radius="16dp" />
+    <stroke android:width="1dp" android:color="@color/wedora_hairline_on_photo" />
+</shape>

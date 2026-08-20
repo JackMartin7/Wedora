@@ -15,7 +15,7 @@
          #E8536B — #E8536B measured 3.57:1 with white button text (needs
          4.5:1); #E22A48 is the nearest darkening of the same hue that
          clears it, at 4.51:1. -->
-    <color name="wedora_accent">#E22A48</color>
+    <color name="wedora_accent">#F43F5E</color>
     <!-- Pressed/active state for anything using wedora_accent as a solid
          fill (see bg_button_primary_stateful.xml's new state_pressed item).
          Unchanged from the original spec — already 4.85:1 with white text,
@@ -188,5 +188,42 @@
          the board's page colour. Its own token so the dark value can follow
          the design without altering light mode, which has no design. -->
     <color name="wedora_nav_bg">@color/wedora_surface</color>
+
+    <!-- ===================================================================
+         ON-PHOTO TOKENS. Deliberately defined HERE ONLY, with no
+         values-night counterpart.
+
+         Everything in item_match_card.xml sits on top of the card photo and
+         its two scrims, and those scrims are hardcoded dark (#CC000000 ->
+         transparent) with no night variant. So the backdrop is dark in BOTH
+         app themes, and any foreground on it must stay light in both — the
+         opposite of the normal light-mode-means-dark-text rule the rest of
+         the app follows.
+
+         Using wedora_text there was the bug: it resolves to #1A1A1A in light
+         mode, i.e. near-black text on a near-black scrim.
+
+         values-night is an override layer, so a token defined only here is
+         already inherited by dark mode. Defining these once rather than
+         twice is what makes "must not vary by theme" structural instead of a
+         convention two files have to keep agreeing on.
+
+         Values are the current DARK values of the tokens they replace, so
+         dark mode renders unchanged — except wedora_caption_on_photo, which
+         is deliberately 85% white rather than dark mode's opaque #D1D5DB.
+         =================================================================== -->
+    <color name="wedora_text_on_photo">#FFFFFF</color>
+    <!-- 85% white rather than an opaque grey: matches item_discover_grid,
+         the app's other text-on-photo surface, and blends over the image
+         instead of sitting flat on it. -->
+    <color name="wedora_caption_on_photo">#D9FFFFFF</color>
+    <color name="wedora_accent_on_photo">#F43F5E</color>
+    <!-- Covers both the softened accent (distance pin) and the status pill's
+         text, which resolved to the same #FB7185 in dark mode. -->
+    <color name="wedora_accent_soft_on_photo">#FB7185</color>
+    <color name="wedora_glass_on_photo">#1AFFFFFF</color>
+    <color name="wedora_hairline_on_photo">#1AFFFFFF</color>
+    <color name="wedora_tag_bg_on_photo">#26F43F5E</color>
+    <color name="wedora_tag_border_on_photo">#4DF43F5E</color>
 
 </resources>

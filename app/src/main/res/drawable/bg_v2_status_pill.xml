@@ -4,7 +4,7 @@
      5.57:1 once composited over the card surface. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/wedora_tag_bg" />
+    <solid android:color="@color/wedora_tag_bg_on_photo" />
     <corners android:radius="100dp" />
-    <stroke android:width="1dp" android:color="@color/wedora_tag_border" />
+    <stroke android:width="1dp" android:color="@color/wedora_tag_border_on_photo" />
 </shape>
