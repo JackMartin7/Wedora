@@ -834,13 +834,33 @@ class HomeActivity :
         }
 
         // Real distance when both this user and the viewer have coordinates;
-        // the pill is hidden entirely otherwise rather than showing "0 km".
+        // the block is hidden entirely otherwise rather than showing "0 km".
+        //
+        // The card renders distance as a vertical stack (see the block's own
+        // comment in item_match_card.xml), so the formatted "2.4 km" is split
+        // into number and unit here rather than in DistanceUtils - the other
+        // three screens that call formatDistance still want it whole.
+        //
+        // Split on the LAST space so a future format with a spaced number
+        // ("1 234 km") still puts only the unit in the second view. If there
+        // is no space at all the whole string stays in the number view, which
+        // is wrong-looking but never drops information.
+        //
+        // Visibility moved to the container: toggling tvDistance alone would
+        // leave the pin and the unit sitting in an otherwise empty pill.
         val distanceBadge = card.distanceBadge()
         if (distanceBadge == null) {
-            b.tvDistance.visibility = View.GONE
+            b.distanceBlock.visibility = View.GONE
         } else {
-            b.tvDistance.visibility = View.VISIBLE
-            b.tvDistance.text = distanceBadge
+            b.distanceBlock.visibility = View.VISIBLE
+            val cut = distanceBadge.lastIndexOf(' ')
+            if (cut > 0) {
+                b.tvDistance.text = distanceBadge.substring(0, cut)
+                b.tvDistanceUnit.text = distanceBadge.substring(cut + 1)
+            } else {
+                b.tvDistance.text = distanceBadge
+                b.tvDistanceUnit.text = ""
+            }
         }
 
         b.btnLike.setImageResource(

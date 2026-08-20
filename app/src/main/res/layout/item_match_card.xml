@@ -170,7 +170,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:paddingHorizontal="24dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="12dp"
         android:paddingBottom="28dp">
 
         <LinearLayout
@@ -205,7 +206,7 @@
                 android:layout_height="56dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:paddingEnd="16dp"
+                android:paddingEnd="12dp"
                 android:background="@drawable/bg_v2_glass_pill_on_photo">
 
                 <ImageButton
@@ -241,7 +242,7 @@
                 android:id="@+id/btnPass"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="12dp"
                 android:padding="16dp"
                 android:background="@drawable/bg_v2_glass_pill_on_photo"
                 android:src="@drawable/ic_action_pass"
@@ -252,7 +253,7 @@
                 android:id="@+id/btnChat"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="12dp"
                 android:padding="16dp"
                 android:background="@drawable/bg_v2_glass_pill_on_photo"
                 android:src="@drawable/ic_nav_chats"
@@ -264,25 +265,77 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <!-- Keeps its id and its "2.4 km" content; the design renders it
-                 as a glass chip rather than the solid accent pill it was. -->
-            <TextView
-                android:id="@+id/tvDistance"
+            <!--
+                Distance, as a narrow VERTICAL block: pin above the number
+                above the unit. Figma 118:468 specifies exactly this shape
+                (63.88 wide, with a 9x14 pin at 118:469 and the number and
+                unit as separate stacked text leaves at 118:471/118:472).
+
+                It was previously built as a horizontal chip, which is about
+                44dp wider, and that is what overflowed the row - four items
+                needed ~344dp against 332dp available on a 412dp screen, so
+                the label was cropped mid-word. The design's vertical stack
+                is precisely what makes four items fit.
+
+                Shortened deliberately: the design's block is 90dp tall,
+                which would push the bio down by 34dp. This one wraps its
+                content instead and lands near 64dp.
+
+                BOUNDED WIDTH is the safety net. tvDistance's maxWidth caps
+                the number, so the whole block cannot exceed roughly 68dp no
+                matter what value arrives - a wildly wrong coordinate can no
+                longer widen the row until something clips. Below ~360dp the
+                row is still tight, but it degrades by ellipsizing the number
+                rather than hard-cropping the pill.
+
+                tvDistance keeps its id and stays the number only; the unit
+                moved to its own view, so bindCard splits the formatted
+                string. DistanceUtils.formatDistance is untouched, since the
+                other three screens still want it whole.
+            -->
+            <LinearLayout
+                android:id="@+id/distanceBlock"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"
                 android:background="@drawable/bg_v2_glass_pill_on_photo"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="10dp"
-                android:drawableStart="@drawable/ic_location_pin"
-                android:drawablePadding="6dp"
-                android:drawableTint="@color/wedora_accent_soft_on_photo"
-                android:maxLines="1"
-                android:textColor="@color/wedora_caption_on_photo"
-                android:textSize="12sp"
-                android:fontFamily="@font/poppins_medium"
                 android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="2.4 km" />
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_location_pin"
+                    android:tint="@color/wedora_accent_soft_on_photo"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:maxWidth="48dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:textColor="@color/wedora_text_on_photo"
+                    android:textSize="13sp"
+                    android:fontFamily="@font/poppins_semibold"
+                    tools:text="2.4" />
+
+                <TextView
+                    android:id="@+id/tvDistanceUnit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:maxLines="1"
+                    android:textColor="@color/wedora_caption_on_photo"
+                    android:textSize="10sp"
+                    android:fontFamily="@font/poppins_medium"
+                    tools:text="km" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
