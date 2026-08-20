@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     A blurred teaser tile for the Likes tab's "Who Viewed Your Profile" strip
-    on a free account — same circular shape as item_likes_matched_user.xml
-    (which this replaces for a free user), plus a small lock badge. Static
+    on a free account — same rounded-square shape as item_likes_matched_user.xml
+    (which this replaces for a free user), plus a small lock badge. Both moved
+    off WedoraCircleImage together so the two states of this strip cannot
+    diverge; the centred lock badge is unaffected by the corner change. Static
     and decorative like item_profile_viewer_featured.xml/
     item_like_featured.xml: every avatar is the same neutral placeholder
     regardless of who's behind it (no photo backend for other users), so
@@ -24,7 +26,7 @@
         android:contentDescription="@string/cd_locked_like"
         app:strokeColor="@color/wedora_avatar_ring"
         app:strokeWidth="2dp"
-        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:shapeAppearanceOverlay="@style/WedoraAvatarRounded"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

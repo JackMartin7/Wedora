@@ -151,6 +151,24 @@
         <item name="cornerSize">24dp</item>
     </style>
 
+    <!-- Rounded-square avatar, as a PERCENTAGE rather than a fixed radius.
+
+         Used where an avatar shows browsable content (someone to look at)
+         rather than identity chrome. The distinction is the design's own: the
+         Figma board squares its photos (24dp on the Explore grid, 40dp on the
+         swipe card) but keeps the 48dp header avatar a full circle, so shape
+         tracks role here, not size. Small identity avatars stay on
+         WedoraCircleImage.
+
+         25% because that reproduces item_explore_nearby's established look
+         exactly at 64dp (its fixed 16dp radius) while staying proportional if
+         reused at another size — a fixed 16dp would be 31% at 52dp and 24% at
+         66dp, so the corner would visibly drift between screens. -->
+    <style name="WedoraAvatarRounded">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">25%</item>
+    </style>
+
     <!-- Interest-tag chip label (onboarding slide 2) -->
     <style name="WedoraChipLabel">
         <item name="android:background">@drawable/bg_chip</item>

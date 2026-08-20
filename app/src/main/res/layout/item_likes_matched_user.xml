@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    One person in the Likes tab's "Users Matched" strip: a circular avatar
-    ringed in accent — the same treatment as the Chats matches strip and
-    Explore's "People Nearby" strip — with the name below and an online dot at
-    the avatar's corner when this person is currently active.
+    One person in the Likes tab's "Users Matched" strip: a rounded-square
+    avatar ringed in accent, with the name below and an online dot at the
+    avatar's corner when this person is currently active.
+
+    The avatar was circular. It is squared to match the rest of this screen —
+    item_like_grid and item_like_featured were already rounded-square, so the
+    strip was the odd one out within its own tab. Explore's 64dp People Nearby
+    avatar is the same size and shape, which is the look this now matches.
+
+    The accent ring is deliberately kept at 2dp rather than dropped to
+    Explore's 1dp hairline: it marks a matched user, so it is signal, not
+    decoration. Only the shape changed. The ring is a stroke on the
+    ShapeableImageView itself, so it follows the new corners for free.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -24,14 +33,30 @@
         android:contentDescription="@string/cd_avatar"
         app:strokeColor="@color/wedora_avatar_ring"
         app:strokeWidth="2dp"
-        app:shapeAppearanceOverlay="@style/WedoraCircleImage"
+        app:shapeAppearanceOverlay="@style/WedoraAvatarRounded"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!--
+        3dp inset, which a circular avatar did not need.
+
+        Against a circle the dot sat flush in the bounding-box corner, outside
+        the circle's edge, reading as a detached badge. A 25% corner on 64dp is
+        a 16dp arc centred at (48,48); at margin 0 the dot's diagonal reach is
+        20.14dp against that 16dp radius, so it would visibly overhang the
+        rounded corner. 3dp brings the reach to 15.90dp — tangent, tucked into
+        the corner.
+
+        It also matches the squared sibling in this same tab: item_like_grid
+        insets its dot 8dp on a grid cell roughly 160dp wide, and that same
+        ratio on 64dp is 3.2dp.
+    -->
     <include
         android:id="@+id/onlineDot"
         layout="@layout/view_online_status_dot"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="3dp"
         app:layout_constraintEnd_toEndOf="@id/ivMatchedAvatar"
         app:layout_constraintBottom_toBottomOf="@id/ivMatchedAvatar" />
 
