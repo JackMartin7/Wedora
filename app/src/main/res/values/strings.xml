@@ -859,10 +859,20 @@
     <string name="update_row_action">Update</string>
     <string name="update_row_checking">Checking…</string>
 
-    <!-- ProfileDetail section headers -->
-    <string name="profile_section_basics">Basics</string>
-    <string name="profile_section_about">About</string>
-    <string name="profile_section_looking_for">Looking For</string>
+    <!-- ProfileDetail section headers. No header for the Looking For /
+         Status card: it carries its own inline labels and sits directly under
+         the photo. Basics is gone - age moved into the name line and location
+         into the photo overlay, leaving nothing for it to hold. -->
+    <string name="profile_section_about">About Me</string>
     <string name="profile_section_interests">Interests</string>
+
+    <!-- Inline labels on the Looking For / Status card. -->
+    <string name="profile_label_looking_for">Looking For</string>
+    <string name="profile_label_status">Status</string>
+
+    <!-- "Denele Harold, 40" - name and age on one line, overlaid on the photo. -->
+    <string name="profile_detail_name_age_format">%1$s, %2$d</string>
+    <!-- "9775 km away" - wraps whatever DistanceUtils.formatDistance produced. -->
+    <string name="profile_detail_distance_away_format">%1$s away</string>
 
 </resources>

@@ -64,36 +64,47 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp">
+            android:orientation="vertical">
 
             <!--
-                ConstraintLayout, not a FrameLayout, for one reason: the photo
-                needs a maximum width.
+                ===== Photo header =====
 
-                Its height is fixed but its width used to be match_parent, so
-                the frame's ASPECT RATIO tracked the screen's. Portrait gave
-                roughly 328x360 (near square) and centerCrop trimmed a little
-                off a portrait photo; landscape gave roughly 720x360, and
-                centerCrop had to scale the same photo to ~960dp tall to fill
-                that width, showing only the middle 360dp — about 60% of the
+                Full-bleed, with the name, location and distance overlaid on a
+                scrim rather than stacked beneath the photo (Figma 132:2). The
+                16dp side padding that used to sit on this column moved down to
+                the section column below, so the image reaches the screen edges.
+
+                ConstraintLayout, not a FrameLayout, for one reason that still
+                applies: the photo needs a MAXIMUM WIDTH.
+
+                Its height is fixed but its width is match_parent, so the
+                frame's ASPECT RATIO tracks the screen's. Portrait gives roughly
+                375x360 (near square) and centerCrop trims a little off a
+                portrait photo; landscape would give roughly 720x360, and
+                centerCrop would scale the same photo to ~960dp tall to fill
+                that width, showing only the middle 360dp - about 60% of the
                 image cropped away.
 
-                constraintWidth_max caps it at 400dp, so landscape gets
-                400x360 instead of 720x360 — near enough to the portrait shape
-                that the crop matches. Below 400dp (every phone in portrait)
-                the cap never applies and nothing changes. The spare width in
-                landscape shows the screen background either side, reading as
-                a centred photo rather than a stretched band.
+                constraintWidth_max caps it at 400dp, so landscape gets 400x360
+                instead - near enough to the portrait shape that the crop
+                matches. Below 400dp (every phone in portrait) the cap never
+                applies. The spare width in landscape shows the screen
+                background either side, reading as a centred photo rather than
+                a stretched band.
 
                 Note this is a WIDTH cap, not an aspect ratio: constraining the
-                ratio instead would make a landscape frame ~960dp tall, which
-                is worse than the bug.
+                ratio instead would make a landscape frame ~960dp tall, which is
+                worse than the bug. The overlay and scrim are constrained to the
+                PHOTO rather than to this container, so at that cap they stay on
+                the image instead of floating over the background beside it.
             -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="360dp">
 
+                <!-- No shapeAppearanceOverlay any more: the photo is full-bleed,
+                     so rounded corners would cut notches out of the screen
+                     edges. -->
                 <com.google.android.material.imageview.ShapeableImageView
                     android:id="@+id/ivDetailPhoto"
                     android:layout_width="0dp"
@@ -103,205 +114,256 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    android:src="@drawable/ic_avatar_placeholder"
                     android:scaleType="centerCrop"
-                    android:contentDescription="@string/cd_profile_photo"
-                    app:shapeAppearanceOverlay="@style/WedoraCardImage" />
+                    android:src="@drawable/ic_avatar_placeholder"
+                    android:contentDescription="@string/cd_profile_photo" />
 
-                <!-- Larger (16dp) variant, and live rather than one-time: this
-                     is the one screen where the viewer is looking at a single
-                     person continuously, so it's worth a listener over a get().
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="200dp"
+                    android:background="@drawable/bg_detail_scrim"
+                    app:layout_constraintBottom_toBottomOf="@id/ivDetailPhoto"
+                    app:layout_constraintStart_toStartOf="@id/ivDetailPhoto"
+                    app:layout_constraintEnd_toEndOf="@id/ivDetailPhoto" />
 
-                     Anchored to the PHOTO's corner, not the parent's: once the
-                     width cap kicks in they are no longer the same edge, and
-                     a parent-anchored dot would float in the empty margin
-                     beside the photo in landscape. -->
+                <!-- Moved to the TOP end of the photo. It used to sit bottom-end,
+                     which is now where the distance line runs. -->
                 <include
                     android:id="@+id/onlineDot"
                     layout="@layout/view_online_status_dot"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_marginEnd="14dp"
-                    android:layout_marginBottom="14dp"
+                    android:layout_marginTop="14dp"
                     app:layout_constraintEnd_toEndOf="@id/ivDetailPhoto"
-                    app:layout_constraintBottom_toBottomOf="@id/ivDetailPhoto" />
+                    app:layout_constraintTop_toTopOf="@id/ivDetailPhoto" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="16dp"
+                    android:paddingBottom="16dp"
+                    app:layout_constraintBottom_toBottomOf="@id/ivDetailPhoto"
+                    app:layout_constraintStart_toStartOf="@id/ivDetailPhoto"
+                    app:layout_constraintEnd_toEndOf="@id/ivDetailPhoto">
+
+                    <!-- "Denele Harold, 40" - name and age together now, so
+                         formatAgeLocation is no longer used on this screen. -->
+                    <TextView
+                        android:id="@+id/tvDetailName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        android:textColor="@color/wedora_text_on_photo"
+                        android:textSize="26sp"
+                        android:fontFamily="@font/poppins_semibold"
+                        tools:text="Denele Harold, 40" />
+
+                    <TextView
+                        android:id="@+id/tvDetailLocation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:drawableStart="@drawable/ic_location_pin"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/wedora_caption_on_photo"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textColor="@color/wedora_caption_on_photo"
+                        android:textSize="14sp"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="Washington DC, Queensland" />
+
+                    <!-- PROVISIONAL ICON: ic_send is a paper plane and reads
+                         close to the design's navigation arrow, but it is not
+                         the exported asset. Replace when the real SVG lands. -->
+                    <TextView
+                        android:id="@+id/tvDetailDistance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:drawableStart="@drawable/ic_send"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/wedora_caption_on_photo"
+                        android:maxLines="1"
+                        android:textColor="@color/wedora_caption_on_photo"
+                        android:textSize="14sp"
+                        android:visibility="gone"
+                        tools:visibility="visible"
+                        tools:text="9775 km away" />
+
+                </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <TextView
-                android:id="@+id/tvDetailName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:textColor="@color/wedora_text"
-                android:textSize="24sp"
-                android:fontFamily="@font/poppins_semibold"
-                tools:text="Amelia Hart" />
-
-            <!-- Hidden when either this user or the profile has no
-                 coordinates on file. Stays in the header block rather than
-                 under Basics: it describes the VIEWER's relationship to this
-                 person, not a fact about the person. -->
-            <TextView
-                android:id="@+id/tvDetailDistance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_distance_pill"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="6dp"
-                android:textColor="@color/white"
-                android:textSize="12sp"
-                android:fontFamily="@font/poppins_medium"
-                android:visibility="gone"
-                tools:visibility="visible"
-                tools:text="2.4 km" />
-
-            <!--
-                ===== Labelled sections =====
-
-                Each section wraps its header WITH its content and is hidden
-                as a unit. That is the load-bearing part: profiles here are
-                often sparse, and a "BASICS" heading sitting above nothing
-                reads as a rendering bug rather than as missing data.
-
-                Always expanded, not collapsible. The bodies are a line or two
-                each plus a handful of chips, so collapsing would save almost
-                no height while adding state to restore across rotation and
-                tap targets competing with the like/pass row below. The screen
-                already scrolls.
-            -->
-
+            <!-- ===== Sections. Padded; the photo above deliberately is not. ===== -->
             <LinearLayout
-                android:id="@+id/sectionBasics"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
                 android:orientation="vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:paddingHorizontal="16dp">
 
-                <TextView
-                    style="@style/WedoraSectionHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/profile_section_basics" />
+                <!--
+                    Looking For / Status. One card with two labelled columns,
+                    not two cards, and no section heading above it - it carries
+                    its own inline labels (Figma 132:2).
 
-                <!-- One combined line from formatAgeLocation rather than split
-                     into rows: that helper already handles the awkward
-                     combinations (age but no city, city but no country), and
-                     re-deriving that here would regress quietly on sparse
-                     profiles. -->
-                <TextView
-                    android:id="@+id/tvDetailAgeLocation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/wedora_text"
-                    android:textSize="14sp"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:text="24 • Islamabad, Pakistan" />
+                    Values are the RAW lookingFor / myStatus fields rather than
+                    MarriageIntent.summaryLine's combined string: the column
+                    labels already say which is which, so "Looking for Second
+                    Wife" under a "LOOKING FOR" heading would stutter.
 
-                <TextView
-                    android:id="@+id/tvDetailGender"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textColor="@color/wedora_text_secondary"
-                    android:textSize="14sp"
-                    android:visibility="gone"
-                    tools:visibility="visible"
-                    tools:text="Female" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/sectionAbout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <TextView
-                    style="@style/WedoraSectionHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/profile_section_about" />
-
-                <TextView
-                    android:id="@+id/tvDetailBio"
+                    Each column hides independently, and the divider goes with
+                    whichever survives. WIDTH RISK: the board shows "Any" and
+                    "Single", but real values run to "Second Wife" and
+                    "Divorced" - hence maxLines and ellipsize on both.
+                -->
+                <LinearLayout
+                    android:id="@+id/cardIntent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:lineSpacingExtra="4sp"
-                    android:textColor="@color/wedora_text_secondary"
-                    android:textSize="14sp"
-                    tools:text="Coffee, long walks and terrible puns." />
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_info_card"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="14dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
 
-            </LinearLayout>
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:padding="12dp"
+                        android:background="@drawable/bg_icon_button"
+                        android:src="@drawable/ic_like_outline"
+                        android:tint="@color/wedora_text_secondary"
+                        android:contentDescription="@null" />
 
-            <LinearLayout
-                android:id="@+id/sectionLookingFor"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
+                    <LinearLayout
+                        android:id="@+id/colLookingFor"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="14dp"
+                        android:orientation="vertical">
 
-                <TextView
-                    style="@style/WedoraSectionHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/profile_section_looking_for" />
+                        <TextView
+                            style="@style/WedoraCardLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile_label_looking_for" />
 
-                <!-- One line from MarriageIntent.summaryLine, same reasoning
-                     as the Basics line. Keeps its badge styling inside the
-                     section rather than becoming plain text. -->
-                <TextView
-                    android:id="@+id/tvDetailIntent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_intent_badge"
-                    android:paddingHorizontal="10dp"
-                    android:paddingVertical="5dp"
-                    android:textColor="@color/wedora_tag_text"
-                    android:textSize="12sp"
-                    android:fontFamily="@font/poppins_medium"
-                    tools:text="Divorced • Looking for Second Wife" />
+                        <TextView
+                            android:id="@+id/tvDetailLookingFor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textColor="@color/wedora_text"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins_semibold"
+                            tools:text="Any" />
 
-            </LinearLayout>
+                    </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/sectionInterests"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:orientation="vertical"
-                android:visibility="gone"
-                tools:visibility="visible">
+                    <View
+                        android:id="@+id/intentDivider"
+                        android:layout_width="1dp"
+                        android:layout_height="36dp"
+                        android:layout_marginHorizontal="14dp"
+                        android:background="@color/wedora_hairline" />
 
-                <TextView
-                    style="@style/WedoraSectionHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/profile_section_interests" />
+                    <LinearLayout
+                        android:id="@+id/colStatus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="end">
 
-                <!-- Filled by setInterestsReadOnly, which renders only this
-                     profile's own interests and makes them inert. Interests
-                     shared with the viewer sort first and take an accent
-                     stroke. -->
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chipsDetailInterests"
+                        <TextView
+                            style="@style/WedoraCardLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/profile_label_status" />
+
+                        <TextView
+                            android:id="@+id/tvDetailStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:gravity="end"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:textColor="@color/wedora_text"
+                            android:textSize="16sp"
+                            android:fontFamily="@font/poppins_semibold"
+                            tools:text="Single" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sectionAbout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:chipSpacingHorizontal="8dp"
-                    app:chipSpacingVertical="8dp" />
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/WedoraSectionHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_section_about" />
+
+                    <TextView
+                        android:id="@+id/tvDetailBio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_about_card"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingVertical="14dp"
+                        android:lineSpacingExtra="5sp"
+                        android:textColor="@color/wedora_text_secondary"
+                        android:textSize="14sp"
+                        tools:text="Adventure seeker and coffee enthusiast." />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/sectionInterests"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        style="@style/WedoraSectionHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/profile_section_interests" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipsDetailInterests"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="8dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -374,8 +436,10 @@
             resolves, with likeLoading occupying the slot meanwhile; toggling
             the button alone would leave the number sitting in an empty pill.
 
-            bg_like_count_pill rather than bg_icon_button: that one is an oval
-            and would draw as an ellipse at this width.
+            bg_like_accent_pill rather than bg_icon_button: that one is an
+            oval and would draw as an ellipse at this width. It is filled
+            accent rather than a subtle surface because the design makes Like
+            the one emphasised action of the three.
         -->
         <LinearLayout
             android:id="@+id/likeControl"
@@ -385,7 +449,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingEnd="20dp"
-            android:background="@drawable/bg_like_count_pill"
+            android:background="@drawable/bg_like_accent_pill"
             android:visibility="gone"
             tools:visibility="visible">
 
@@ -396,6 +460,7 @@
                 android:padding="16dp"
                 android:background="@null"
                 android:src="@drawable/ic_like_outline"
+                android:tint="@color/white"
                 android:contentDescription="@string/cd_like" />
 
             <TextView
@@ -405,7 +470,7 @@
                 android:minWidth="24dp"
                 android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/wedora_text"
+                android:textColor="@color/white"
                 android:textSize="15sp"
                 android:fontFamily="@font/poppins_semibold"
                 tools:text="42" />

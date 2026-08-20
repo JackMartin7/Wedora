@@ -158,7 +158,10 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         if (badge == null) {
             binding.tvDetailDistance.visibility = View.GONE
         } else {
-            binding.tvDetailDistance.text = badge
+            // "9775 km away" - the design phrases it, where the swipe card's
+            // cramped pill shows the bare figure.
+            binding.tvDetailDistance.text =
+                getString(R.string.profile_detail_distance_away_format, badge)
             binding.tvDetailDistance.visibility = View.VISIBLE
         }
     }
@@ -383,47 +386,47 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
     private fun showProfile(name: String, profile: UserProfile) {
         userName = name
         otherProfile = profile
-        binding.tvDetailName.text = name
+        // Name and age on one line, overlaid on the photo. formatAgeLocation
+        // is no longer used here: the design splits age onto the name line and
+        // location onto its own, so the combined helper has nothing to combine.
+        val age = profile.age
+        binding.tvDetailName.text = if (age == null) {
+            name
+        } else {
+            getString(R.string.profile_detail_name_age_format, name, age)
+        }
         binding.ivDetailPhoto.loadRemoteProfilePhoto(profile.photoUrl)
-        binding.tvLikeCount.text = profile.likesReceivedCount.toString()
+        binding.tvLikeCount.text = formatCompactCount(profile.likesReceivedCount)
 
-        val line = formatAgeLocation(
-            this,
-            R.string.match_card_age_location_format,
-            profile.age,
-            profile.city,
-            profile.country
-        )
-        if (line == null) {
-            binding.tvDetailAgeLocation.visibility = View.GONE
+        val location = listOfNotNull(
+            profile.city?.takeIf { it.isNotBlank() },
+            profile.country?.takeIf { it.isNotBlank() }
+        ).joinToString(", ")
+        if (location.isEmpty()) {
+            binding.tvDetailLocation.visibility = View.GONE
         } else {
-            binding.tvDetailAgeLocation.text = line
-            binding.tvDetailAgeLocation.visibility = View.VISIBLE
+            binding.tvDetailLocation.text = location
+            binding.tvDetailLocation.visibility = View.VISIBLE
         }
 
-        val genderLabel = Gender.values()
-            .firstOrNull { it.firestoreValue == profile.gender }
-            ?.let { getString(it.labelRes) }
-        if (genderLabel == null) {
-            binding.tvDetailGender.visibility = View.GONE
-        } else {
-            binding.tvDetailGender.text = genderLabel
-            binding.tvDetailGender.visibility = View.VISIBLE
-        }
-
-        // Sections hide as a unit, header included. A "BASICS" heading above
-        // nothing reads as a rendering fault rather than as missing data, and
-        // sparse profiles are common here.
-        binding.sectionBasics.visibility =
-            if (line == null && genderLabel == null) View.GONE else View.VISIBLE
-
-        val intentLine = MarriageIntent.summaryLine(this, profile.myStatus, profile.lookingFor)
-        if (intentLine == null) {
-            binding.sectionLookingFor.visibility = View.GONE
-        } else {
-            binding.tvDetailIntent.text = intentLine
-            binding.sectionLookingFor.visibility = View.VISIBLE
-        }
+        // Looking For and Status as two labelled columns, from the RAW fields.
+        // MarriageIntent.summaryLine is deliberately not used: it wraps
+        // lookingFor in "Looking for ..." and joins the pair, which under a
+        // column already labelled LOOKING FOR would read as a stutter.
+        //
+        // Each column hides on its own, the divider only survives when both do,
+        // and the card goes when neither does - otherwise an empty card with a
+        // stray divider is left sitting under the photo.
+        val looking = profile.lookingFor?.takeIf { it.isNotBlank() }
+        val status = profile.myStatus?.takeIf { it.isNotBlank() }
+        looking?.let { binding.tvDetailLookingFor.text = it }
+        status?.let { binding.tvDetailStatus.text = it }
+        binding.colLookingFor.visibility = if (looking == null) View.GONE else View.VISIBLE
+        binding.colStatus.visibility = if (status == null) View.GONE else View.VISIBLE
+        binding.intentDivider.visibility =
+            if (looking != null && status != null) View.VISIBLE else View.GONE
+        binding.cardIntent.visibility =
+            if (looking == null && status == null) View.GONE else View.VISIBLE
 
         val bio = profile.bio?.trim()
         if (bio.isNullOrEmpty()) {

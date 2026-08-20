@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bottom scrim over ProfileDetail's photo, carrying the name, location and
+    distance. Figma 132:2 overlays them on the image rather than stacking them
+    beneath it.
+
+    Separate from bg_v2_scrim_bottom, which carries 40dp corners to match the
+    swipe card's radius. This photo is full-bleed to the screen edges, so any
+    corner rounding here would cut a visible notch out of the gradient.
+
+    angle=270 is top-to-bottom, so startColor is at the TOP. Transparent down
+    to the midpoint, then ramping to near-black where the text sits.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:startColor="@android:color/transparent"
+        android:centerColor="#66000000"
+        android:endColor="#E6000000" />
+</shape>

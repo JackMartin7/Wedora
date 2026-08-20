@@ -102,17 +102,32 @@
         <item name="android:layout_marginBottom">10dp</item>
     </style>
 
-    <!-- ProfileDetail section header ("BASICS", "ABOUT", ...).
-
-         Uppercase and letter-spaced rather than just bold: these sit above
-         short bodies of text, and at 12sp a bold sentence-case heading is
-         hard to tell apart from the content under it. Matches the treatment
-         the redesign uses for its own section headings. -->
-    <style name="WedoraSectionHeader">
+    <!-- Small uppercase label above a value inside a card ("LOOKING FOR",
+         "STATUS"). The uppercase letter-spaced treatment that WedoraSectionHeader
+         used to carry lives here instead: at this size, above a bold value, it
+         reads as a caption rather than competing with it. -->
+    <style name="WedoraCardLabel">
+        <!-- text_secondary rather than text_muted: muted is #737B8A, which is
+             4.15:1 on wedora_surface and misses AA for text this small.
+             text_secondary is 6.96:1 and reads just as recessive. The design's
+             own value is still unknown pending the Figma export. -->
         <item name="android:textColor">@color/wedora_text_secondary</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">10sp</item>
         <item name="android:textAllCaps">true</item>
         <item name="android:letterSpacing">0.08</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+    </style>
+
+    <!-- ProfileDetail section header ("About Me", "Interests").
+
+         Sentence case, white and larger, per Figma 132:2. This replaces an
+         earlier uppercase letter-spaced treatment that predated seeing the
+         design - the board makes these headings prominent rather than
+         subordinate labels, so they lead the eye down the page instead of
+         reading as captions on the content above them. -->
+    <style name="WedoraSectionHeader">
+        <item name="android:textColor">@color/wedora_text</item>
+        <item name="android:textSize">17sp</item>
         <item name="android:fontFamily">@font/poppins_semibold</item>
     </style>
 

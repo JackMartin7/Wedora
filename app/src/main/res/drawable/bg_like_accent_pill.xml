@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ProfileDetail's like control: a solid accent stadium carrying a white
+    heart and the received-like count, per Figma 132:2.
+
+    Replaces bg_like_count_pill, which was a subtle surface matching the
+    circular Pass/Message buttons. The design makes Like the one emphasised
+    action, so it is filled rather than outlined.
+
+    Radius is half the 64dp control height, so the ends stay true
+    semicircles alongside its circular siblings.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_accent" />
+    <corners android:radius="32dp" />
+</shape>

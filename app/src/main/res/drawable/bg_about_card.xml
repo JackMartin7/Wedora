@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The About Me card: a surface with a single accent bar down its leading
+    edge, per Figma 132:2.
+
+    A layer-list rather than a shape with a stroke, because a stroke draws on
+    all four sides and there is no per-edge stroke in a shape drawable. The
+    accent rectangle sits underneath and the surface rectangle is inset from
+    the start by the bar width, leaving exactly that strip showing.
+
+    PROVISIONAL: bar width and radius are eyeballed from the exported PNG,
+    pending the real values from Figma.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_accent" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item android:start="3dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/wedora_surface" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+</layer-list>

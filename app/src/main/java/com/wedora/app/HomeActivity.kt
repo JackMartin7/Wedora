@@ -871,7 +871,7 @@ class HomeActivity :
         // unlikes: the count is maintained server-side by onMatchWritten, so
         // incrementing it locally would double-count once the pool refreshes,
         // and this viewer's own like is one of many the number represents.
-        b.tvLikeCount.text = card.likesReceivedCount.toString()
+        b.tvLikeCount.text = formatCompactCount(card.likesReceivedCount)
 
         b.root.setOnClickListener { startActivity(ProfileDetailActivity.intent(this, card.id)) }
         // Shallower than a button: the card is large, so the same 5% dip would

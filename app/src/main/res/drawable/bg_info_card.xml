@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Looking For / Status card on ProfileDetail.
+
+    PROVISIONAL: surface colour reuses wedora_surface and the radius is
+    eyeballed from the exported PNG, both pending real values from Figma.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_surface" />
+    <corners android:radius="12dp" />
+</shape>
