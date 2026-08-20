@@ -166,6 +166,25 @@ async function displayNameFor(uid: string): Promise<string> {
 }
 
 /**
+ * Everyone who has liked, on one side of a match write.
+ *
+ * The UNION of `likedUsers` and the scalar `likedBy` it replaced, mirroring
+ * Match.kt's parseLikedUsers exactly. Liking back on a legacy document writes
+ * likedUsers = [the second liker] while the original liker still sits in
+ * likedBy alone, so reading only the array drops them.
+ *
+ * This matters here specifically because the backfill credits legacy likes.
+ * Counting only `likedUsers` on delete would decrement the array side and
+ * silently leave the legacy like credited forever — an upward drift of
+ * exactly the kind this counter is supposed to avoid.
+ */
+function likersOf(snap: FirebaseFirestore.DocumentSnapshot): string[] {
+  const current = (snap.get("likedUsers") as string[] | undefined) ?? [];
+  const legacy = snap.get("likedBy") as string | undefined;
+  return legacy ? Array.from(new Set([...current, legacy])) : current;
+}
+
+/**
  * Keeps `users/{uid}.likesReceivedCount` in step with the likes recorded on
  * match documents.
  *
@@ -216,8 +235,8 @@ async function syncLikesReceivedCounts(
   change: { before: FirebaseFirestore.DocumentSnapshot;
             after: FirebaseFirestore.DocumentSnapshot }
 ): Promise<void> {
-  const before = (change.before.get("likedUsers") as string[] | undefined) ?? [];
-  const after = (change.after.get("likedUsers") as string[] | undefined) ?? [];
+  const before = likersOf(change.before);
+  const after = likersOf(change.after);
 
   // On a delete there is no `after`, so the participants come from `before`.
   const users = ((change.after.exists
