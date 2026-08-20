@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A single read-only interest chip, inflated by
+    ChipSelection.setInterestsReadOnly. Same reasoning as item_interest_chip:
+    a Chip has to be inflated to pick up its style.
+
+    checkable="false" is safe here in a way it was not with the picker style.
+    Appearance no longer derives from checked state, so there is no filled look
+    to lose by turning checkability off - which is what previously forced the
+    chips to stay checkable while having click and focus disabled.
+-->
+<com.google.android.material.chip.Chip
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/WedoraInterestChipReadOnly"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:checkable="false"
+    android:clickable="false"
+    android:focusable="false" />

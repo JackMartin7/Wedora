@@ -235,4 +235,20 @@
          designed value. -->
     <color name="wedora_gold">#B45309</color>
 
+    <!-- Resting background for a READ-ONLY interest chip
+         (WedoraInterestChipReadOnly). Not wedora_surface, deliberately.
+
+         wedora_surface is #F9F9F9 here and #1E161E in dark, which against
+         their respective pages is 1.05:1 and 1.09:1 - so a chip painted with
+         it does not read as a pill at all, only as floating text and an icon.
+         That was the real cause of a shared-interest chip looking "selected":
+         the highlight was not too strong, the baseline had no presence for it
+         to be subtle against.
+
+         #E8E8E8 is 1.23:1 against the light page, matching the 1.21:1 the dark
+         value achieves. Roughly 1.2:1 is where a surface boundary starts being
+         perceptible.
+
+         Light mode is a derived value: the Figma board is dark-only. -->
+    <color name="wedora_chip_surface">#E8E8E8</color>
 </resources>

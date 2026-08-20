@@ -174,4 +174,10 @@
          for why light mode cannot use this value. -->
     <color name="wedora_gold">#FBBF24</color>
 
+    <!-- 1.21:1 against wedora_bg, where wedora_surface managed only 1.09:1.
+         See values/colors.xml for why this is its own token. Kept just above
+         the cards' #1E161E rather than well above it: chips are small and need
+         the extra tone to read, but going lighter still would make them more
+         prominent than the sections containing them. -->
+    <color name="wedora_chip_surface">#262026</color>
 </resources>

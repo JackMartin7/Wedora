@@ -102,6 +102,44 @@
         <item name="android:layout_marginBottom">10dp</item>
     </style>
 
+    <!-- Interest chip for READ-ONLY display (ProfileDetail), as distinct from
+         WedoraInterestChip, which is the interactive picker used by onboarding
+         and Edit Profile.
+
+         The separation is the whole point. The picker derives its colours from
+         CHECKED state (see color/interest_chip_bg_tint.xml, where checked is a
+         solid accent fill), so displaying a profile's interests by inflating
+         that layout and setting isChecked made every chip render as "selected"
+         - a wall of solid accent, and nothing like the reference.
+
+         Parent is Chip.Action rather than Chip.Choice or Chip.Entry: Choice
+         brings the checked semantics this must not inherit, and Entry brings a
+         close icon. Action is the closest Material offers to a plain display
+         chip. Every colour here is a flat value rather than a state selector,
+         so appearance cannot drift with state again.
+
+         Lighter than the picker on purpose - 32dp against 40dp, 16dp icon
+         against 18dp - because this is display, not a touch target. -->
+    <style name="WedoraInterestChipReadOnly" parent="Widget.MaterialComponents.Chip.Action">
+        <item name="chipBackgroundColor">@color/wedora_chip_surface</item>
+        <item name="android:textColor">@color/wedora_text</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">16dp</item>
+        <item name="chipMinHeight">32dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:fontFamily">@font/poppins_medium</item>
+        <item name="chipIconVisible">true</item>
+        <item name="chipIconTint">@color/wedora_accent</item>
+        <item name="chipIconSize">16dp</item>
+        <item name="chipStartPadding">10dp</item>
+        <item name="chipEndPadding">12dp</item>
+        <item name="iconEndPadding">4dp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+        <!-- Nothing here responds to touch, so a ripple would be a lie. -->
+        <item name="rippleColor">@android:color/transparent</item>
+    </style>
+
     <!-- Small uppercase label above a value inside a card ("LOOKING FOR",
          "STATUS"). The uppercase letter-spaced treatment that WedoraSectionHeader
          used to carry lives here instead: at this size, above a bold value, it

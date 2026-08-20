@@ -81,20 +81,27 @@ fun ChipGroup.setInterestOptions(selected: Collection<String>, onChanged: () -> 
 /**
  * Fills a [ChipGroup] with a profile's OWN interests, for display only.
  *
- * Deliberately different from [setInterestOptions] in two ways. It renders
- * only the interests this profile actually has, rather than every Interest
- * with some of them checked — the latter reads as an editor somebody forgot
- * to disable. And the chips are inert.
+ * Deliberately different from [setInterestOptions] in two ways. It renders only
+ * the interests this profile actually has, rather than every Interest with some
+ * of them checked — the latter reads as an editor somebody forgot to disable.
+ * And it inflates item_interest_chip_readonly, NOT the picker's layout.
+ *
+ * That second point is load-bearing. The picker's style colours itself from
+ * CHECKED state, so an earlier version of this function inflated the picker
+ * layout and set isChecked to get a filled look — which rendered every chip in
+ * the picker's "selected" appearance, a wall of solid accent. The read-only
+ * style holds flat colours instead, so nothing here depends on state.
  *
  * [shared] are the viewer's own interests; anything in both sets sorts to the
- * front and takes an accent stroke, so what you have in common is the first
- * thing you see. Pass an empty set to render them plainly, which is what
- * happens for a guest (no viewer profile exists to compare against).
+ * front and is marked with an accent-tinted background AND a matching stroke.
+ * Two signals rather than one because the tint alone is only about 1.2:1
+ * against the plain chip — visible, but too easily missed by itself. Icon
+ * colour cannot carry the distinction: the design tints every chip's icon
+ * accent regardless.
  *
- * The chips stay CHECKABLE while being non-clickable, which looks like a
- * contradiction and is not: Material's setCheckable(false) forces isChecked
- * back to false, which would drop the filled style and leave them looking
- * disabled. Blocking click and focus is what actually makes them inert.
+ * Pass an empty set to render them plainly, which is what happens for a guest —
+ * there is no viewer profile to compare against, and claiming nothing is shared
+ * would be a different statement from making no claim at all.
  */
 fun ChipGroup.setInterestsReadOnly(
     interests: Collection<String>,
@@ -103,24 +110,24 @@ fun ChipGroup.setInterestsReadOnly(
     removeAllViews()
     isSingleSelection = false
 
-    // Interest.values() order is the canonical display order everywhere else
-    // in the app; sorting shared-first preserves it within each group.
+    // Interest.values() order is the canonical display order everywhere else in
+    // the app; sorting shared-first preserves it within each group.
     val ordered = Interest.values()
         .filter { it.firestoreValue in interests }
         .sortedByDescending { it.firestoreValue in shared }
 
     val inflater = LayoutInflater.from(context)
     ordered.forEach { interest ->
-        val chip = inflater.inflate(R.layout.item_interest_chip, this, false) as Chip
+        val chip = inflater.inflate(R.layout.item_interest_chip_readonly, this, false) as Chip
         chip.text = context.getString(interest.labelRes)
         chip.chipIcon = ContextCompat.getDrawable(context, interest.iconRes)
         chip.tag = interest.firestoreValue
-        chip.isChecked = true
-        chip.isClickable = false
-        chip.isFocusable = false
         if (interest.firestoreValue in shared) {
-            chip.chipStrokeWidth = 1.5f * context.resources.displayMetrics.density
-            chip.chipStrokeColor = ContextCompat.getColorStateList(context, R.color.wedora_accent)
+            chip.chipBackgroundColor =
+                ContextCompat.getColorStateList(context, R.color.wedora_tag_bg)
+            chip.chipStrokeWidth = context.resources.displayMetrics.density
+            chip.chipStrokeColor =
+                ContextCompat.getColorStateList(context, R.color.wedora_tag_border)
         }
         addView(chip)
     }
