@@ -1,5 +1,6 @@
 package com.wedora.app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -19,6 +20,31 @@ import com.wedora.app.databinding.ActivityNearbyListBinding
  */
 class NearbyListActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host {
 
+    /**
+     * Which ordering this screen is showing. Both modes are the same feed from
+     * [loadDiscoveryFeed]; only the sort, the title and the card caption differ,
+     * which is why Trending reuses this screen rather than duplicating it.
+     */
+    enum class Mode { NEARBY, TRENDING }
+
+    companion object {
+        private const val EXTRA_MODE = "mode"
+
+        fun intent(context: Context, mode: Mode = Mode.NEARBY): Intent =
+            Intent(context, NearbyListActivity::class.java)
+                .putExtra(EXTRA_MODE, mode.name)
+    }
+
+    /**
+     * Defaults to NEARBY on anything unexpected. This Activity is declared in
+     * the manifest and could be started without the extra, and an unknown enum
+     * name would otherwise throw rather than degrade.
+     */
+    private val mode: Mode by lazy {
+        runCatching { Mode.valueOf(intent.getStringExtra(EXTRA_MODE) ?: Mode.NEARBY.name) }
+            .getOrDefault(Mode.NEARBY)
+    }
+
     private lateinit var binding: ActivityNearbyListBinding
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
@@ -34,6 +60,11 @@ class NearbyListActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Ho
 
         binding.rvNearbyList.layoutManager = LinearLayoutManager(this)
         binding.rvNearbyList.adapter = adapter
+
+        binding.tvTitle.setText(
+            if (mode == Mode.TRENDING) R.string.trending_list_title
+            else R.string.nearby_list_title
+        )
 
         binding.btnBack.setOnClickListener { finish() }
     }
@@ -67,11 +98,26 @@ class NearbyListActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Ho
             return
         }
 
+        val ordered = if (mode == Mode.TRENDING) allowed.asTrending() else allowed
+        if (ordered.isEmpty()) {
+            showEmpty()
+            return
+        }
+
         binding.emptyState.hide()
         binding.rvNearbyList.visibility = View.VISIBLE
         adapter.submitList(
-            allowed.map {
-                NearbyRow(it.id, it.name, it.ageLocationLine(this), it.distanceBadge(), it.photoUrl)
+            ordered.map {
+                val badge = if (mode == Mode.TRENDING) {
+                    resources.getQuantityString(
+                        R.plurals.trending_like_count,
+                        it.likesReceivedCount,
+                        formatCompactCount(it.likesReceivedCount)
+                    )
+                } else {
+                    it.distanceBadge()
+                }
+                NearbyRow(it.id, it.name, it.ageLocationLine(this), badge, it.photoUrl)
             }
         )
     }
@@ -86,8 +132,8 @@ class NearbyListActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Ho
         binding.rvNearbyList.visibility = View.GONE
         binding.emptyState.show(
             R.drawable.ic_sparkle_heart,
-            R.string.empty_nearby_title,
-            R.string.empty_nearby_subtitle,
+            if (mode == Mode.TRENDING) R.string.empty_trending_title else R.string.empty_nearby_title,
+            if (mode == Mode.TRENDING) R.string.empty_trending_subtitle else R.string.empty_nearby_subtitle,
             R.string.empty_action_adjust_filters,
             ::openFilters
         )

@@ -10,14 +10,15 @@ import com.wedora.app.databinding.ItemNearbyRowBinding
 
 /**
  * One row in the full People Nearby list. [meta] is the age/location line and
- * [distanceBadge] the formatted distance; either is null when unavailable and
+ * [badge] the distance or like count; either is null when unavailable and
  * the corresponding view is hidden.
  */
 data class NearbyRow(
     val userId: String,
     val name: String,
     val meta: String?,
-    val distanceBadge: String?,
+    /** Distance for the Nearby list, like count for Trending. See NearbyPerson. */
+    val badge: String?,
     val photoUrl: String?
 )
 
@@ -48,11 +49,11 @@ class NearbyListAdapter(
                 tvNearbyMeta.text = row.meta
             }
 
-            if (row.distanceBadge == null) {
+            if (row.badge == null) {
                 tvNearbyDistance.visibility = View.GONE
             } else {
                 tvNearbyDistance.visibility = View.VISIBLE
-                tvNearbyDistance.text = row.distanceBadge
+                tvNearbyDistance.text = row.badge
             }
 
             root.setOnClickListener { onClick(row) }

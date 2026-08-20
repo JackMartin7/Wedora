@@ -25,6 +25,13 @@ import com.wedora.app.databinding.ActivityExploreBinding
 class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host {
 
     private companion object {
+        /**
+         * Below this many qualifying people, the Trending strip hides entirely
+         * rather than showing a near-empty row. Two avatars under a "TRENDING"
+         * heading reads as broken, not as a shortlist.
+         */
+        const val MIN_TRENDING = 5
+
         /** How many of the closest people the horizontal strip previews. */
         const val NEARBY_STRIP_MAX = 12
         /** How many of the Discover grid's profiles this screen previews. */
@@ -38,6 +45,10 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
     private val nearbyAdapter = NearbyAdapter { person ->
         startActivity(ProfileDetailActivity.intent(this, person.userId))
     }
+    private val trendingAdapter = NearbyAdapter { person ->
+        startActivity(ProfileDetailActivity.intent(this, person.userId))
+    }
+
     private val discoverAdapter = DiscoverAdapter { profile ->
         startActivity(ProfileDetailActivity.intent(this, profile.userId))
     }
@@ -80,6 +91,10 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         binding.rvNearby.adapter = nearbyAdapter
 
+        binding.rvTrending.layoutManager =
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        binding.rvTrending.adapter = trendingAdapter
+
         binding.rvDiscover.layoutManager = GridLayoutManager(this, GRID_COLUMNS)
         binding.rvDiscover.adapter = discoverAdapter
 
@@ -107,7 +122,11 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         })
 
         binding.tvNearbySeeAll.setOnClickListener {
-            startActivity(Intent(this, NearbyListActivity::class.java))
+            startActivity(NearbyListActivity.intent(this, NearbyListActivity.Mode.NEARBY))
+        }
+
+        binding.tvTrendingSeeAll.setOnClickListener {
+            startActivity(NearbyListActivity.intent(this, NearbyListActivity.Mode.TRENDING))
         }
 
         // See All and Load More both just open the full grid — Load More is
@@ -247,6 +266,7 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         if (cards.isEmpty()) {
             discoverCards = cards
             showNearbyEmpty()
+            binding.sectionTrending.visibility = View.GONE
             showDiscoverEmpty()
             return
         }
@@ -255,11 +275,14 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
             NearbyPerson(it.id, it.name, it.distanceBadge(), it.photoUrl)
         }
         showNearby(nearby)
+        showTrending(cards)
 
-        // The Nearby strip above isn't part of this cap — only the Discover
-        // grid is, per applyGuestProfileViewLimit's own doc comment — so this
-        // only ever trims what showDiscover / applyDiscoverFilter render, not
-        // showNearby's own list.
+        // Neither strip above is part of this cap — only the Discover grid is,
+        // per applyGuestProfileViewLimit's own doc comment — so this only ever
+        // trims what showDiscover / applyDiscoverFilter render, not what
+        // showNearby and showTrending put on screen. Trending follows Nearby
+        // here deliberately: they are the same pool in a different order, so
+        // capping one and not the other would be arbitrary.
         discoverCards = applyGuestProfileViewLimit(cards)
         if (discoverCards.isEmpty() && cards.isNotEmpty() && GuestPrefs.isGuest(this)) {
             showDiscoverGuestLimitReached()
@@ -296,12 +319,47 @@ class ExploreActivity : WedoraBaseActivity(), GuestProfileLimitBottomSheet.Host 
         // Nearby has no separate spinner; it just fills in with the same result.
         binding.rvNearby.visibility = View.GONE
         binding.tvNearbyEmpty.visibility = View.GONE
+        binding.sectionTrending.visibility = View.GONE
     }
 
     private fun showNearby(people: List<NearbyPerson>) {
         binding.tvNearbyEmpty.visibility = View.GONE
         binding.rvNearby.visibility = View.VISIBLE
         nearbyAdapter.submitList(people)
+    }
+
+    /**
+     * Fills the Trending strip from the SAME pool the rest of this screen uses,
+     * re-sorted by likes received - no second query, and no risk of showing
+     * someone the feed itself would have excluded.
+     *
+     * The strip hides rather than shrinks below [MIN_TRENDING] qualifying
+     * people. There is no empty-state message: unlike Nearby, whose emptiness
+     * the user can act on by widening their distance filter, an absent Trending
+     * strip is not something they can do anything about, so saying so would be
+     * noise.
+     */
+    private fun showTrending(cards: List<MatchCard>) {
+        val trending = cards.asTrending()
+        if (trending.size < MIN_TRENDING) {
+            binding.sectionTrending.visibility = View.GONE
+            return
+        }
+        binding.sectionTrending.visibility = View.VISIBLE
+        trendingAdapter.submitList(
+            trending.take(NEARBY_STRIP_MAX).map {
+                NearbyPerson(
+                    it.id,
+                    it.name,
+                    resources.getQuantityString(
+                        R.plurals.trending_like_count,
+                        it.likesReceivedCount,
+                        formatCompactCount(it.likesReceivedCount)
+                    ),
+                    it.photoUrl
+                )
+            }
+        )
     }
 
     private fun showNearbyEmpty() {

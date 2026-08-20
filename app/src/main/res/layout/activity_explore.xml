@@ -209,6 +209,71 @@
                 android:visibility="gone"
                 tools:visibility="visible" />
 
+            <!--
+                Section 2: Trending. Same strip, same adapter, same card as
+                People Nearby above - only the ordering and the caption differ,
+                so it reuses NearbyAdapter rather than duplicating it.
+
+                Hidden as a whole when too few people qualify (see
+                ExploreActivity.MIN_TRENDING): a strip showing one or two
+                avatars reads as broken rather than as a shortlist.
+            -->
+            <LinearLayout
+                android:id="@+id/sectionTrending"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/explore_trending_label"
+                        android:textAllCaps="true"
+                        android:letterSpacing="0.1"
+                        android:textColor="@color/wedora_text_muted"
+                        android:textSize="14sp"
+                        android:fontFamily="@font/poppins_bold" />
+
+                    <TextView
+                        android:id="@+id/tvTrendingSeeAll"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="4dp"
+                        android:text="@string/explore_see_all"
+                        android:textColor="@color/wedora_accent"
+                        android:textSize="12sp"
+                        android:fontFamily="@font/poppins_bold" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvTrending"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:clipToPadding="false"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="8dp"
+                    android:orientation="horizontal"
+                    android:scrollbars="none"
+                    tools:listitem="@layout/item_explore_nearby" />
+
+            </LinearLayout>
+
             <!-- Section 2: Discover -->
 
             <LinearLayout

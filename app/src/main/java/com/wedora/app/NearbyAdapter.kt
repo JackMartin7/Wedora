@@ -9,14 +9,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.wedora.app.databinding.ItemExploreNearbyBinding
 
 /**
- * One discoverable person in the Explore Nearby strip. [distanceBadge] is the
- * formatted distance ("2.4 km"), or null when this pair has no computable
- * distance so the pill is hidden.
+ * One discoverable person in an Explore strip.
+ *
+ * [badge] is whatever that strip captions its cards with - a formatted
+ * distance ("2.4 km") for People Nearby, a like count ("12 likes") for
+ * Trending - or null to hide the pill entirely. It was distanceBadge until
+ * Trending reused this adapter; the name is deliberately neutral now, since
+ * the strip does not care which it is being handed.
  */
 data class NearbyPerson(
     val userId: String,
     val name: String,
-    val distanceBadge: String?,
+    val badge: String?,
     val photoUrl: String?
 )
 
@@ -40,11 +44,11 @@ class NearbyAdapter(
             ivNearbyAvatar.loadRemoteProfilePhoto(person.photoUrl)
             tvNearbyName.text = person.name
 
-            if (person.distanceBadge == null) {
+            if (person.badge == null) {
                 tvNearbyDistance.visibility = View.GONE
             } else {
                 tvNearbyDistance.visibility = View.VISIBLE
-                tvNearbyDistance.text = person.distanceBadge
+                tvNearbyDistance.text = person.badge
             }
 
             root.setOnClickListener { onClick(person) }

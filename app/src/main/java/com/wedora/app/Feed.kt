@@ -56,6 +56,34 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
  * order survives untouched within each tier, which is what "premium sorts
  * first, otherwise unchanged" means in practice.
  */
+/**
+ * The minimum received likes to qualify for Trending.
+ *
+ * 1, not 0. Measured against production, 64% of feed-eligible profiles have at
+ * least one like and the median is 3, so this excludes a real minority rather
+ * than gutting the section - but a "Trending" strip led by people nobody has
+ * liked would be a lie.
+ */
+const val TRENDING_MIN_LIKES = 1
+
+/**
+ * The same candidate pool, ordered for Trending: most-liked first.
+ *
+ * Deliberately a re-sort of what [loadDiscoveryFeed] already returned rather
+ * than its own query. That costs zero extra reads, and more importantly it is
+ * the correct set - a global "most liked" query would surface people outside
+ * the viewer's gender preference, people they blocked, and people they already
+ * passed or liked. Trending is therefore scoped to who this viewer could
+ * actually match with, including their own distance filter.
+ *
+ * Ties break by distance for free: sortedByDescending is stable and the pool
+ * arrives distance-sorted, so equal counts keep nearest-first order. Same
+ * property [withPremiumPriority] relies on.
+ */
+fun List<MatchCard>.asTrending(): List<MatchCard> =
+    filter { it.likesReceivedCount >= TRENDING_MIN_LIKES }
+        .sortedByDescending { it.likesReceivedCount }
+
 fun List<MatchCard>.withPremiumPriority(): List<MatchCard> =
     sortedByDescending { it.isPremium }
 

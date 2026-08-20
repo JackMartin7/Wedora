@@ -875,4 +875,16 @@
     <!-- "9775 km away" - wraps whatever DistanceUtils.formatDistance produced. -->
     <string name="profile_detail_distance_away_format">%1$s away</string>
 
+    <!-- Trending: the same candidate pool as People Nearby, re-sorted by
+         likes received. See ExploreActivity. -->
+    <string name="explore_trending_label">Trending</string>
+    <string name="trending_list_title">Trending</string>
+    <string name="empty_trending_title">No one trending yet</string>
+    <string name="empty_trending_subtitle">Likes are still building up. Check back soon.</string>
+    <!-- The like count on a Trending card. Plural so "1 like" reads correctly. -->
+    <plurals name="trending_like_count">
+        <item quantity="one">%1$s like</item>
+        <item quantity="other">%1$s likes</item>
+    </plurals>
+
 </resources>
