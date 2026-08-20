@@ -226,4 +226,13 @@
     <color name="wedora_tag_bg_on_photo">#26F43F5E</color>
     <color name="wedora_tag_border_on_photo">#4DF43F5E</color>
 
+    <!-- Crown/premium accent. The design specifies #FBBF24, which scores
+         11.52:1 on the dark header but only 1.67:1 on white — below the 3:1
+         minimum for a non-text element. So this token VARIES by theme, unlike
+         the _on_photo set above: the header background follows the theme, so
+         the icon on it has to as well. #B45309 is 5.02:1, in line with the
+         4.51:1 the pink crown scored here before. See values-night for the
+         designed value. -->
+    <color name="wedora_gold">#B45309</color>
+
 </resources>

@@ -1,9 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dark-mode toggle in the Home header (btnDarkMode).
+
+    Converted from the Figma header icon (118:432). Path data is verbatim
+    from the export; the geometry is not redrawn.
+
+    SIZING: the export is a 15.0056x20 leaf; the group maps its 20-unit frame onto
+    19.7 units of this 24 viewport — the ink height of ic_notification_bell,
+    which is staying and is therefore the fixed reference every other header
+    icon is matched to. That also lands within 1.5% of the design's own 20dp
+    spec. scale 0.985 with translate (4.6097, 2.15) centres it.
+
+    fillType is deliberately absent: the export carries no fill-rule, so it
+    uses non-zero, which is Android's default too. Forcing evenOdd would
+    invert the knockouts.
+
+    Same crescent family as the glyph it replaces, but 14% narrower with
+    thicker arms (IoU 0.60). This icon carries its own colour: btnDarkMode
+    applies no android:tint, and wedora_text_secondary resolves to #9CA3AF in
+    dark mode — the exact value the design specifies.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path
-        android:fillColor="@color/wedora_text_secondary"
-        android:pathData="M21,13.2 A9.2,9.2 0 1,1 10.8,3 A7.2,7.2 0 0,0 21,13.2 Z" />
+    <group
+        android:scaleX="0.985"
+        android:scaleY="0.985"
+        android:translateX="4.6097"
+        android:translateY="2.15">
+        <path
+            android:fillColor="@color/wedora_text_secondary"
+            android:pathData="M8.73047 1.25C3.90625 1.25 0 5.16797 0 10C0 14.832 3.90625 18.75 8.73047 18.75C11.0977 18.75 13.2422 17.8047 14.8164 16.2734C15.0117 16.082 15.0625 15.7852 14.9375 15.543C14.8125 15.3008 14.543 15.1641 14.2734 15.2109C13.8906 15.2773 13.5 15.3125 13.0977 15.3125C9.3125 15.3125 6.24219 12.2344 6.24219 8.4375C6.24219 5.86719 7.64844 3.62891 9.73047 2.44922C9.96875 2.3125 10.0898 2.03906 10.0312 1.77344C9.97266 1.50781 9.74609 1.30859 9.47266 1.28516C9.22656 1.26562 8.98047 1.25391 8.73047 1.25391V1.25" />
+    </group>
 </vector>

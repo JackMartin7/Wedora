@@ -170,4 +170,8 @@
          blur just smears whatever scrolls under it. -->
     <color name="wedora_nav_bg">#120D12</color>
 
+    <!-- Figma 118:441 exactly. 11.52:1 on wedora_bg. See values/colors.xml
+         for why light mode cannot use this value. -->
+    <color name="wedora_gold">#FBBF24</color>
+
 </resources>

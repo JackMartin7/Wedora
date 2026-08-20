@@ -1,11 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Crown for the Premium upgrade card. White, to sit on the gradient. -->
+<!--
+    Premium/crown button in the Home header (btnPremium).
+
+    Converted from the Figma header icon (118:441). Path data is verbatim
+    from the export; the geometry is not redrawn.
+
+    SIZING: the export is a 22.5x20 leaf; the group maps its 20-unit frame onto
+    19.7 units of this 24 viewport — the ink height of ic_notification_bell,
+    which is staying and is therefore the fixed reference every other header
+    icon is matched to. That also lands within 1.5% of the design's own 20dp
+    spec. scale 0.985 with translate (0.9188, 2.15) centres it.
+
+    fillType is deliberately absent: the export carries no fill-rule, so it
+    uses non-zero, which is Android's default too. Forcing evenOdd would
+    invert the knockouts.
+
+    The previous glyph was a plain angular zigzag (M3,8 L7,12 L12,5 ...) with
+    no finials and no base band — a different icon, not a proportion problem
+    (IoU 0.69). This is the designed crown: three ball-tipped points over a
+    solid base.
+
+    WIDEST GLYPH IN THE HEADER. Its frame is 22.5x20, so matched on height it
+    spans x[0.92, 23.08] — under a unit of margin. Faithful to the design,
+    where the crown genuinely outsizes its neighbours.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <path
-        android:fillColor="@color/white"
-        android:pathData="M3,8 L7,12 L12,5 L17,12 L21,8 L19.5,19 L4.5,19 Z" />
+    <group
+        android:scaleX="0.985"
+        android:scaleY="0.985"
+        android:translateX="0.9188"
+        android:translateY="2.15">
+        <path
+            android:fillColor="@color/wedora_gold"
+            android:pathData="M12.0703 4.14062C12.5156 3.86719 12.8125 3.37109 12.8125 2.8125C12.8125 1.94922 12.1133 1.25 11.25 1.25C10.3867 1.25 9.6875 1.94922 9.6875 2.8125C9.6875 3.375 9.98438 3.86719 10.4297 4.14062L8.19141 8.61719C7.83594 9.32812 6.91406 9.53125 6.29297 9.03516L2.8125 6.25C3.00781 5.98828 3.125 5.66406 3.125 5.3125C3.125 4.44922 2.42578 3.75 1.5625 3.75C0.699219 3.75 0 4.44922 0 5.3125C0 6.17578 0.699219 6.875 1.5625 6.875C1.57031 6.875 1.58203 6.875 1.58984 6.875L3.375 16.6953C3.58984 17.8828 4.625 18.75 5.83594 18.75H16.6641C17.8711 18.75 18.9062 17.8867 19.125 16.6953L20.9102 6.875C20.918 6.875 20.9297 6.875 20.9375 6.875C21.8008 6.875 22.5 6.17578 22.5 5.3125C22.5 4.44922 21.8008 3.75 20.9375 3.75C20.0742 3.75 19.375 4.44922 19.375 5.3125C19.375 5.66406 19.4922 5.98828 19.6875 6.25L16.207 9.03516C15.5859 9.53125 14.6641 9.32812 14.3086 8.61719L12.0703 4.14062V4.14062" />
+    </group>
 </vector>
