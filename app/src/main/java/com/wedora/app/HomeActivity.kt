@@ -51,7 +51,14 @@ class HomeActivity :
         const val TAG = "WedoraMatching"
 
         /** Enough to fill the screen and imply a stack, without scrolling. */
-        const val SKELETON_CARDS = 3
+        /**
+         * One, not three. Three suited the old skeleton, which was a short
+         * wrap_content card that could repeat down the container. The current
+         * one fills the stack's whole box, so repeating it would just push
+         * copies off-screen - and the real stack overlaps its cards rather
+         * than stacking them vertically anyway.
+         */
+        const val SKELETON_CARDS = 1
     }
 
     /** One slot in the swipe stack — either a real profile or a native ad. */
