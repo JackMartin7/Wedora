@@ -88,7 +88,11 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
         if (id.isNullOrBlank()) {
             Log.w(TAG, "Opened without a user id")
             toast(getString(R.string.error_profile_load_failed))
-            finish()
+            // finishOrGoHome, like the other two bail-outs below: reached from
+            // the new-match notification this screen is the task root, so a
+            // plain finish would show the toast and then close the app. An
+            // error is the worst moment to drop someone out entirely.
+            finishOrGoHome()
             return
         }
         userId = id
@@ -209,7 +213,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
                     // No usable profile — the document is missing or has no name.
                     Log.w(TAG, "No displayName for user $userId")
                     toast(getString(R.string.error_profile_load_failed))
-                    finish()
+                    finishOrGoHome()
                     return@addOnSuccessListener
                 }
                 showProfile(name, profile)
@@ -217,7 +221,7 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
             .addOnFailureListener { e ->
                 Log.w(TAG, "Failed to load profile $userId", e)
                 toast(getString(R.string.error_profile_load_failed))
-                finish()
+                finishOrGoHome()
             }
     }
 
@@ -337,10 +341,14 @@ class ProfileDetailActivity : WedoraBaseActivity(), DailyLimitReachedBottomSheet
      * once even when there's no ad to show — so this always closes.
      */
     private fun closeWithInterstitial() {
+        // finishOrGoHome, not finish: the new-match notification opens this
+        // screen directly, making it the task root, where a plain finish would
+        // close the app on the first back press. The interstitial still runs
+        // first either way - only where the user lands afterwards changes.
         if (InterstitialAds.onEvent(this, InterstitialAds.Trigger.PROFILE_CLOSE)) {
-            InterstitialAds.show(this) { finish() }
+            InterstitialAds.show(this) { finishOrGoHome() }
         } else {
-            finish()
+            finishOrGoHome()
         }
     }
 

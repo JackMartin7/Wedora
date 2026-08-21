@@ -1,6 +1,7 @@
 package com.wedora.app
 
 import android.content.Intent
+import androidx.activity.addCallback
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -54,7 +55,13 @@ class ProfileViewersActivity : WedoraBaseActivity() {
         binding.rvViewers.layoutManager = LinearLayoutManager(this)
         binding.rvViewers.adapter = adapter
 
-        binding.btnBack.setOnClickListener { finish() }
+        // Reachable straight from the profile-view notification, where this
+        // becomes the task root - see finishOrGoHome. The dispatcher callback
+        // is not redundant with the arrow: without it, SYSTEM back fell through
+        // to the default finish() and closed the app even though the arrow
+        // behaved.
+        binding.btnBack.setOnClickListener { finishOrGoHome() }
+        onBackPressedDispatcher.addCallback(this) { finishOrGoHome() }
 
         val openUpgrade = View.OnClickListener {
             startActivity(Intent(this, PaymentSubscriptionActivity::class.java))
