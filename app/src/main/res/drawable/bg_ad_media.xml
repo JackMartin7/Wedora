@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Rounds the MediaView inside the native ad card. Applied to the FrameLayout
+    wrapping it, together with android:clipToOutline="true" - MediaView is a
+    FrameLayout subclass, not a ShapeableImageView, so it accepts no
+    shapeAppearanceOverlay of its own.
+
+    28dp is not arbitrary: nested rounded shapes look right when the inner
+    radius is the outer radius minus the padding between them, and the card is
+    40dp with 12dp of padding.
+
+    This is required, not decorative. The media used to be square and got away
+    with it because a 16dp card corner only reaches 0.51dp inward at 12dp down,
+    leaving 11.5dp of clearance. At 40dp that same point is 11.43dp inward, so
+    a square media block would clear the card's arc by 0.57dp - touching it in
+    practice, and the same defect as the scrim that poked past the swipe card's
+    rounded photo.
+
+    Outline clipping is NOT antialiased, unlike a drawable's own corners. That
+    was avoidable for the scrim, where matching <corners> on the shape did the
+    job; there is no equivalent here short of wrapping in a MaterialCardView,
+    which clips the same way internally. At this radius it should be fine, but
+    it is the thing to look at on a real screen.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/wedora_bg" />
+    <corners android:radius="28dp" />
+</shape>

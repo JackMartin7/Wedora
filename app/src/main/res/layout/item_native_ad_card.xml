@@ -21,7 +21,7 @@
     android:layout_marginHorizontal="16dp"
     android:layout_marginBottom="20dp"
     android:padding="12dp"
-    android:background="@drawable/bg_card">
+    android:background="@drawable/bg_ad_card">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,10 +29,14 @@
         android:orientation="vertical">
 
         <!-- ===== Media + Ad badge + dismiss ===== -->
+        <!-- Rounded and clipping so the media does not sit square inside a
+             40dp card corner - see bg_ad_media for the geometry. -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:background="@drawable/bg_ad_media"
+            android:clipToOutline="true">
 
             <com.google.android.gms.ads.nativead.MediaView
                 android:id="@+id/adMedia"
@@ -40,13 +44,17 @@
                 android:layout_height="match_parent" />
 
             <!-- Required by AdMob policy: must stay visible and legible
-                 whenever the ad renders — never remove or hide this view. -->
+                 whenever the ad renders — never remove or hide this view.
+
+                 Inset 14dp rather than 10dp: the media is clipped to a 28dp
+                 radius now, and a 10dp inset would tuck this badge into the
+                 corner arc where the clip could bite into it. -->
             <TextView
                 android:id="@+id/tvAdBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start"
-                android:layout_margin="10dp"
+                android:layout_margin="14dp"
                 android:background="@drawable/bg_badge_basic"
                 android:paddingHorizontal="10dp"
                 android:paddingVertical="3dp"
