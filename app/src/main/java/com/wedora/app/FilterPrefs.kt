@@ -23,6 +23,8 @@ object FilterPrefs {
     private const val KEY_MY_STATUS = "filter_my_status"
     private const val KEY_LOOKING_FOR = "filter_looking_for"
     private const val KEY_INTERESTS = "filter_interests"
+    private const val KEY_ACTIVE_TODAY = "filter_active_today"
+    private const val KEY_COUNTRY = "filter_country"
 
     /**
      * Full range by default — until someone narrows it via Filters, age
@@ -95,7 +97,9 @@ object FilterPrefs {
             getInterestedIn(context).isNotEmpty() ||
             getMyStatusFilter(context) != null ||
             getLookingForFilter(context, MarriageIntent.ALL_LOOKING_FOR) != null ||
-            getInterestsFilter(context).isNotEmpty()
+            getInterestsFilter(context).isNotEmpty() ||
+            getActiveToday(context) ||
+            getCountryFilter(context) != null
 
     /**
      * Statuses to include. An unset filter — and one with every option ticked
@@ -153,6 +157,37 @@ object FilterPrefs {
     }
 
     /**
+     * "Active today" - narrow to people seen within
+     * [OnlineStatus.ACTIVE_WINDOW_MS]. Off by default, so it is opt-in like
+     * interests: nobody is excluded until the user turns it on.
+     */
+    fun getActiveToday(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_ACTIVE_TODAY, false)
+
+    fun setActiveToday(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_ACTIVE_TODAY, enabled).apply()
+    }
+
+    /**
+     * The country to narrow to, or null for no narrowing.
+     *
+     * Stored as the raw string the profiles hold rather than a code, because
+     * `country` is free text on the profile and the picker offers exactly the
+     * values present in the candidate pool - see FilterActivity. Matching a
+     * canonical code against free text would silently miss people (the pool
+     * currently holds both "USA" and "United States" for the same place).
+     * Normalising that stored data is separate work.
+     */
+    fun getCountryFilter(context: Context): String? =
+        prefs(context).getString(KEY_COUNTRY, null)?.takeIf { it.isNotBlank() }
+
+    fun setCountryFilter(context: Context, country: String?) {
+        prefs(context).edit().apply {
+            if (country.isNullOrBlank()) remove(KEY_COUNTRY) else putString(KEY_COUNTRY, country)
+        }.apply()
+    }
+
+    /**
      * Null when [stored] is absent or covers every option — i.e. when it isn't
      * actually narrowing anything.
      */
@@ -198,6 +233,8 @@ object FilterPrefs {
             .remove(KEY_DISTANCE_KM)
             .remove(KEY_MY_STATUS)
             .remove(KEY_LOOKING_FOR)
+            .remove(KEY_ACTIVE_TODAY)
+            .remove(KEY_COUNTRY)
             .remove(KEY_INTERESTS)
             .apply()
     }

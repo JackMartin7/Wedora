@@ -151,6 +151,16 @@ class EditProfileActivity : WedoraBaseActivity() {
         binding.etAge.addTextChangedListener(watcher)
         binding.etCity.addTextChangedListener(watcher)
         binding.etCountry.addTextChangedListener(watcher)
+        // Tap-to-open. Its TextWatchers stay attached, so a pick still drives
+        // both updateSaveEnabled and the debounced geocode.
+        binding.etCountry.setOnClickListener {
+            CountryPickerBottomSheet
+                .newInstance(selected = enteredCountry(), allowAny = false)
+                .also { sheet ->
+                    sheet.onCountryPicked = { name -> binding.etCountry.setText(name.orEmpty()) }
+                }
+                .show(supportFragmentManager, "country_picker")
+        }
         binding.etBio.addTextChangedListener(SimpleWatcher {
             updateBioCounter()
             updateSaveEnabled()

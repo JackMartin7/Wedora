@@ -224,7 +224,15 @@ class LocationResolver(private val context: Context) {
         onFailure: () -> Unit
     ) {
         val city = address?.locality
-        val country = address?.countryName
+        // countryCode first: countryName is LOCALE-DEPENDENT, and it is where
+        // the Arabic, Bengali and Albanian country names already sitting in the
+        // data came from - written by the geocoder on those users' devices, not
+        // typed. The code is locale-independent, so canonicalising it yields
+        // the same English name regardless of device language. Falls back to
+        // the raw name when the geocoder supplies no code.
+        val country = address?.countryCode
+            ?.let { Countries.canonicalise(it) }
+            ?: address?.countryName
         mainHandler.post {
             if (city.isNullOrBlank() || country.isNullOrBlank()) {
                 Log.w(TAG, "Geocoder returned no locality/country")

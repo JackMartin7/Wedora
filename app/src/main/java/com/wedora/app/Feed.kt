@@ -142,6 +142,9 @@ fun List<MatchCard>.withNewSignupPriority(
  * excluded while the filter is active, on the same reasoning as status — see
  * the comment at the check itself.
  *
+ * "Active today" and Country follow the same missing-data rule, and both are
+ * off by default so neither narrows anything until deliberately set.
+ *
  * Distance IS applied now, via [matchesDistanceFilter], using the viewer's
  * coordinates ([myLat]/[myLon]) — but it fails open when either side has none,
  * so it narrows the feed without ever excluding people for being un-locatable.
@@ -184,6 +187,22 @@ fun matchesActiveFilters(
     // qualified" case the status rule already covers.
     val wantedInterests = FilterPrefs.getInterestsFilter(context)
     if (wantedInterests.isNotEmpty() && card.interests.none { it in wantedInterests }) return false
+
+    // Off by default; once on, a profile with no lastSeen at all is excluded,
+    // same rule as status and interests. Note this window is 24h, NOT the
+    // five-minute one behind the presence dots - see OnlineStatus.
+    if (FilterPrefs.getActiveToday(context) && !OnlineStatus.isActiveRecently(card.lastSeen)) {
+        return false
+    }
+
+    // Countries.matches, not string equality: the picker offers canonical
+    // names while profiles still hold the free text captured before it existed,
+    // so a filter for "United States" has to keep matching the profiles saved
+    // as "USA". A profile with no country is excluded once a country is chosen
+    // - roughly a quarter have none, so this narrows harder than the others do.
+    FilterPrefs.getCountryFilter(context)?.let { wanted ->
+        if (!Countries.matches(card.country, wanted)) return false
+    }
 
     if (!matchesDistanceFilter(card, myLat, myLon, FilterPrefs.getDistanceKm(context))) return false
 

@@ -89,8 +89,10 @@
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="12dp"
-            android:hint="@string/hint_country"
-            android:inputType="textCapWords"
+            android:hint="@string/country_hint"
+            android:focusable="false"
+            android:cursorVisible="false"
+            android:inputType="none"
             android:imeOptions="actionDone"
             android:autofillHints="postalAddressCountry" />
 

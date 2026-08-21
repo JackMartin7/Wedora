@@ -887,4 +887,16 @@
         <item quantity="other">%1$s likes</item>
     </plurals>
 
+    <!-- Filter: activity + country -->
+    <string name="filter_active_today">Active today</string>
+    <string name="filter_active_today_subtitle">Only show people seen in the last 24 hours</string>
+    <string name="filter_by_country">Country</string>
+    <string name="filter_country_any">Any country</string>
+
+    <!-- Country picker -->
+    <string name="country_picker_title">Select country</string>
+    <string name="country_picker_search_hint">Search countries</string>
+    <string name="country_picker_no_results">No countries match that search</string>
+    <string name="country_hint">Select country</string>
+
 </resources>

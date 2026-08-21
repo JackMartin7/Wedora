@@ -110,6 +110,53 @@
                 app:trackHeight="6dp"
                 app:labelBehavior="gone" />
 
+            <!--
+                Active today. A toggle rather than a chip because it is a
+                single on/off narrowing, and it sits right after Age to match
+                the reference's ordering.
+
+                NOT labelled "Online Now" on purpose: the window behind it is
+                24h (OnlineStatus.ACTIVE_WINDOW_MS) while the presence dots use
+                five minutes, so someone can pass this filter and correctly
+                show no dot. The label says what the filter actually does.
+            -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/WedoraSectionHeader"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/filter_active_today" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/filter_active_today_subtitle"
+                        android:textColor="@color/wedora_text_secondary"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switchActiveToday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp" />
+
+            </LinearLayout>
+
             <!-- ===== Status ===== -->
             <!-- Options depend on the gender of the people being filtered, so
                  the chips are built in code once that's known. -->
@@ -161,6 +208,55 @@
                 app:singleLine="false"
                 app:singleSelection="false"
                 app:chipSpacingHorizontal="8dp" />
+
+            <!--
+                Country. The options are NOT a fixed country list - they are
+                the distinct countries actually present in this viewer's
+                candidate pool, filled in by FilterActivity once the feed
+                loads.
+
+                That is deliberate. `country` is free text on the profile, and
+                the pool currently holds both "USA" and "United States" for the
+                same place, so matching a canonical list against it would
+                silently miss people. Offering exactly what is stored means the
+                filter always matches, at the cost of a list that shows those
+                duplicates until the stored data is normalised - separate work.
+            -->
+            <TextView
+                style="@style/WedoraSectionHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="26dp"
+                android:text="@string/filter_by_country" />
+
+            <!--
+                Opens CountryPickerBottomSheet rather than a dropdown. It used
+                to be a MaterialAutoCompleteTextView fed from the cached pool;
+                the picker replaced that because it is searchable, shows flags,
+                and offers the canonical list instead of whatever free text
+                happened to be stored.
+
+                A plain TextView, not an ExposedDropdownMenu box: that widget
+                installs its own click handler to toggle a dropdown, which
+                fights a click listener that wants to open a sheet instead.
+            -->
+            <TextView
+                android:id="@+id/inputCountry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_input_field"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="16dp"
+                android:drawableEnd="@drawable/ic_chevron_down"
+                android:drawableTint="@color/wedora_text_secondary"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:textColor="@color/wedora_text"
+                android:textSize="14sp"
+                android:fontFamily="@font/poppins_medium"
+                tools:text="🇵🇰  Pakistan" />
 
             <!-- ===== Distance ===== -->
 

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One country row: flag emoji, then the canonical English name. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="?attr/selectableItemBackground"
+    android:paddingVertical="14dp">
+
+    <!-- The flag is decorative: the name beside it carries the meaning, and on
+         devices whose fonts lack the glyph this renders as a two-letter box.
+         Announcing that to a screen reader would be noise. -->
+    <TextView
+        android:id="@+id/tvCountryFlag"
+        android:layout_width="34dp"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:importantForAccessibility="no"
+        tools:text="🇵🇰" />
+
+    <TextView
+        android:id="@+id/tvCountryName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="@color/wedora_text"
+        android:textSize="15sp"
+        android:fontFamily="@font/poppins_medium"
+        tools:text="Pakistan" />
+
+    <ImageView
+        android:id="@+id/ivCountryCheck"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/ic_check_accent"
+        android:visibility="gone"
+        android:contentDescription="@null"
+        tools:visibility="visible" />
+
+</LinearLayout>

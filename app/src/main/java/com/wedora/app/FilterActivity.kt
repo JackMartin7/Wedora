@@ -47,6 +47,13 @@ class FilterActivity : WedoraBaseActivity() {
     /** Gender of the people being filtered; drives both chip option lists. */
     private var candidateGender: String? = null
 
+    /**
+     * The country chosen in the picker but not yet applied. Mirrors how the
+     * chips and sliders behave - nothing on this screen narrows the feed until
+     * Apply is tapped - so backing out discards the choice.
+     */
+    private var pendingCountry: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityFilterBinding.inflate(layoutInflater)
@@ -80,6 +87,10 @@ class FilterActivity : WedoraBaseActivity() {
         binding.chipsInterestsFilter.setInterestOptions(
             selected = FilterPrefs.getInterestsFilter(this)
         )
+        binding.switchActiveToday.isChecked = FilterPrefs.getActiveToday(this)
+        pendingCountry = FilterPrefs.getCountryFilter(this)
+        showCountrySelection()
+        binding.inputCountry.setOnClickListener { openCountryPicker() }
 
         showAgeLabel()
         showDistanceLabel()
@@ -103,17 +114,20 @@ class FilterActivity : WedoraBaseActivity() {
         val uid = auth.realUid
         if (uid == null) {
             showIntentChips()
+            showCountrySelection()
             return
         }
         firestore.collection(UserProfile.COLLECTION).document(uid).get()
             .addOnSuccessListener { snapshot ->
                 candidateGender = UserProfile.from(snapshot).interestedIn
                 showIntentChips()
+                showCountrySelection()
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Couldn't read interestedIn for the filter options; using the default list", e)
                 candidateGender = null
                 showIntentChips()
+                showCountrySelection()
             }
     }
 
@@ -127,6 +141,40 @@ class FilterActivity : WedoraBaseActivity() {
      * would keep narrowing the feed by values the user can no longer see or
      * clear on this screen.
      */
+    /**
+     * Shows the currently selected country, and opens the picker on tap.
+     *
+     * The options are now the canonical ISO list rather than the distinct
+     * values found in the cached pool. That is a deliberate trade: the derived
+     * list only ever offered countries someone could actually match, but it
+     * also surfaced the free text already stored - "USA" and "United States"
+     * as separate rows - and could not show flags. The canonical list will
+     * offer countries nobody in the pool has; Countries.matches is what keeps
+     * a canonical selection matching the old free-text values meanwhile.
+     */
+    private fun showCountrySelection() {
+        val label = pendingCountry?.let { name ->
+            Countries.flagFor(name)?.let { "$it  $name" } ?: name
+        } ?: getString(R.string.filter_country_any)
+        binding.inputCountry.text = label
+    }
+
+    private fun openCountryPicker() {
+        CountryPickerBottomSheet
+            .newInstance(selected = pendingCountry, allowAny = true)
+            .also { sheet ->
+                sheet.onCountryPicked = { name ->
+                    // Held, not saved. Every other control on this screen only
+                    // takes effect on Apply, and a country that saved itself on
+                    // selection would still be filtering after the user backed
+                    // out without applying.
+                    pendingCountry = name
+                    showCountrySelection()
+                }
+            }
+            .show(supportFragmentManager, "country_picker")
+    }
+
     private fun showIntentChips() {
         val statusOptions = MarriageIntent.statusOptions(candidateGender)
         binding.chipsStatusFilter.setOptions(
@@ -163,6 +211,9 @@ class FilterActivity : WedoraBaseActivity() {
         )
         binding.sliderDistance.value = FilterPrefs.DEFAULT_DISTANCE_KM.toFloat()
         binding.chipsInterestsFilter.setInterestOptions(selected = emptyList())
+        binding.switchActiveToday.isChecked = false
+        pendingCountry = null
+        showCountrySelection()
 
         // Default is everything ticked, which reads as "don't narrow".
         val statusOptions = MarriageIntent.statusOptions(candidateGender)
@@ -238,6 +289,8 @@ class FilterActivity : WedoraBaseActivity() {
 
         FilterPrefs.setDistanceKm(this, selectedDistance())
         FilterPrefs.setInterestsFilter(this, binding.chipsInterestsFilter.selectedInterestIds().toSet())
+        FilterPrefs.setActiveToday(this, binding.switchActiveToday.isChecked)
+        FilterPrefs.setCountryFilter(this, pendingCountry)
 
         setResult(RESULT_OK)
         finish()

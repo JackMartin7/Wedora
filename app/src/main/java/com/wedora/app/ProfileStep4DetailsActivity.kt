@@ -117,6 +117,11 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
         etAge.addTextChangedListener(watcher)
         etCity.addTextChangedListener(watcher)
         etCountry.addTextChangedListener(watcher)
+        // Tap-to-open rather than typing. The field keeps its TextWatchers, so
+        // setting the text from the picker still triggers the debounced
+        // forward-geocode that turns city + country into coordinates - which
+        // the distance filter depends on.
+        etCountry.setOnClickListener { openCountryPicker() }
 
         // Separate from `watcher` above: only city/country affect the geocode
         // query, and age changes shouldn't re-trigger it.
@@ -195,6 +200,13 @@ class ProfileStep4DetailsActivity : ProfileStepActivity() {
     }
 
     private fun isInManualMode(): Boolean = groupManual.visibility == View.VISIBLE
+
+    private fun openCountryPicker() {
+        CountryPickerBottomSheet
+            .newInstance(selected = etCountry.text.toString(), allowAny = false)
+            .also { it.onCountryPicked = { name -> etCountry.setText(name.orEmpty()) } }
+            .show(supportFragmentManager, "country_picker")
+    }
 
     /**
      * Debounced forward-geocode of the typed city/country into [manualCoords].
