@@ -6,9 +6,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
 
 /**
  * Wires a [BottomNavigationView] the same way on every tab screen: marks
@@ -76,48 +73,58 @@ private class BottomNavBadgeObserver(
     private val bottomNav: BottomNavigationView
 ) : DefaultLifecycleObserver {
 
-    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
-    private var listener: ListenerRegistration? = null
-
-    override fun onStart(owner: LifecycleOwner) {
-        val selfUid = FirebaseAuth.getInstance().currentUser
-            ?.takeUnless { GuestPrefs.isGuest(activity) }?.uid
-
+    /**
+     * Reads MatchNotificationWatcher's live set instead of querying Firestore.
+     *
+     * This used to open its own listener on
+     * matches.whereArrayContains(users, selfUid) - the watcher's exact query -
+     * in onStart. Because the nav finishes each tab as it switches, every tab
+     * tap re-attached and re-paid for an initial snapshot of every match the
+     * user has: about thirteen documents for a typical account and well over a
+     * hundred for a heavy one, on every single tap. The watcher already holds
+     * that data for the process lifetime, so this now costs nothing.
+     *
+     * The uid comes from the watcher too rather than from Auth, so the counts
+     * and the identity they were computed for cannot disagree.
+     */
+    private val onMatches: (List<Match>, String?) -> Unit = { matches, selfUid ->
         if (selfUid == null) {
+            // Signed out, or a guest: the watcher stops and emits empty. Same
+            // outcome as the null-uid branch this replaced.
             bottomNav.applyBadgeCount(R.id.nav_match, 0)
             bottomNav.applyBadgeCount(R.id.nav_chats, 0)
-            return
-        }
+        } else {
+            // Hidden matches are filtered HERE, not in the watcher: it needs
+            // the full set for notifications, and only the badges care about
+            // this user having hidden a conversation.
+            val visible = matches.filterNot { it.isHiddenFor(selfUid) }
 
-        listener = firestore.collection(Match.COLLECTION)
-            .whereArrayContains(Match.FIELD_USERS, selfUid)
-            .addSnapshotListener { snapshot, _ ->
-                val matches = snapshot?.documents
-                    ?.mapNotNull { Match.from(it) }
-                    .orEmpty()
-                    .filterNot { it.isHiddenFor(selfUid) }
-
-                bottomNav.applyBadgeCount(
-                    R.id.nav_match,
-                    matches.count { it.isUnseenLikeFor(selfUid) }
-                )
-                bottomNav.applyBadgeCount(
-                    R.id.nav_chats,
-                    matches.sumOf { match ->
-                        val lastMessage = match.lastMessage
-                        if (lastMessage?.senderId != null && lastMessage.senderId != selfUid) {
-                            lastMessage.unreadCount
-                        } else {
-                            0
-                        }
+            bottomNav.applyBadgeCount(
+                R.id.nav_match,
+                visible.count { it.isUnseenLikeFor(selfUid) }
+            )
+            bottomNav.applyBadgeCount(
+                R.id.nav_chats,
+                visible.sumOf { match ->
+                    val lastMessage = match.lastMessage
+                    if (lastMessage?.senderId != null && lastMessage.senderId != selfUid) {
+                        lastMessage.unreadCount
+                    } else {
+                        0
                     }
-                )
-            }
+                }
+            )
+        }
+    }
+
+    override fun onStart(owner: LifecycleOwner) {
+        // addObserver replays the current set synchronously, so the badges are
+        // correct on the first frame rather than blank until something changes.
+        MatchNotificationWatcher.addObserver(onMatches)
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        listener?.remove()
-        listener = null
+        MatchNotificationWatcher.removeObserver(onMatches)
     }
 }
 

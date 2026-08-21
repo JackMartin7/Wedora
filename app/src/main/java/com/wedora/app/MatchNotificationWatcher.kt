@@ -53,6 +53,59 @@ object MatchNotificationWatcher {
     /** Last known state per matchId, for diffing the next snapshot against. */
     private val knownMatches = mutableMapOf<String, Match>()
 
+    /**
+     * Who [knownMatches] currently belongs to, or null when signed out or a
+     * guest. Handed to observers so they never have to ask Auth themselves and
+     * risk disagreeing with the data they were just given.
+     */
+    private var currentUid: String? = null
+
+    /**
+     * Anything that wants the live match set without opening its own listener.
+     *
+     * This exists because BottomNavHelper used to run the exact same
+     * whereArrayContains query, re-attached on every tab screen's onStart -
+     * and since the nav finishes each tab as it switches, every tab tap paid
+     * for a fresh initial snapshot of every match the user has. This watcher
+     * already holds that data for the whole process, so the badges can read it
+     * for nothing.
+     */
+    private val observers = mutableSetOf<(List<Match>, String?) -> Unit>()
+
+    /**
+     * Registers [observer] and IMMEDIATELY replays the current state to it.
+     *
+     * The replay is the important half. This watcher warms once at app start,
+     * so by the time any tab screen subscribes it is long past its priming
+     * snapshot and no further change may arrive for minutes. Without the
+     * replay a subscriber would sit at zero until something happened to move -
+     * badges would simply look empty.
+     *
+     * Not warm yet means the empty replay is correct rather than stale: the
+     * priming emit below follows the moment it lands.
+     */
+    fun addObserver(observer: (List<Match>, String?) -> Unit) {
+        observers.add(observer)
+        observer(if (isWarm) knownMatches.values.toList() else emptyList(), currentUid)
+    }
+
+    fun removeObserver(observer: (List<Match>, String?) -> Unit) {
+        observers.remove(observer)
+    }
+
+    /**
+     * Pushes the current set to every observer.
+     *
+     * Called once per snapshot batch rather than once per document change, so
+     * a snapshot touching five documents produces one badge update, not five.
+     * Iterates a copy so an observer removing itself mid-emit cannot mutate
+     * the set being walked.
+     */
+    private fun emit() {
+        val snapshot = knownMatches.values.toList()
+        observers.toList().forEach { it(snapshot, currentUid) }
+    }
+
     private val authListener = FirebaseAuth.AuthStateListener { auth ->
         // realUid, not currentUser?.uid: a guest's anonymous session (see
         // LoginActivity.continueAsGuest) has no matches and never will, so
@@ -72,6 +125,7 @@ object MatchNotificationWatcher {
 
         isWarm = false
         knownMatches.clear()
+        currentUid = selfUid
         matchesListener = firestore.collection(Match.COLLECTION)
             .whereArrayContains(Match.FIELD_USERS, selfUid)
             .addSnapshotListener { snapshot, error ->
@@ -86,12 +140,17 @@ object MatchNotificationWatcher {
                         Match.from(doc)?.let { knownMatches[it.id] = it }
                     }
                     isWarm = true
+                    // Covers an observer that subscribed during the cold window
+                    // and got the empty replay; addObserver covers everyone
+                    // who arrives after this point.
+                    emit()
                     return@addSnapshotListener
                 }
 
                 snapshot.documentChanges.forEach { change ->
                     handleChange(change, selfUid)
                 }
+                emit()
             }
     }
 
@@ -100,6 +159,10 @@ object MatchNotificationWatcher {
         matchesListener = null
         isWarm = false
         knownMatches.clear()
+        currentUid = null
+        // Sign-out, or switching to a guest: observers must clear rather than
+        // keep showing the previous account's counts.
+        emit()
     }
 
     private fun handleChange(change: DocumentChange, selfUid: String) {
