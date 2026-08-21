@@ -74,7 +74,11 @@ object FeedCache {
     //    via optInt's default, which is silently wrong rather than merely
     //    stale — a real count would read as zero until the pool refreshed.
     //    Bumping discards those payloads instead.
-    private const val SCHEMA_VERSION = 3
+    // 4: added interests. Worse than stale if left unbumped: a v3 payload has
+    //    no interests array, so every card would parse as having none - and an
+    //    active interests filter excludes exactly those, emptying the feed
+    //    entirely until the cache aged out.
+    private const val SCHEMA_VERSION = 4
 
     private const val FIELD_VERSION = "version"
     private const val FIELD_SAVED_AT = "savedAt"
@@ -141,6 +145,7 @@ object FeedCache {
         .put("longitude", longitude ?: JSONObject.NULL)
         .put("gender", gender ?: JSONObject.NULL)
         .put("likesReceivedCount", likesReceivedCount)
+        .put("interests", JSONArray(interests))
         .put("myStatus", myStatus ?: JSONObject.NULL)
         .put("lookingFor", lookingFor ?: JSONObject.NULL)
         .put("lastSeen", lastSeen?.time ?: JSONObject.NULL)
@@ -170,6 +175,9 @@ object FeedCache {
             longitude = if (isNull("longitude")) null else optDouble("longitude"),
             gender = optString("gender").orEmptyNull(),
             likesReceivedCount = optInt("likesReceivedCount"),
+            interests = optJSONArray("interests")
+                ?.let { arr -> (0 until arr.length()).mapNotNull { arr.optString(it).orEmptyNull() } }
+                ?: emptyList(),
             myStatus = optString("myStatus").orEmptyNull(),
             lookingFor = optString("lookingFor").orEmptyNull(),
             lastSeen = if (isNull("lastSeen")) null else Date(optLong("lastSeen")),

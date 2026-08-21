@@ -45,6 +45,12 @@ data class MatchCard(
      * control keeps a stable width as the deck advances.
      */
     val likesReceivedCount: Int,
+    /**
+     * This profile's interests, as [Interest.firestoreValue] ids. Empty on
+     * anyone who skipped that step, which the interests filter treats as
+     * "cannot match" — see matchesActiveFilters.
+     */
+    val interests: List<String>,
     /** Null on accounts predating the field — the badge is hidden, not blank. */
     val myStatus: String?,
     val lookingFor: String?,

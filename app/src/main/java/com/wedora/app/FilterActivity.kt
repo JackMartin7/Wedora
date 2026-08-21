@@ -11,9 +11,10 @@ import com.wedora.app.databinding.ActivityFilterBinding
  * Feed filters: age range, marital status, what they're looking for,
  * distance, and interests.
  *
- * Interests is stored and restored like the rest of this screen but, unlike
- * the others, isn't applied to the feed query at all yet — see FilterPrefs's
- * own note on [FilterPrefs.getInterestsFilter].
+ * Interests narrows the feed like the rest of them now, matching on ANY: a
+ * profile qualifies with one interest in common. It stays opt-in — its default
+ * and its Reset state are both empty, unlike Status and Looking For, whose
+ * default is everything ticked.
  *
  * Status and Looking For are worded differently per gender — a man is a
  * widower and looks for a wife; everyone else is widowed and looks for a

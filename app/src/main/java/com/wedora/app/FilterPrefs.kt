@@ -94,7 +94,8 @@ object FilterPrefs {
             getDistanceKm(context) != DEFAULT_DISTANCE_KM ||
             getInterestedIn(context).isNotEmpty() ||
             getMyStatusFilter(context) != null ||
-            getLookingForFilter(context, MarriageIntent.ALL_LOOKING_FOR) != null
+            getLookingForFilter(context, MarriageIntent.ALL_LOOKING_FOR) != null ||
+            getInterestsFilter(context).isNotEmpty()
 
     /**
      * Statuses to include. An unset filter — and one with every option ticked
@@ -131,13 +132,18 @@ object FilterPrefs {
         prefs(context).getStringSet(KEY_LOOKING_FOR, null) ?: options.toSet()
 
     /**
-     * [Interest.firestoreValue] ids picked on the Filters screen. Unlike
-     * Status/Looking For this is purely a stored preference — see
-     * FilterActivity's own note — so there's no "everything ticked means no
-     * filter" trick here: an empty set really does just mean nothing was
-     * picked, and [hasActiveFilters] deliberately doesn't check this, since a
-     * selection with no effect on the feed shouldn't light up the "filters
-     * active" indicator.
+     * [Interest.firestoreValue] ids picked on the Filters screen.
+     *
+     * Returns a plain set rather than null-when-everything-is-ticked, which is
+     * how Status and Looking For signal "don't narrow". That difference is
+     * deliberate and survives this filter becoming real: matching is ANY, so
+     * ticking every interest still narrows — it means "has at least one
+     * interest", which excludes profiles that listed none. All-ticked is a
+     * weaker filter here, not an absent one.
+     *
+     * An empty set is the off state, and it is both the default and what Reset
+     * restores, so the filter is opt-in: nobody is excluded until the user
+     * picks something.
      */
     fun getInterestsFilter(context: Context): Set<String> =
         prefs(context).getStringSet(KEY_INTERESTS, emptySet()) ?: emptySet()

@@ -39,6 +39,7 @@ fun DocumentSnapshot.toMatchCard(): MatchCard? {
         longitude = profile.longitude,
         gender = profile.gender,
         likesReceivedCount = profile.likesReceivedCount,
+        interests = profile.interests,
         myStatus = profile.myStatus,
         lookingFor = profile.lookingFor,
         lastSeen = profile.lastSeen,
@@ -137,6 +138,10 @@ fun List<MatchCard>.withNewSignupPriority(
  * Relationship type is not applied — there is no relationshipType field to
  * compare. It's stored in FilterPrefs, and the filter screen says so.
  *
+ * Interests match on ANY: one in common is enough. A profile with none is
+ * excluded while the filter is active, on the same reasoning as status — see
+ * the comment at the check itself.
+ *
  * Distance IS applied now, via [matchesDistanceFilter], using the viewer's
  * coordinates ([myLat]/[myLon]) — but it fails open when either side has none,
  * so it narrows the feed without ever excluding people for being un-locatable.
@@ -165,6 +170,20 @@ fun matchesActiveFilters(
     FilterPrefs.getLookingForFilter(context, MarriageIntent.ALL_LOOKING_FOR)?.let { allowed ->
         if (card.lookingFor !in allowed) return false
     }
+
+    // ANY, not ALL: one interest in common qualifies. Empty means the filter
+    // is off, so nobody is narrowed until the user actually picks something -
+    // and empty is both the default and what Reset restores.
+    //
+    // A profile with NO interests is excluded once the filter is on, matching
+    // the status/looking-for rule above rather than distance's fail-open.
+    // Distance fails open for a specific reason - coordinates are legitimately
+    // missing for anyone who typed their city by hand - and there is no
+    // equivalent here: an empty interests list means the optional step was
+    // skipped, which is the same "no way to know whether it would have
+    // qualified" case the status rule already covers.
+    val wantedInterests = FilterPrefs.getInterestsFilter(context)
+    if (wantedInterests.isNotEmpty() && card.interests.none { it in wantedInterests }) return false
 
     if (!matchesDistanceFilter(card, myLat, myLon, FilterPrefs.getDistanceKm(context))) return false
 
