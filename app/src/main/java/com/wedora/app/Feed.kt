@@ -298,6 +298,64 @@ fun feedCandidatePool(
  * order (see each call site) — a deliberate difference, so ordering stays
  * with the caller rather than being imposed here.
  */
+/**
+ * The ceiling on one discovery fetch, matching [FeedCache.MAX_CACHED_CARDS].
+ *
+ * Today this changes nothing: the largest gender bucket is well under it. It is
+ * a guardrail against growth, and it closes a latent mismatch - the cache has
+ * always truncated at this number while the query was unbounded, so a bucket
+ * growing past it would have made the cached and network paths disagree about
+ * who is in the feed.
+ */
+const val FEED_QUERY_LIMIT = FeedCache.MAX_CACHED_CARDS.toLong()
+
+/**
+ * Whether a thin result from the CACHE is worth re-querying the network for.
+ *
+ * The bypass this replaces re-queried on any thin result, for a good reason:
+ * a user who has run out of people should pick up whoever signed up since,
+ * rather than sitting on a stale pool. That reasoning holds for one cause of
+ * thinness and not the other, and the old check could not tell them apart.
+ *
+ *  - EXHAUSTION - plenty of people pass the filters, but this user has already
+ *    passed or liked them. A refetch genuinely can help: new signups appear.
+ *
+ *  - FILTERS - the user's own age/distance/status/interests/country/activity
+ *    settings cut the pool down. A refetch returns the same people and applies
+ *    the same filters client-side, so it produces the same thin result at the
+ *    cost of a full read of the gender bucket. That was happening on EVERY feed
+ *    screen open for a filtered user, permanently.
+ *
+ * The two are separable in memory at no cost, because filters and exclusions
+ * are applied separately: run the filters alone. If they alone take the pool
+ * below the threshold, the filters are the cause and the network cannot beat
+ * the cache.
+ *
+ * A pool smaller than the threshold is treated as worth re-querying regardless
+ * - that is a suspect or incomplete cache rather than a real answer about who
+ * exists.
+ *
+ * Freshness is not sacrificed: FeedCache's own TTL already bounds staleness to
+ * fifteen minutes. The old bypass was guarding a window the TTL already covers,
+ * and paying an unbounded number of reads to do it.
+ */
+fun cacheWorthRefetching(
+    context: Context,
+    pool: List<MatchCard>,
+    selfUid: String?,
+    myLat: Double?,
+    myLon: Double?
+): Boolean {
+    if (pool.size < FALLBACK_MIN_RESULTS) return true
+    val passingFilters = pool
+        .filter { it.id != selfUid }
+        .map { it.withDistanceFrom(myLat, myLon) }
+        .count { matchesActiveFilters(context, it, myLat, myLon) }
+    // Filters alone left too few: exclusions are not the constraint, so a
+    // refetch would return the same people and filter them the same way.
+    return passingFilters >= FALLBACK_MIN_RESULTS
+}
+
 fun buildFeedCards(
     context: Context,
     pool: List<MatchCard>,
@@ -416,7 +474,9 @@ private fun queryDiscoveryFeed(
     if (cachedPool != null) {
         val cards = buildFeedCards(context, cachedPool, selfUid, exclusions, myLat, myLon)
             .sortedForDiscovery()
-        if (cards.size >= FALLBACK_MIN_RESULTS) {
+        if (cards.size >= FALLBACK_MIN_RESULTS ||
+            !cacheWorthRefetching(context, cachedPool, selfUid, myLat, myLon)
+        ) {
             onResult(cards)
             return
         }
@@ -430,6 +490,7 @@ private fun queryDiscoveryFeed(
     }
 
     query
+        .limit(FEED_QUERY_LIMIT)
         .get()
         .addOnSuccessListener { snapshot ->
             // Cached pre-filter, so a later filter change re-narrows this

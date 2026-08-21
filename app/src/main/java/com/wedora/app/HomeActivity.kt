@@ -699,14 +699,17 @@ class HomeActivity :
         myLon: Double?
     ) {
         // Cached pool first (signed-in only — selfUid is null for a guest).
-        // The size check is the same bypass Feed.kt documents: an exhausted
-        // feed must always re-query rather than sit on a stale pool.
+        // A thin result only re-queries when the network could actually do
+        // better — see cacheWorthRefetching, shared with loadDiscoveryFeed so
+        // the two paths cannot drift apart.
         val cachedPool = selfUid?.let { FeedCache.load(this, it, interestedIn) }
         if (cachedPool != null) {
             val cards = buildFeedCards(this, cachedPool, selfUid, exclusions, myLat, myLon)
                 .withRecencyPriority()
                 .withPremiumPriority()
-            if (cards.size >= FALLBACK_MIN_RESULTS) {
+            if (cards.size >= FALLBACK_MIN_RESULTS ||
+                !cacheWorthRefetching(this, cachedPool, selfUid, myLat, myLon)
+            ) {
                 showCards(cards)
                 return
             }
@@ -720,6 +723,7 @@ class HomeActivity :
         }
 
         query
+            .limit(FEED_QUERY_LIMIT)
             .get()
             .addOnSuccessListener { snapshot ->
                 // Toggling dark/light mode recreates the Activity; this

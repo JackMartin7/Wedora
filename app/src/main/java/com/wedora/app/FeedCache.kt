@@ -57,8 +57,16 @@ object FeedCache {
      */
     private const val TTL_MS = 15 * 60 * 1000L
 
-    /** Bounds the SharedPreferences payload — see this object's own note. */
-    private const val MAX_CACHED_CARDS = 300
+    /**
+     * Bounds the SharedPreferences payload — see this object's own note.
+     *
+     * Not private: the discovery query limits itself to the same number (see
+     * Feed.kt's FEED_QUERY_LIMIT). If the query could return more than this
+     * stores, the cached path would serve a truncated subset while the network
+     * path saw everything, and the same user would get a different feed
+     * depending on cache state with nothing in the code explaining why.
+     */
+    const val MAX_CACHED_CARDS = 300
 
     /**
      * Bumped whenever the serialized card shape changes, so entries written
