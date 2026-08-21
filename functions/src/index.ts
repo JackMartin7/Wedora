@@ -119,17 +119,71 @@ const PUSH_TYPE_MESSAGE = "message";
 const PUSH_TYPE_LIKE = "like";
 
 /**
+ * FCM error codes meaning the token is permanently dead - uninstalled,
+ * reinstalled with a new token, or app data cleared. Nothing will ever be
+ * delivered to it again.
+ *
+ * messaging/invalid-argument is deliberately NOT here even though it can
+ * indicate a bad token: it also fires for a malformed PAYLOAD, so clearing on
+ * it would risk wiping a perfectly good token because of a bug in our own
+ * message construction. Too broad for a destructive action.
+ *
+ * Everything else - server-unavailable, internal-error, quota-exceeded,
+ * third-party-auth-error, plain network failure - is transient and must leave
+ * the token alone.
+ */
+const DEAD_TOKEN_CODES = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+]);
+
+/**
+ * Removes a token FCM has told us is permanently dead, so later notifications
+ * skip that user at fcmTokenFor instead of failing again.
+ *
+ * Transactional, and only deletes if the stored token is STILL the one that
+ * failed. Between reading it and the send coming back, the user may have
+ * reinstalled and registered a new token; deleting unconditionally would wipe
+ * a working one and silently stop their notifications for good - a worse bug
+ * than the wasted send this is cleaning up.
+ *
+ * Failures here are logged and swallowed: not clearing a dead token costs one
+ * wasted send next time, which is not worth failing a notification over.
+ */
+async function clearDeadToken(uid: string, token: string): Promise<void> {
+  const db = getFirestore();
+  const ref = db.collection("users").doc(uid);
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.get("fcmToken") !== token) return;
+      tx.update(ref, { fcmToken: FieldValue.delete() });
+    });
+    logger.info(`Cleared dead fcmToken for ${uid}`);
+  } catch (e) {
+    logger.warn(`Could not clear dead fcmToken for ${uid}`, e);
+  }
+}
+
+/**
  * Data-only FCM send — never a "notification" payload, so the client's
  * WedoraFirebaseMessagingService.onMessageReceived stays the single place a
  * push becomes a shown system notification (same reasoning that receiver's
  * own doc comment gives, now enforced from the sending side too). Keys
  * mirror exactly what that receiver reads: type, senderUid, title, body.
  *
- * Failures are logged, not thrown — same "nice to have, never blocks the
- * underlying action" stance every push call site in this app already takes.
+ * Failures never throw — a push is "nice to have, never blocks the underlying
+ * action", the stance every push call site in this app takes. But they are no
+ * longer merely logged: a [DEAD_TOKEN_CODES] failure also clears the token, so
+ * the same user is not retried forever. That is the one error class with a side
+ * effect; everything else is logged and dropped.
+ *
+ * [recipientUid] exists only for that cleanup — the send itself needs just the
+ * token.
  */
 async function sendPush(
   token: string,
+  recipientUid: string,
   type: string,
   senderUid: string,
   title: string,
@@ -141,6 +195,11 @@ async function sendPush(
       data: { type, senderUid, title, body },
     });
   } catch (error) {
+    const code = (error as { code?: string })?.code;
+    if (code && DEAD_TOKEN_CODES.has(code)) {
+      await clearDeadToken(recipientUid, token);
+      return;
+    }
     logger.warn(`Push send failed (type=${type}, senderUid=${senderUid})`, error);
   }
 }
@@ -317,7 +376,7 @@ export const onMatchWritten = onDocumentWritten(
 
       const token = await fcmTokenFor(recipient);
       if (!token) return;
-      await sendPush(token, PUSH_TYPE_LIKE, liker, "Someone liked your profile! ❤️", "");
+      await sendPush(token, recipient, PUSH_TYPE_LIKE, liker, "Someone liked your profile! ❤️", "");
       return;
     }
 
@@ -340,6 +399,7 @@ export const onMatchWritten = onDocumentWritten(
     if (!token) return;
     await sendPush(
       token,
+      originalLiker,
       PUSH_TYPE_MATCH,
       newLiker,
       "New Match! 🎉",
@@ -378,6 +438,6 @@ export const onMessageSent = onDocumentCreated(
     if (!token) return;
 
     const preview = text.length > 200 ? `${text.slice(0, 200)}…` : text;
-    await sendPush(token, PUSH_TYPE_MESSAGE, senderId, senderName, preview);
+    await sendPush(token, recipient, PUSH_TYPE_MESSAGE, senderId, senderName, preview);
   }
 );
