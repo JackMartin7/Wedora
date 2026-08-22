@@ -44,8 +44,8 @@ android {
         // on tablets. See its PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY
         // opt-out in AndroidManifest.xml.
         targetSdk = 36
-        versionCode = 26
-        versionName = "1.3.6"
+        versionCode = 28
+        versionName = "1.3.8"
     }
 
     signingConfigs {
