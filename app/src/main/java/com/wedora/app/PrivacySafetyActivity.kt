@@ -56,58 +56,8 @@ class PrivacySafetyActivity : WedoraBaseActivity() {
         binding.rvBlockedUsers.adapter = adapter
 
         loadBlockedUsers()
-        loadMessagePrivacy()
     }
 
-    // ----- Who can message me ---------------------------------------------
-
-    /**
-     * The switch stays disabled until the stored value arrives, so it can't be
-     * toggled from a default that isn't the user's actual setting — a race
-     * that would write the opposite of what they intended.
-     */
-    private fun loadMessagePrivacy() {
-        firestore.collection(UserProfile.COLLECTION).document(selfUid).get()
-            .addOnSuccessListener { snapshot ->
-                val enabled = UserProfile.from(snapshot).onlyMatchesCanMessage
-                // Set the state before attaching the listener, or restoring it
-                // would immediately write it straight back.
-                binding.switchOnlyMatchesCanMessage.isChecked = enabled
-                binding.switchOnlyMatchesCanMessage.isEnabled = true
-                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener { _, isChecked ->
-                    setMessagePrivacy(isChecked)
-                }
-            }
-            .addOnFailureListener { e ->
-                // Left disabled: a privacy switch that silently failed to load
-                // would show "off" and invite the user to trust it.
-                Log.w(TAG, "Failed to load message privacy setting", e)
-                Toast.makeText(this, R.string.privacy_setting_load_failed, Toast.LENGTH_LONG).show()
-            }
-    }
-
-    /**
-     * Reverts the switch if the write fails, so it never displays a protection
-     * that isn't actually stored. The listener is detached around the revert to
-     * keep it from re-firing and writing again.
-     */
-    private fun setMessagePrivacy(enabled: Boolean) {
-        firestore.collection(UserProfile.COLLECTION).document(selfUid)
-            .set(
-                mapOf(UserProfile.FIELD_ONLY_MATCHES_CAN_MESSAGE to enabled),
-                SetOptions.merge()
-            )
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Failed to save message privacy setting", e)
-                Toast.makeText(this, R.string.privacy_setting_save_failed, Toast.LENGTH_LONG).show()
-
-                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener(null)
-                binding.switchOnlyMatchesCanMessage.isChecked = !enabled
-                binding.switchOnlyMatchesCanMessage.setOnCheckedChangeListener { _, isChecked ->
-                    setMessagePrivacy(isChecked)
-                }
-            }
-    }
 
     // ----- Blocked users --------------------------------------------------
 

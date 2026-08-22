@@ -376,7 +376,7 @@ export const onMatchWritten = onDocumentWritten(
 
       const token = await fcmTokenFor(recipient);
       if (!token) return;
-      await sendPush(token, recipient, PUSH_TYPE_LIKE, liker, "Someone liked your profile! ❤️", "");
+      await sendPush(token, recipient, PUSH_TYPE_LIKE, liker, "Someone liked your profile ❤️", "Like them back to start chatting");
       return;
     }
 
@@ -402,8 +402,8 @@ export const onMatchWritten = onDocumentWritten(
       originalLiker,
       PUSH_TYPE_MATCH,
       newLiker,
-      "New Match! 🎉",
-      "You matched with someone new"
+      "It's mutual 🎉",
+      "You both liked each other. Start the conversation."
     );
   }
 );

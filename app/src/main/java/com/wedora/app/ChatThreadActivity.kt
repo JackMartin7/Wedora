@@ -235,7 +235,7 @@ class ChatThreadActivity :
         observeOtherUserStatus()
         observeReadReceipts()
         markThreadOpened()
-        applyMessagingGate()
+        MatchNotificationWatcher.addObserver(onMatchesForGate)
     }
 
     /**
@@ -383,43 +383,34 @@ class ChatThreadActivity :
     }
 
     /**
-     * Reflects the other person's "only matched users can message me" setting
-     * in the composer, so someone who can't send finds out before typing
-     * rather than from a failed write.
+     * Keeps the composer in step with whether messaging is open on this match.
      *
-     * This is presentation only — firestore.rules is what actually enforces
-     * the setting. That's why every read here fails *open*: a network blip
-     * shouldn't lock someone out of a conversation they're entitled to, and if
-     * they aren't, the rule rejects the message anyway.
+     * The model changed: mutual like is now mandatory for everyone, replacing
+     * the opt-in onlyMatchesCanMessage toggle. Messaging is open when the pair
+     * have liked each other, OR when the conversation already has messages -
+     * grandfathering the one-sided threads that were started under the old
+     * rules and would otherwise go silent mid-conversation. lastMessage is
+     * written on the match document in the same batch as every message, so its
+     * presence is exactly that signal.
      *
-     * Evaluated on open. A like-back that arrives while the thread is already
-     * on screen won't unlock the composer until it's reopened — the match
-     * document isn't listened to here, only the messages under it.
+     * LIVE, not evaluated once on open. This used to read the other profile and
+     * run a one-shot match query in onCreate, which meant a like-back arriving
+     * while the thread was on screen left the composer locked until it was
+     * reopened. It now reads MatchNotificationWatcher's live set - the same
+     * observable the nav badges use - so the composer unlocks the moment the
+     * second like lands, at no extra reads: that listener is already open for
+     * the whole process.
+     *
+     * Fails OPEN on a match this watcher has not got: firestore.rules is what
+     * actually enforces this, so a missing local record should not lock someone
+     * out of a conversation they are entitled to. If they are not, the write is
+     * rejected anyway.
      */
-    private fun applyMessagingGate() {
-        firestore.collection(UserProfile.COLLECTION).document(otherUid).get()
-            .addOnSuccessListener { userDoc ->
-                if (!UserProfile.from(userDoc).onlyMatchesCanMessage) {
-                    setComposerLocked(false)
-                    return@addOnSuccessListener
-                }
-                // A one-sided like still creates the match document, so the
-                // gate turns on "is it mutual", not "does a match exist".
-                matchExistsQuery(firestore, selfUid, otherUid)
-                    .addOnSuccessListener { snapshot ->
-                        val mutual = snapshot.documents.firstOrNull()
-                            ?.let { Match.from(it)?.isMutual() } == true
-                        setComposerLocked(!mutual)
-                    }
-                    .addOnFailureListener { e ->
-                        Log.w(TAG, "Couldn't check match state for messaging gate", e)
-                        setComposerLocked(false)
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Couldn't read recipient messaging setting", e)
-                setComposerLocked(false)
-            }
+    private val onMatchesForGate: (List<Match>, String?) -> Unit = { matches, uid ->
+        val match = matches.firstOrNull { it.id == Match.idFor(selfUid, otherUid) }
+        val unlocked = match == null || uid == null ||
+            match.lastMessage != null || match.isMutual()
+        setComposerLocked(!unlocked)
     }
 
     private fun setComposerLocked(locked: Boolean) {
@@ -868,6 +859,7 @@ class ChatThreadActivity :
     }
 
     override fun onDestroy() {
+        MatchNotificationWatcher.removeObserver(onMatchesForGate)
         messagesListener?.remove()
         statusListener?.remove()
         readReceiptListener?.remove()

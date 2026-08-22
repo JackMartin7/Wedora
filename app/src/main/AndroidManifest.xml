@@ -208,6 +208,12 @@
             android:name=".ProfileDetailActivity"
             android:exported="false" />
 
+        <!-- Launched only by MatchCelebration, from outside an Activity
+             context, hence the NEW_TASK flag there. -->
+        <activity
+            android:name=".MatchCelebrationActivity"
+            android:exported="false" />
+
         <activity
             android:name=".EditProfileActivity"
             android:exported="false"

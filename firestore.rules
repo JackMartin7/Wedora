@@ -461,29 +461,47 @@ service cloud.firestore {
                  get(/databases/$(database)/documents/matches/$(matchId)).data.users;
         }
 
-        // The recipient's "only matched users can message me" setting.
+        // Everyone who has liked, on this match.
         //
-        // Enforced here rather than only in the UI: a privacy control that the
-        // client can decline to apply isn't one. A modified client, or simply
-        // an older build that predates the setting, would otherwise sail past
-        // it.
+        // The UNION of likedUsers and the legacy scalar likedBy it replaced,
+        // mirroring Match.kt's parseLikedUsers and the Cloud Function's
+        // likersOf. Liking back on a legacy document writes
+        // likedUsers = [the second liker] while the original liker survives
+        // only in likedBy, so reading the array alone reports a genuinely
+        // mutual pair as one-sided.
         //
-        // "Matched" means mutual — both participants in likedUsers. A one-sided
-        // like creates the match document (this app matches instantly), so
-        // without this check anyone who likes you can open a thread and write
-        // to you, which is exactly what the setting exists to prevent.
+        // That inconsistency was harmless while mutuality only drove an opt-in
+        // toggle. It is load-bearing now: a wrong verdict here locks a
+        // conversation. About eleven documents still carry the legacy field.
+        function likersOf(matchData) {
+          return matchData.get('likedBy', null) == null
+              ? matchData.get('likedUsers', [])
+              : matchData.get('likedUsers', []).concat([matchData.get('likedBy', '')]);
+        }
+
+        // Whether messaging is open on this match.
         //
-        // Default is false: absent means the user never turned it on, and a
-        // privacy control must never be applied to someone who didn't ask for
-        // it — silently muting an existing conversation would be worse than
-        // not having the feature.
-        function recipientAcceptsMessageFrom(matchData) {
-          let others = matchData.users.removeAll([request.auth.uid]);
-          let recipientGate = others.size() == 1
-              && get(/databases/$(database)/documents/users/$(others[0]))
-                   .data.get('onlyMatchesCanMessage', false) == true;
-          return !recipientGate
-              || matchData.get('likedUsers', []).hasAll(matchData.users);
+        // MUTUAL LIKE IS NOW MANDATORY, for everyone. It used to be an opt-in
+        // privacy setting (onlyMatchesCanMessage, which only ten of 537 users
+        // had ever enabled) layered over a model where any one-sided like
+        // opened a thread by default. A one-sided like still creates the match
+        // document - that is what surfaces the like at all - but it no longer
+        // grants the ability to write.
+        //
+        // GRANDFATHERING: a match that already has messages stays open even if
+        // it is not mutual. lastMessage is written on the match document in the
+        // same batch as every message (see MessageLimit.kt), so its presence
+        // means "this conversation has been used" - no separate flag, no
+        // backfill, and no extra read, since this rule already holds matchData.
+        // Measured against production when this shipped: 621 one-sided
+        // conversations had messages and stay open; 1,964 one-sided matches had
+        // none and become gated.
+        //
+        // Enforced here rather than only in the UI: a client can decline to
+        // apply a client-side gate, and older builds predate this rule.
+        function messagingUnlocked(matchData) {
+          return matchData.get('lastMessage', null) != null
+              || likersOf(matchData).hasAll(matchData.users);
         }
 
         /**
@@ -689,7 +707,8 @@ service cloud.firestore {
         allow read: if isMatchMember();
 
         // A sender can only post as themselves, with real content, and only
-        // if the recipient accepts messages from them. None of the fields
+        // if messaging is open on this match - mutual like, or a
+        // conversation that already has messages. None of the fields
         // the three update paths below own may be set at creation time —
         // closes the gap where a raw write could otherwise create an
         // already-"deleted" message or forge another uid's reaction/hide
@@ -702,7 +721,7 @@ service cloud.firestore {
             && !('deleted' in request.resource.data)
             && !('deletedFor' in request.resource.data)
             && !('reactions' in request.resource.data)
-            && recipientAcceptsMessageFrom(
+            && messagingUnlocked(
                  get(/databases/$(database)/documents/matches/$(matchId)).data);
 
         // Three narrow, mutually exclusive update paths — everything else

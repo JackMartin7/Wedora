@@ -497,7 +497,7 @@
     <string name="privacy_only_matches_caption">When on, people can only message you once you\'ve liked them back.</string>
     <string name="privacy_setting_load_failed">Couldn\'t load your messaging setting. Please try again.</string>
     <string name="privacy_setting_save_failed">Couldn\'t save that setting. Please try again.</string>
-    <string name="chat_locked_until_match">You can message once they like you back</string>
+    <string name="chat_locked_until_match">You can message once you’ve both liked each other</string>
 
     <!-- Notification settings -->
     <string name="notif_settings_intro">Choose what Wedora can notify you about.</string>
@@ -898,5 +898,13 @@
     <string name="country_picker_search_hint">Search countries</string>
     <string name="country_picker_no_results">No countries match that search</string>
     <string name="country_hint">Select country</string>
+
+    <!-- Match celebration. Copy is deliberately identical to the push the
+         Cloud Function sends, so the notification and the in-app moment say
+         the same thing. -->
+    <string name="match_celebration_title">It’s mutual 🎉</string>
+    <string name="match_celebration_subtitle">You both liked each other. Start the conversation.</string>
+    <string name="match_celebration_message">Send a message</string>
+    <string name="match_celebration_keep">Keep swiping</string>
 
 </resources>
